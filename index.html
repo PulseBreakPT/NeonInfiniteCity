@@ -1,105 +1,101 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-PT">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#070a0e">
-  <meta name="description" content="NEON INFINITE: explora uma cidade 3D procedural sem fim, diretamente no navegador.">
-  <title>NEON INFINITE — Cidade sem limites</title>
-  <link rel="icon" href="./public/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./src/style.css">
-  <script type="importmap">
-    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}
-  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="theme-color" content="#0a1115" />
+  <meta name="description" content="AFTERFALL — sobrevivência isométrica num Portugal pós-apocalíptico. Explora aldeias, casas, campos, prisões e bunkers, recolhe recursos e resiste aos infectados." />
+  <link rel="icon" href="./public/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./src/survival/style.css" />
+  <title>AFTERFALL | Sobrevive ao Fim</title>
 </head>
 <body>
-  <main id="game" aria-label="Explorador de cidade tridimensional">
-    <canvas id="scene" aria-label="Mundo tridimensional. Arrasta para olhar em redor." tabindex="0"></canvas>
-    <div class="ambient-vignette" aria-hidden="true"></div>
-    <div class="scanlines" aria-hidden="true"></div>
-    <div id="crosshair" class="crosshair" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+  <main id="app" aria-label="Jogo de sobrevivência AFTERFALL">
+    <canvas id="world" aria-label="Exploração isométrica da zona de quarentena"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
 
     <header class="topbar">
-      <div class="identity">
-        <div class="identity-mark"><span class="mark-inner"></span></div>
-        <div><p class="eyebrow">PROCEDURAL WORLD / EXPERIMENT 001</p><h1>NEON<span>INFINITE</span></h1></div>
+      <div class="brand">
+        <div class="brand-icon">A<span>F</span></div>
+        <div class="brand-text"><small>PROJETO · NEON INFINITE // SOBREVIVÊNCIA</small><h1>AFTER<span>FALL</span><sup>01</sup></h1></div>
       </div>
-      <div class="top-status"><span class="live-dot"></span><span>GERAÇÃO EM TEMPO REAL</span></div>
-      <div class="top-actions">
-        <button class="icon-button" id="photo-btn" aria-label="Guardar fotografia do mundo" title="Capturar imagem">◎</button>
-        <button class="icon-button" id="help-btn" aria-label="Mostrar ajuda" title="Controlos">?</button>
-        <button class="icon-button" id="pause-btn" aria-label="Pausar jogo" title="Pausar">Ⅱ</button>
-      </div>
+      <div class="top-center"><span class="pulse"></span> ZONA DE QUARENTENA <span class="separator"></span> <span id="clock">DIA 1 · 08:10</span></div>
+      <div class="top-actions"><button id="map-btn" class="icon-btn" aria-label="Mapa">▦ <span>MAPA</span></button><button id="inventory-btn" class="icon-btn" aria-label="Inventário">◫ <span>MOCHILA</span></button><button id="pause-btn" class="icon-btn square" aria-label="Pausa">Ⅱ</button></div>
     </header>
 
-    <aside class="side-meta" aria-live="off">
-      <div class="vertical-caption">UNIVERSO <b id="seed-label">000000</b></div>
-      <div class="hud-card sector-card">
-        <p class="hud-label"><span class="glyph">▰</span> LOCALIZAÇÃO ATUAL</p>
-        <h2 id="district-label">NÚCLEO CENTRAL</h2>
-        <p class="subtle" id="coordinates">0000.0 / 0000.0</p>
-        <div class="sector-divider"></div>
-        <div class="stat-columns">
-          <div><p class="hud-label">ALTITUDE</p><p class="big-stat"><span id="altitude">124</span><small> M</small></p></div>
-          <div><p class="hud-label">VELOCIDADE</p><p class="big-stat"><span id="speed">0</span><small> KM/H</small></p></div>
-        </div>
+    <aside class="left-hud">
+      <div class="location-panel panel">
+        <div class="eyebrow"><span class="signal"></span> LOCALIZAÇÃO ATUAL</div>
+        <div id="area" class="area">ALDEIA ABANDONADA</div>
+        <div class="small-detail"><span>SETOR <b id="coords">18 / 23</b></span><span class="status-pill">EM EXPLORAÇÃO</span></div>
+        <div class="landscape-rule"></div>
+        <div class="survival-heading"><span>CONDIÇÃO DO SOBREVIVENTE</span><span>VIVO</span></div>
+        <div class="stat"><div><span>SAÚDE</span><b><span id="health-value">100</span>%</b></div><div class="track"><i id="health-fill" style="width:100%;background:#e06f62"></i></div></div>
+        <div class="stat"><div><span>FOME</span><b><span id="hunger-value">92</span>%</b></div><div class="track"><i id="hunger-fill" style="width:92%;background:#e5b66e"></i></div></div>
+        <div class="stat"><div><span>SEDE</span><b><span id="thirst-value">87</span>%</b></div><div class="track"><i id="thirst-fill" style="width:87%;background:#73bac5"></i></div></div>
+        <div class="stat"><div><span>ENERGIA</span><b><span id="stamina-value">100</span>%</b></div><div class="track"><i id="stamina-fill" style="width:100%;background:#99bb83"></i></div></div>
       </div>
-      <div class="hud-card mission-card">
-        <p class="hud-label"><span class="signal-pulse"></span> TRANSMISSÃO DESCONHECIDA</p>
-        <h3>RECUPERA SINAIS</h3>
-        <p class="mission-description">Encontra os núcleos vermelhos espalhados pela cidade para ganhar pontos.</p>
-        <div class="objective-row"><span id="target-arrow" class="target-arrow">↗</span><span id="target-distance">A procurar sinal…</span></div>
+      <div class="task-panel panel">
+        <div class="eyebrow"><span class="red-dot"></span> MISSÃO PRINCIPAL</div>
+        <h2>SOBREVIVE AO FIM.</h2>
+        <p>Explora casas e aldeias, saqueia edifícios, foge dos infetados e encontra instalações militares.</p>
+        <div class="quest"><span class="quest-icon">⌖</span> ENCONTRA UM BUNKER <span>↗</span></div>
       </div>
+      <div class="tip-box">DICA: entra nos edifícios pelas portas e prime <strong>E</strong> para procurar mantimentos.</div>
     </aside>
-
-    <section class="scoreboard" aria-label="Pontuação da missão">
-      <p class="hud-label">PONTUAÇÃO / EXPLORAÇÃO</p>
-      <p id="score" class="score-numeral">000000</p>
-      <div class="score-secondary"><span><i class="diamond">◆</i> <b id="signals">0</b> SINAIS</span><span id="combo" class="combo">MULTIPLICADOR x1</span></div>
-    </section>
 
     <aside class="right-hud">
-      <div class="compass"><span>N</span><span class="compass-middle">◇</span><span>SE</span></div>
-      <div class="radar" id="minimap-panel"><canvas id="minimap" width="188" height="188" aria-label="Minimapa dos edifícios próximos"></canvas><span class="radar-nw">MAPA LOCAL</span><span class="radar-scale">400 M</span></div>
-      <div class="system-stat"><span class="live-dot"></span><span id="performance">-- FPS</span><span> / </span><span id="chunks">0 SETORES</span></div>
+      <div class="world-state panel">
+        <div class="eyebrow">RELATÓRIO DE SOBREVIVÊNCIA</div>
+        <div class="day-display"><small>DIA</small><span id="survival-days">01</span></div>
+        <div class="report-line"><span>INFETADOS ELIMINADOS</span><b id="kills">0</b></div>
+        <div class="report-line"><span>DISTÂNCIA PERCORRIDA</span><b id="distance">0 m</b></div>
+        <div class="report-line danger"><span>AMEAÇAS PRÓXIMAS</span><b id="zombie-count">0</b></div>
+      </div>
+      <div class="live-indicator"><span></span> MUNDO PROCEDURAL INFINITO</div>
     </aside>
 
-    <nav class="bottom-dock" aria-label="Ações do jogo">
-      <button class="dock-button" id="world-btn"><span class="dock-icon">⌁</span><span>NOVO MUNDO</span></button>
-      <span class="dock-separator"></span>
-      <button class="dock-button" id="night-btn" aria-pressed="false"><span class="dock-icon">☾</span><span id="night-label">DIA</span></button>
-      <button class="dock-button" id="rain-btn" aria-pressed="false"><span class="dock-icon">≋</span><span>CHUVA</span></button>
-      <button class="dock-button" id="quality-btn" aria-pressed="true"><span class="dock-icon">✧</span><span id="quality-label">DETALHE ALTO</span></button>
-    </nav>
+    <div id="messages" class="messages" role="status" aria-live="polite"></div>
+    <div class="crosshair" aria-hidden="true">⌖</div>
+    <div class="bottom-left"><span class="legend-tile">⬡</span> TERRITÓRIO CONTAMINADO <span class="sep">/</span> 2026</div>
+    <div class="bottom-right">WASD MOVER · SHIFT CORRER · ESPAÇO ATACAR · E INTERAGIR · I INVENTÁRIO · M MAPA</div>
 
-    <div class="bottom-info"><span>EXPLORAÇÃO LIVRE / SEM FRONTEIRAS</span><span id="direction-label">RUMO NW · 312°</span></div>
-
-    <div id="touch-controls" class="touch-controls" aria-label="Controlos táteis">
-      <div class="joystick-wrap"><span>MOVER</span><div class="joystick" id="joystick"><div class="joystick-nub"></div></div></div>
-      <div class="flight-buttons"><span>ALTITUDE</span><button data-hold="Space" aria-label="Subir">↑</button><button data-hold="KeyE" aria-label="Descer">↓</button><button data-hold="ShiftLeft" aria-label="Acelerar">⚡</button></div>
+    <div class="quick-bar">
+      <button id="use-comida" class="quick-slot"><span class="slot-icon">🥫</span><b>COMER</b><small>1 · <span id="num-comida">3</span></small></button>
+      <button id="use-agua" class="quick-slot"><span class="slot-icon">💧</span><b>BEBER</b><small>2 · <span id="num-agua">3</span></small></button>
+      <button id="use-medicamentos" class="quick-slot"><span class="slot-icon">✚</span><b>CURAR</b><small>3 · <span id="num-medicamentos">1</span></small></button>
+      <div class="bar-divider"></div>
+      <button id="interact" class="quick-slot action-slot"><span class="slot-icon">↳</span><b>REVISTAR</b><small>E</small></button>
+      <button id="attack" class="quick-slot action-slot"><span class="slot-icon">⚒</span><b>ATACAR</b><small>ESPAÇO</small></button>
+      <button id="craft-btn" class="quick-slot action-slot craft"><span class="slot-icon">⚙</span><b>CRIAR</b><small>C</small></button>
     </div>
 
-    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div class="touch-ui">
+      <div id="joystick" class="joystick" aria-label="Joystick virtual para deslocação"><span id="joystick-knob"></span></div>
+      <button id="run" class="touch-run">CORRER <strong>↗</strong></button>
+    </div>
 
-    <section id="start-screen" class="start-screen" aria-label="Início da experiência">
-      <div class="start-content">
-        <p class="start-kicker"><span class="live-dot"></span> A TUA CIDADE NÃO TEM FIM</p>
-        <h2>UM MUNDO.<br><em>INFINITAS</em><br>RUAS.</h2>
-        <p class="start-copy">Uma metrópole viva e procedural, criada em tempo real, agora com avenidas mais ricas, carros dinâmicos, estruturas detalhadas, parques urbanos e um horizonte banhado pelo sol.</p>
-        <button id="start-btn" class="primary-button"><span>INICIAR EXPLORAÇÃO</span><span class="button-arrow">↗</span></button>
-        <p class="start-controls" id="start-controls">WASD para mover · Rato para olhar · Espaço para subir · Shift para acelerar</p>
+    <section id="inventory-panel" class="overlay-panel" aria-label="Inventário" hidden>
+      <div class="overlay-header"><div><div class="eyebrow">SISTEMA DE SUPRIMENTOS</div><h2>MOCHILA <em>// INVENTÁRIO</em></h2></div><button id="close-inventory" aria-label="Fechar inventário">✕</button></div>
+      <p>Os recursos recolhidos ficam guardados automaticamente. Come, bebe e trata os ferimentos para sobreviver.</p>
+      <div class="inventory-grid">
+        <div>🥫 <span>CONSERVAS</span><strong id="inv-comida"></strong></div>
+        <div>💧 <span>ÁGUA</span><strong id="inv-agua"></strong></div>
+        <div>✚ <span>MEDICAMENTOS</span><strong id="inv-medicamentos"></strong></div>
+        <div>▣ <span>MADEIRA</span><strong id="inv-madeira"></strong></div>
+        <div>⬡ <span>SUCATA</span><strong id="inv-metal"></strong></div>
+        <div>◉ <span>MUNIÇÕES</span><strong id="inv-municoes"></strong></div>
+        <div>✚ <span>PENSOS</span><strong id="inv-penso"></strong></div>
+        <div>◆ <span>COMBUSTÍVEL</span><strong id="inv-combustivel"></strong></div>
       </div>
-      <div class="start-serial"><span>NEON SYSTEMS</span><span>PROCEDURAL / ∞</span><span>2026</span></div>
+      <div class="recipe"><span>FABRICAÇÃO</span><b>2 MADEIRAS + 1 SUCATA → 2 PENSOS</b><button id="craft-inventory">FABRICAR</button></div>
     </section>
 
-    <section id="help-panel" class="help-panel" hidden aria-label="Ajuda e controlos">
-      <div class="help-head"><div><p class="eyebrow">MANUAL DE EXPLORAÇÃO</p><h2>CONTROLOS</h2></div><button id="close-help" class="icon-button" aria-label="Fechar ajuda">×</button></div>
-      <p>Move-te em qualquer direção, sobrevoa a cidade e aproxima-te das anomalias vermelhas para recolher sinais. O progresso fica guardado automaticamente neste navegador.</p>
-      <div class="help-grid"><span>W A S D</span><b>Deslocar</b><span>RATO / TOQUE</span><b>Olhar em redor</b><span>ESPAÇO / Q</span><b>Subir</b><span>E / CTRL</span><b>Descer</b><span>SHIFT</span><b>Turbo</b><span>SCROLL</span><b>Velocidade-base</b><span>ESC</span><b>Soltar rato</b></div>
-      <p class="help-note">No telemóvel usa o joystick à esquerda, arrasta o lado direito para olhar e utiliza os botões de altitude.</p>
-    </section>
-    <div id="error-message" class="error-message" role="alert" hidden></div>
+    <section id="pause-overlay" class="center-overlay" hidden><div class="center-card"><div class="eyebrow">OPERAÇÃO SUSPENSA</div><h2>JOGO EM PAUSA</h2><p>O mundo espera pelo teu regresso.</p><button id="continue-btn" class="primary">RETOMAR EXPLORAÇÃO →</button><button id="newgame-btn" class="muted-btn">COMEÇAR NOVA VIDA</button></div></section>
+    <section id="death-overlay" class="center-overlay" hidden><div class="center-card dead"><div class="eyebrow">O FIM DE UM SOBREVIVENTE</div><h2>MORRESTE.</h2><p>A cidade continua. A tua história terminou.</p><button id="restart-btn" class="primary">TENTAR SOBREVIVER NOVAMENTE ↗</button></div></section>
+    <button id="rain-btn" class="weather-btn" aria-label="Alternar chuva">≋ CHUVA</button>
   </main>
-  <script type="module" src="./src/main.js"></script>
+  <script type="module" src="./src/survival/game.js"></script>
 </body>
 </html>
