@@ -1,0 +1,12 @@
+{
+  "name": "neon-infinite-city",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Infinite procedural 3D neon city explorer — browser-first, mobile-friendly",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "test": "node --test tests/*.test.js",
+    "check": "node --check src/main.js && node --check src/world/procedural.js && node --check src/world/CityWorld.js && node --check src/engine/FlightControls.js && node --check src/engine/Atmosphere.js"
+  }
+}
