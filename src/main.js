@@ -8,7 +8,7 @@ import { loadSave, saveGame, freshSave } from './game/save.js';
 const $ = id => document.getElementById(id);
 const mobile = matchMedia('(pointer: coarse)').matches || innerWidth <= 700;
 const app = {
-  state: loadSave(), started: false, paused: false, night: true, rain: false,
+  state: loadSave(), started: false, paused: false, night: false, rain: false,
   quality: !mobile, fps: 0, frames: 0, frameTime: 0, lastUI: 0,
   streak: 0, lastCollect: 0, toastTimer: 0
 };
@@ -166,7 +166,7 @@ function switchRain() {
 
 function switchQuality() {
   app.quality = !app.quality;
-  world.setRadius(app.quality ? 2 : 1);
+  world.setRadius(app.quality ? 3 : 1);
   renderer.setPixelRatio(Math.min(devicePixelRatio, app.quality ? (mobile ? 1.45 : 1.85) : 1));
   renderer.setSize(innerWidth, innerHeight);
   $('quality-btn').classList.toggle('active', app.quality);
@@ -262,12 +262,17 @@ function init() {
     renderer.setSize(innerWidth, innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.48;
+    renderer.toneMappingExposure = 1.38;
     controls = new FlightControls(camera, renderer.domElement);
     controls.enabled = false;
-    world = new CityWorld(scene, { seed: app.state.seed, collected, radius: app.quality ? 2 : 1 });
+    world = new CityWorld(scene, { seed: app.state.seed, collected, radius: app.quality ? 3 : 1 });
     atmosphere = new Atmosphere(scene, camera, mobile ? 230 : 510);
+    world.setNight(app.night);
+    atmosphere.setNight(app.night);
     world.update(camera, 0);
+    $('night-btn').classList.toggle('active', app.night);
+    $('night-btn').setAttribute('aria-pressed', String(app.night));
+    $('night-label').textContent = app.night ? 'NOITE' : 'DIA';
     $('quality-btn').classList.toggle('active', app.quality);
     $('quality-btn').setAttribute('aria-pressed', String(app.quality));
     $('quality-label').textContent = app.quality ? 'DETALHE ALTO' : 'DESEMPENHO';
