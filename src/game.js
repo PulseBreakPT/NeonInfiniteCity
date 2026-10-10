@@ -1,5 +1,6 @@
 import{createWorld,createState,update,interact,nearby,useItem,objectives,inside,SAVE_KEY,serialize,restore,clamp}from'./core.js';
 import{Renderer}from'./renderer.js';
+import{SHEET_COUNT,PACK_ROOT}from'./assetpack.js';
 const $=id=>document.getElementById(id);
 let world=createWorld(),state=createState(),renderer,selected='male',playing=false,paused=false,last=0,uiTick=0,saveTick=0,toastTimer,ended=false,restartArmed=false,expandedMap=false;
 const keys=new Set(),joy={x:0,y:0},input={x:0,y:0,run:false};let touchRun=false,joystickPointer=null,audio=null,audioEnabled=false;
@@ -77,7 +78,8 @@ async function load(){
  try{
   const response=await fetch('assets/atlas.json');if(!response.ok)throw new Error('atlas');const atlas=await response.json(),assets={};let loaded=0;
   await Promise.all(Object.keys(atlas).map(name=>new Promise((resolve,reject)=>{const img=new Image(),timeout=setTimeout(()=>reject(new Error(name)),30000);img.onload=()=>{clearTimeout(timeout);assets[name]=img;$('load-progress').value=++loaded;resolve();};img.onerror=()=>{clearTimeout(timeout);reject(new Error(name));};img.src='assets/'+name+'.png';})));
-  renderer=new Renderer($('world'),$('minimap'),world,assets,atlas);renderer.camera={x:-168,y:636};bind();$('start').disabled=false;$('loading').hidden=true;home();requestAnimationFrame(frame);
+  const packSheets=await Promise.all(Array.from({length:SHEET_COUNT},(_,i)=>new Promise(resolve=>{const image=new Image();image.onload=()=>{$('load-progress').value=++loaded;resolve(image);};image.onerror=()=>{$('load-progress').value=++loaded;console.warn('Premium500 atlas indisponível',i);resolve(null);};image.src=PACK_ROOT+'atlases/sheet-'+String(i).padStart(2,'0')+'.svg';})));
+  renderer=new Renderer($('world'),$('minimap'),world,assets,atlas,packSheets);renderer.camera={x:-168,y:636};bind();$('start').disabled=false;$('loading').hidden=true;home();requestAnimationFrame(frame);
  }catch(error){$('load-text').textContent='Não foi possível carregar os assets. Verifica a ligação e recarrega a página.';const button=document.createElement('button');button.textContent='Tentar novamente';button.className='secondary';button.style.width='220px';button.onclick=()=>location.reload();$('loading').append(button);console.error('Asset loading failed',error);}
 }
 load();

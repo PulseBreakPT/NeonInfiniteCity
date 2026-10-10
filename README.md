@@ -52,3 +52,9 @@ Abre `http://localhost:8080`. Não abrir `index.html` diretamente por `file://`,
 É uma primeira versão jogável, local e de um jogador. Não contém multiplayer, combate, construção livre, crafting complexo ou mundo infinito. Os ciclos gerados têm quatro frames por direção, algumas poses semelhantes e pequenas variações de anatomia/alinhamento. A montagem jogável não reproduz o detalhe cinematográfico das referências conceptuais.
 
 Os testes verificam colisões, recursos, caminho aos objetivos, conclusão, gravações, integridade dos atlas e hooks da interface. Não substituem testes visuais e de toque em dispositivos reais. Nenhum asset foi extraído de Project Zomboid.
+
+## PREMIUM500 · pack isométrico original
+
+A biblioteca [Premium500](assets/premium500/gallery.html) adiciona **500 assets SVG individuais** e **10 atlas vetoriais**. São 120 terrenos, 120 elementos naturais, 60 arquitetónicos, 65 interiores, 35 veículos, 45 urbanos, 35 de sobrevivência e 20 personagens. Explora e descarrega os SVG individualmente na [galeria online](https://pulsebreakpt.github.io/NeonInfiniteCity/assets/premium500/gallery.html).
+
+O motor carrega apenas os dez atlas e mantém os 104 sprites originais. Os 120 terrenos são utilizados na geração do mapa; as outras 380 peças são colocadas deterministicamente como decoração isométrica em ruas, edifícios e natureza. Para garantir que os objetivos e gravações existentes continuam funcionais, a nova decoração não acrescenta colisões nem interações de recolha. O jogo mantém a jogabilidade anterior. Não há dependências externas.

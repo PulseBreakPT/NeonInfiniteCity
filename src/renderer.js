@@ -1,8 +1,10 @@
 import{SIZE,project,inside,objectives,nearby,distance}from'./core.js';
+import{createScenery,tileAsset}from'./assetpack.js';
 export class Renderer{
- constructor(canvas,mini,world,assets,atlas){this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false});this.mini=mini;this.world=world;this.assets=assets;this.atlas=atlas;this.camera={x:0,y:0};this.zoom=1;this.lantern=true;this.rain=false;this.resize();this.makeTerrain();}
+ constructor(canvas,mini,world,assets,atlas,packSheets=[]){this.packSheets=packSheets;this.world=world;this.world.scenery=createScenery(world);this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false});this.mini=mini;this.world=world;this.assets=assets;this.atlas=atlas;this.camera={x:0,y:0};this.zoom=1;this.lantern=true;this.rain=false;this.resize();this.makeTerrain();}
  resize(){this.w=innerWidth;this.h=innerHeight;this.dpr=Math.min(devicePixelRatio||1,1.75);this.canvas.width=Math.round(this.w*this.dpr);this.canvas.height=Math.round(this.h*this.dpr);this.canvas.style.width=this.w+'px';this.canvas.style.height=this.h+'px';}
  poly(points,fill,stroke){const c=this.ctx;c.beginPath();points.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.closePath();if(fill){c.fillStyle=fill;c.fill();}if(stroke){c.strokeStyle=stroke;c.lineWidth=1;c.stroke();}}
+ premiumSprite(index,x,y,height,opacity=1){const img=this.packSheets[Math.floor(index/50)];if(!img)return;const j=index%50,w=height;const c=this.ctx;c.save();c.globalAlpha=opacity;c.drawImage(img,(j%10)*128,Math.floor(j/10)*128,128,128,x-w/2,y-height,w,height);c.restore();}
  sprite(sheet,index,x,y,height,opacity=1){const r=this.atlas[sheet]?.[index];if(!r)return;const c=this.ctx;const w=r[2]/r[3]*height;c.save();c.globalAlpha=opacity;c.drawImage(this.assets[sheet],...r,x-w/2,y-height,w,height);c.restore();}
  makeTerrain(){
   this.ground=document.createElement('canvas');this.pad=80;this.ground.width=SIZE*96+160;this.ground.height=SIZE*48+160;const c=this.ground.getContext('2d');const old=this.ctx;this.ctx=c;c.translate(SIZE*48+this.pad,this.pad);
@@ -18,6 +20,7 @@ export class Renderer{
    if(x>=4&&x<=6&&y>=8&&y<=10)type=9;
    const points=[{x:p.x,y:p.y-24},{x:p.x+48,y:p.y},{x:p.x,y:p.y+24},{x:p.x-48,y:p.y}];this.poly(points,['#586342','#807858','#74614b','#bcac85','#767570','#474d4a','#454b47','#87867a','#9a9887','#92705a','#756957','#9f9d88','#536043','#625b42','#585345','#6a6c63'][type]);
    c.save();c.clip();const r=this.atlas.terrain[type];c.drawImage(this.assets.terrain,...r,p.x-48.5,p.y-24.5,97,49);c.restore();
+   const detailIndex=tileAsset(type,hash);const sheet=this.packSheets[Math.floor(detailIndex/50)];if(sheet){const slot=detailIndex%50;c.drawImage(sheet,(slot%10)*128,Math.floor(slot/10)*128,128,128,p.x-55,p.y-33.5,110,77);}
    // Painted road markings follow the isometric ground plane.
    if((x===20&&y%3!==0&&!(y>=18&&y<=22))||(y===20&&x%3!==0&&!(x>=18&&x<=23))){c.save();c.globalAlpha=.55;const a=project(x+.45,y+.1),b=project(x+.45,y+.9);const aa=y===20?project(x+.1,y+.5):a,bb=y===20?project(x+.9,y+.5):b;c.strokeStyle='#ded9bd';c.lineWidth=2;c.beginPath();c.moveTo(aa.x,aa.y);c.lineTo(bb.x,bb.y);c.stroke();c.restore();}
   }
@@ -52,6 +55,7 @@ export class Renderer{
    if(o.loot&&!state.collected.includes(o.id)){c.strokeStyle='#e0c776';c.lineWidth=1.3;c.beginPath();c.ellipse(q.x,q.y+1,18,8,0,0,Math.PI*2);c.stroke();c.fillStyle='#ead18c';c.font='bold 15px sans-serif';c.textAlign='center';c.fillText('+',q.x,q.y-45-Math.sin(state.time*2)*2);}
    if(o.generator&&state.generator){c.fillStyle='#b0df85';c.beginPath();c.arc(q.x+7,q.y-25,3,0,7);c.fill();}
   }});
+  for(const d of this.world.scenery||[])if(visible(d.x,d.y))nodes.push({depth:d.x+d.y,draw:()=>{const q=project(d.x,d.y);this.premiumSprite(d.id,q.x,q.y,d.height);}});
   for(const e of this.world.enemies)if(visible(e.x,e.y))nodes.push({depth:e.x+e.y,draw:()=>{const q=project(e.x,e.y);this.shadow(q.x,q.y);c.save();c.filter='grayscale(1) sepia(.6) brightness(.55)';this.sprite('male-walk',e.direction*4+(Math.floor(e.phase*4)%4),q.x,q.y,68);c.restore();if(distance(e,state.player)<6){c.fillStyle='#d18465';c.font='bold 13px sans-serif';c.textAlign='center';c.fillText('!',q.x,q.y-77);}}});
   nodes.push({depth:state.player.x+state.player.y,draw:()=>{
    const q=project(state.player.x,state.player.y),u=state.player;this.shadow(q.x,q.y,14);c.strokeStyle='#c6d3a0';c.lineWidth=1.3;c.beginPath();c.ellipse(q.x,q.y,15,7,0,0,7);c.stroke();
