@@ -1,15 +1,13 @@
 {
   "name": "vida-nova-life-simulator",
-  "version": "2.0.0",
+  "version": "3.2.0",
   "private": true,
   "type": "module",
-  "description": "Original browser-based Portuguese life simulator with yearly choices and persistent progress",
+  "description": "Simulador de vida com interface de jogo fullscreen e navegação sem scroll",
   "scripts": {
     "dev": "python3 -m http.server 8080",
-    "check": "node --check src/engine.js && node --check src/app.js && node --check src/systems.js",
+    "check": "node --check src/engine.js && node --check src/app.js && node --check src/systems.js && node --check src/game-ui.js",
     "test": "node --test tests/*.test.js"
   },
-  "engines": {
-    "node": ">=20"
-  }
+  "engines": {"node": ">=20"}
 }

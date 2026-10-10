@@ -2,67 +2,72 @@
 <html lang="pt-PT">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f6f8ff">
-  <meta name="description" content="VIDA NOVA: um simulador de vida interativo onde cada ano e cada decisão mudam a tua história. Um jogo original para browser e Android.">
-  <title>VIDA NOVA · A tua história começa aqui</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#f5f6ff">
+  <meta name="description" content="VIDA NOVA — vive uma vida inteira, toma decisões e cria o teu legado num simulador de vida de browser.">
+  <title>VIDA NOVA · O teu destino</title>
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style-1.css">
   <link rel="stylesheet" href="./style-2.css">
   <link rel="stylesheet" href="./style-3.css">
-  <link rel="stylesheet" href="./style-4.css">\n  <link rel="stylesheet" href="./style-5.css">
+  <link rel="stylesheet" href="./style-4.css">
+  <link rel="stylesheet" href="./style-5.css">
+  <link rel="stylesheet" href="./game-shell.css">
 </head>
 <body>
   <main class="app" id="app">
     <header class="topbar">
-      <div class="topbrand"><span class="brand-mark" aria-hidden="true">✳</span><div><div class="brand-name">vida<span>nova.</span></div><div class="brand-tag">UM UNIVERSO DE ESCOLHAS</div></div></div>
-      <div class="top-right"><span class="version-pill">LIFE SIM 3.1</span><button class="top-icon" id="settings-btn" title="Opções" aria-label="Opções">⚙</button></div>
+      <div class="topbrand"><span class="brand-mark" aria-hidden="true">✳</span><div><div class="brand-name">vida<span>nova.</span></div><div class="brand-tag">A TUA VIDA. AS TUAS REGRAS.</div></div></div>
+      <div class="top-right"><span class="version-pill">NOVO CAPÍTULO</span><button class="top-icon" id="settings-btn" title="Opções" aria-label="Abrir opções">⚙</button></div>
     </header>
 
     <div id="game-screen" class="screen" hidden>
       <div class="page-shell">
         <div class="page-main">
-          <section id="profile-card" class="profile-card rose">
+          <section id="profile-card" class="profile-card rose" aria-label="A tua personagem">
             <div class="profile-sparks" aria-hidden="true"><span>✦</span><span>◦</span><span>✧</span></div>
-            <div class="profile-primary"><div id="profile-avatar" class="avatar">👶</div><div class="profile-details"><div class="overline">A MINHA HISTÓRIA <span id="character-country">· PORTUGAL</span></div><h1 id="character-name">Leonor Silva</h1><div class="profile-meta"><span id="character-age">0 ANOS</span><span class="mid-dot">·</span><span id="character-status">RECÉM-NASCIDO</span></div></div></div>
-            <div class="profile-footer"><span class="life-date">✦ &nbsp; <span id="profile-year">2026</span></span><span id="mood-tag" class="mood-tag">☀ A vida começa agora</span></div>
+            <div class="profile-primary"><div id="profile-avatar" class="avatar">👶</div><div class="profile-details"><div class="overline">PERSONAGEM <span id="character-country">· PORTUGAL</span></div><h1 id="character-name">Leonor Silva</h1><div class="profile-meta"><span id="character-age">0 ANOS</span><span class="mid-dot">·</span><span id="character-status">RECÉM-NASCIDO</span></div></div></div>
+            <div class="profile-footer"><span class="life-date">✦ <span id="profile-year">2026</span></span><span id="mood-tag" class="mood-tag">☀ A vida começa agora</span></div>
           </section>
-          <div class="stats" id="stats"></div>
-          <div class="wealth-strip"><div><span class="wealth-icon">€</span><div><small>SALDO DISPONÍVEL</small><strong id="cash">0 €</strong></div></div><div class="wealth-right"><small>PATRIMÓNIO TOTAL</small><strong id="wealth">0 €</strong></div></div>
-          <section class="content-panel" id="content-panel" aria-live="polite"></section>
+          <div class="stats" id="stats" aria-label="Atributos da personagem"></div>
+          <div class="wealth-strip"><div><span class="wealth-icon">€</span><div><small>DINHEIRO</small><strong id="cash">0 €</strong></div></div><div class="wealth-right"><small>PATRIMÓNIO</small><strong id="wealth">0 €</strong></div></div>
+          <section class="content-panel" id="content-panel" aria-label="Conteúdo do jogo" aria-live="off"></section>
         </div>
-        <aside class="desktop-aside"><div class="aside-title">A TUA JORNADA <span>✦</span></div><div class="aside-art"><span>☀</span><div><strong>O FUTURO</strong><em>está nas tuas mãos.</em></div></div><div id="aside-facts"></div><p class="aside-bottom">Cada decisão conta. Cada ano traz uma nova oportunidade.</p></aside>
+        <aside class="desktop-aside" hidden><div id="aside-facts"></div></aside>
       </div>
+      <div class="stage-pager" id="stage-pager" hidden aria-label="Páginas de conteúdo"><button type="button" id="page-prev" aria-label="Página anterior">‹</button><span id="page-label" aria-live="polite">1 / 1</span><button type="button" id="page-next" aria-label="Página seguinte">›</button></div>
       <div class="mobile-actionbar" id="actionbar">
-        <button class="age-btn" id="age-btn"><span class="age-icon">＋</span><span><strong>AVANÇAR 1 ANO</strong><small>Vê o que a vida te reserva</small></span><span class="age-arrow">↗</span></button>
+        <button class="age-btn" id="age-btn"><span class="age-icon">✦</span><span><strong>AVANÇAR 1 ANO</strong><small>Escreve o próximo capítulo</small></span><span class="age-arrow">➜</span></button>
       </div>
-      <nav class="bottom-nav" aria-label="Secções do jogo" id="nav">
-        <button data-tab="life" class="nav-item active"><span class="nav-emoji">🏡</span><span>Vida</span></button>
-        <button data-tab="actions" class="nav-item"><span class="nav-emoji">✨</span><span>Atividades</span></button>
-        <button data-tab="people" class="nav-item"><span class="nav-emoji">💞</span><span>Pessoas</span></button>
-        <button data-tab="career" class="nav-item"><span class="nav-emoji">🎓</span><span>Carreira</span></button>
-        <button data-tab="finance" class="nav-item"><span class="nav-emoji">💸</span><span>Finanças</span></button>
-        <button data-tab="systems" class="nav-item"><span class="nav-emoji">🌐</span><span>Sistemas</span></button>
+      <nav class="bottom-nav" aria-label="Ecrãs do jogo" id="nav">
+        <button type="button" data-tab="life" class="nav-item active" aria-label="Vida"><span class="nav-emoji">✦</span><span>Vida</span></button>
+        <button type="button" data-tab="actions" class="nav-item" aria-label="Atividades"><span class="nav-emoji">⚡</span><span>Ações</span></button>
+        <button type="button" data-tab="people" class="nav-item" aria-label="Relações"><span class="nav-emoji">♡</span><span>Pessoas</span></button>
+        <button type="button" data-tab="career" class="nav-item" aria-label="Carreira"><span class="nav-emoji">✧</span><span>Carreira</span></button>
+        <button type="button" data-tab="finance" class="nav-item" aria-label="Finanças"><span class="nav-emoji">€</span><span>Finanças</span></button>
+        <button type="button" data-tab="systems" class="nav-item" aria-label="Sistemas"><span class="nav-emoji">◎</span><span>Sistemas</span></button>
       </nav>
     </div>
 
     <section class="create-screen" id="create-screen">
-      <div class="create-layout"><div class="create-hero"><div class="create-corner">★ UMA NOVA HISTÓRIA</div><div class="create-symbol">✳</div><h1>E se pudesses<br><em>viver mil vidas?</em></h1><p>Da primeira palavra ao último capítulo. Amor, escolhas, carreiras, surpresas e recomeços. A história é tua.</p><div class="create-pills"><span>♡ Relações</span><span>✳ Carreira</span><span>✦ Destino</span></div></div>
-        <form id="create-form" class="create-form"><div class="form-eyebrow">CAPÍTULO ZERO</div><h2>Quem vais ser?</h2><p>Escolhe o início. Depois, deixa a vida acontecer.</p>
-          <div class="field-grid"><label>Primeiro nome<input id="first" maxlength="24" required autocomplete="off" value="Leonor" placeholder="Primeiro nome"></label><label>Apelido<input id="last" maxlength="24" required autocomplete="off" value="Silva" placeholder="Apelido"></label></div>
+      <div class="create-layout">
+        <div class="create-hero"><div class="create-corner">✦ CAPÍTULO ZERO</div><div class="create-symbol">✳</div><h1>Tudo começa<br><em>contigo.</em></h1><p>Uma vida inteira de decisões, pessoas, conquistas e surpresas. Quem vais ser?</p><div class="create-pills"><span>♡ Relações</span><span>✳ Carreira</span><span>✦ Destino</span></div></div>
+        <form id="create-form" class="create-form"><div class="form-eyebrow">CRIA A TUA PERSONAGEM</div><h2>A tua próxima vida</h2><p>Escolhe o ponto de partida.</p>
+          <div class="field-grid"><label>Primeiro nome<input id="first" maxlength="24" required autocomplete="off" value="Leonor" placeholder="Nome"></label><label>Apelido<input id="last" maxlength="24" required autocomplete="off" value="Silva" placeholder="Apelido"></label></div>
           <label>Identidade<select id="gender"><option>Mulher</option><option>Homem</option><option>Não-binário</option></select></label>
-          <label>País de nascimento<select id="country"><option>Portugal</option><option>Brasil</option><option>Espanha</option><option>França</option><option>Estados Unidos</option><option>Reino Unido</option></select></label>
-          <div class="label-row"><span>Cor da tua história</span><span>✦</span></div><div class="color-options" id="colors"><button type="button" class="color-chip rose selected" data-color="rose" aria-label="Rosa"></button><button type="button" class="color-chip blue" data-color="blue" aria-label="Azul"></button><button type="button" class="color-chip mint" data-color="mint" aria-label="Menta"></button><button type="button" class="color-chip gold" data-color="gold" aria-label="Dourado"></button><button type="button" class="color-chip lilac" data-color="lilac" aria-label="Lilás"></button><button type="button" class="color-chip coral" data-color="coral" aria-label="Coral"></button></div>
-          <div class="form-actions"><button type="submit" class="start-button">COMEÇAR A MINHA VIDA <span>↗</span></button><button type="button" class="random-btn" id="random-btn">🎲 &nbsp; Surpreende-me</button></div>
-          <span class="create-disclaimer">Gravado automaticamente neste dispositivo · Sem conta necessária</span>
-        </form></div>
+          <label>País<select id="country"><option>Portugal</option><option>Brasil</option><option>Espanha</option><option>França</option><option>Estados Unidos</option><option>Reino Unido</option></select></label>
+          <div class="label-row"><span>Personaliza a tua cor</span><span>✦</span></div><div class="color-options" id="colors"><button type="button" class="color-chip rose selected" data-color="rose" aria-label="Rosa"></button><button type="button" class="color-chip blue" data-color="blue" aria-label="Azul"></button><button type="button" class="color-chip mint" data-color="mint" aria-label="Menta"></button><button type="button" class="color-chip gold" data-color="gold" aria-label="Dourado"></button><button type="button" class="color-chip lilac" data-color="lilac" aria-label="Lilás"></button><button type="button" class="color-chip coral" data-color="coral" aria-label="Coral"></button></div>
+          <div class="form-actions"><button type="submit" class="start-button">COMEÇAR A JOGAR <span>➜</span></button><button type="button" class="random-btn" id="random-btn">🎲 &nbsp; Surpreende-me</button></div>
+          <span class="create-disclaimer">Progresso guardado automaticamente neste dispositivo</span>
+        </form>
+      </div>
     </section>
 
-    <section id="gameover-screen" class="gameover-screen" hidden><div class="end-card"><span class="end-mark">✧</span><small>O ÚLTIMO CAPÍTULO</small><h2>Uma vida<br><em>para recordar.</em></h2><div id="end-story"></div><button id="again-btn" class="start-button">COMEÇAR OUTRA VIDA ↗</button></div></section>
-
-    <div class="modal-backdrop" id="modal-backdrop" hidden><div class="modal"><div class="modal-top"><span>AS TUAS OPÇÕES</span><button id="modal-close" aria-label="Fechar">✕</button></div><h2>Uma vida de cada vez.</h2><p>O teu progresso fica guardado automaticamente neste navegador. Começar outra vida substitui o progresso atual, mas não apaga o histórico do GitHub.</p><button class="danger-button" id="restart-btn">↻ COMEÇAR VIDA NOVA</button><button class="quiet-button" id="modal-cancel">Continuar a jogar</button></div></div>
+    <section id="gameover-screen" class="gameover-screen" hidden><div class="end-card"><span class="end-mark">✧</span><small>O ÚLTIMO CAPÍTULO</small><h2>Uma vida<br><em>para recordar.</em></h2><div id="end-story"></div><button id="again-btn" class="start-button">COMEÇAR OUTRA VIDA ➜</button></div></section>
+    <div class="modal-backdrop" id="modal-backdrop" hidden><div class="modal"><div class="modal-top"><span>OPÇÕES DO JOGO</span><button id="modal-close" aria-label="Fechar">✕</button></div><h2>Uma vida de cada vez.</h2><p>O progresso é guardado neste dispositivo. Começar outra vida substitui o progresso atual.</p><button class="danger-button" id="restart-btn">↻ COMEÇAR VIDA NOVA</button><button class="quiet-button" id="modal-cancel">Continuar a jogar</button></div></div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
   </main>
   <script type="module" src="./src/app.js"></script>
+  <script type="module" src="./src/game-ui.js"></script>
 </body>
 </html>
