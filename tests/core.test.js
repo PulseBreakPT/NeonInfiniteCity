@@ -72,3 +72,29 @@ test('overlapping claims keep continuous shapes rather than rectangular cells',(
   assert.ok(t.contains(32,34));
   assert.ok(!t.contains(55,60));
 });
+test('polygon area is stable near world Mercator coordinate limits',()=>{
+ const {x,y}=project(-23.5,-46.6);
+ assert.equal(polygonArea([{x,y},{x:x+60,y},{x:x+60,y:y+40},{x,y:y+40}]),2400);
+});
+test('indexed vector territories allow 200 independent conquests without rectangular ownership',()=>{
+  const t=new Territory('you',0,0,12);
+  for(let i=0;i<200;i++){
+    const x=i*70+25;
+    const capture=t.capture([{x,y:-3},{x:x+15,y:9},{x:x+26,y:-3}]);
+    assert.ok(capture?.area>2,`capture ${i} must succeed`);
+  }
+  assert.ok(t.ops.length>140);
+  assert.equal(t.contains(197*70+42,0),true);
+  assert.equal(t.contains(197*70+42,60),false);
+});
+test('spatial territory index honours latest cuts and reclaim at negative coordinates',()=>{
+  const t=new Territory('you',-5000000,3000000,30);
+  const x=-5000000,y=3000000;
+  const clip=[{x:x-12,y:y-12},{x:x+12,y:y-12},{x:x+12,y:y+12},{x:x-12,y:y+12}];
+  assert.equal(t.contains(x,y),true);
+  assert.ok(t.erase(clip)>0);
+  assert.equal(t.contains(x,y),false);
+  assert.ok(t.capture(clip));
+  assert.equal(t.contains(x,y),true);
+  t.clear();assert.equal(t.contains(x,y),false);
+});

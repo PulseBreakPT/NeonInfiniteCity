@@ -56,12 +56,15 @@ export function pointInPoly(p, polygon) {
   return inside;
 }
 export function polygonArea(vertices) {
-  let twice = 0;
-  for (let i = 0; i < vertices.length; i++) {
-    const a = vertices[i], b = vertices[(i + 1) % vertices.length];
-    twice += a.x * b.y - b.x * a.y;
+  if(vertices.length<3)return 0;
+  // Translate to local origin before Shoelace: Mercator world coordinates can
+  // be +/- 20 million metres, where products otherwise lose numerical precision.
+  const origin=vertices[0];let twice=0;
+  for(let i=1;i<vertices.length-1;i++){
+    const a=vertices[i],b=vertices[i+1];
+    twice+=(a.x-origin.x)*(b.y-origin.y)-(b.x-origin.x)*(a.y-origin.y);
   }
-  return Math.abs(twice) * .5;
+  return Math.abs(twice)*.5;
 }
 export function distanceToSegment(p, a, b) {
   const vx = b.x - a.x, vy = b.y - a.y;
@@ -91,13 +94,26 @@ function estimateArea(points,test) {
  */
 export class Territory {
   constructor(owner,x,y,radius=30) {
-    this.owner=owner;this.ops=[];this.area=0;
+    this.owner=owner;this.ops=[];this.area=0;this.index=new Map();this.indexSize=160;
     if(radius>0)this.addCircle(x,y,radius);
   }
+  indexOperation(op) {
+    const id=this.ops.length;
+    this.ops.push(op);
+    const b=op.bounds,s=this.indexSize;
+    for(let x=Math.floor(b.minX/s);x<=Math.floor(b.maxX/s);x++)
+      for(let y=Math.floor(b.minY/s);y<=Math.floor(b.maxY/s);y++){
+        const key=`${x}:${y}`;
+        if(!this.index.has(key))this.index.set(key,[]);
+        this.index.get(key).push(id);
+      }
+  }
   contains(x,y) {
-    const p={x,y};
-    for(let i=this.ops.length-1;i>=0;i--) {
-      const op=this.ops[i],b=op.bounds;
+    const p={x,y},s=this.indexSize;
+    const ids=this.index.get(`${Math.floor(x/s)}:${Math.floor(y/s)}`);
+    if(!ids)return false;
+    for(let k=ids.length-1;k>=0;k--){
+      const op=this.ops[ids[k]],b=op.bounds;
       if(x>=b.minX&&x<=b.maxX&&y>=b.minY&&y<=b.maxY&&pointInPoly(p,op.points))return op.type==='add';
     }
     return false;
@@ -105,25 +121,25 @@ export class Territory {
   get count(){return Math.max(0,Math.round(this.area/(GRID*GRID)));}
   addCircle(x,y,radius){return this.capture(circlePolygon(x,y,radius));}
   capture(path) {
-    if(!Array.isArray(path)||path.length<3||path.length>300||this.ops.length>=140)return null;
+    if(!Array.isArray(path)||path.length<3||path.length>300||this.ops.length>=1600)return null;
     if(!path.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)))return null;
     const points=path.map(p=>({x:p.x,y:p.y})),b=polygonBounds(points),raw=polygonArea(points);
     if(raw<3||raw>MAX_CAPTURE_AREA||b.maxX-b.minX>1600||b.maxY-b.minY>1600)return null;
     const area=estimateArea(points,p=>!this.contains(p.x,p.y));
     if(area<2)return null;
-    this.ops.push({type:'add',points,bounds:b});this.area+=area;
+    this.indexOperation({type:'add',points,bounds:b});this.area+=area;
     return {points,area};
   }
   erase(points) {
-    if(!Array.isArray(points)||points.length<3||!this.ops.length||this.ops.length>=140)return 0;
+    if(!Array.isArray(points)||points.length<3||!this.ops.length||this.ops.length>=1600)return 0;
     const area=estimateArea(points,p=>this.contains(p.x,p.y));
     if(area<2)return 0;
     const copy=points.map(p=>({x:p.x,y:p.y}));
-    this.ops.push({type:'cut',points:copy,bounds:polygonBounds(copy)});
+    this.indexOperation({type:'cut',points:copy,bounds:polygonBounds(copy)});
     this.area=Math.max(0,this.area-area);
     return area;
   }
-  clear(){this.ops=[];this.area=0;}
+  clear(){this.ops=[];this.area=0;this.index.clear();}
 }
 export function updateTrail(actor) {
   const home=actor.territory.contains(actor.x,actor.y);

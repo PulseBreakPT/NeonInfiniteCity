@@ -98,3 +98,7 @@ html,body{background:#f2f7ff;color:#213452}
  .city-grid{max-height:23dvh}.city-btn{min-height:42px}.city-btn .city-flag{font-size:15px}
  .spawn-search-wrap{min-height:34px}.spawn-choice{padding:5px 8px}.spawn-secondary{min-height:30px}
 }
+
+/* 3.0: clearer mass indicator and smaller HUD on touch devices */
+.score-hud .mass-counter strong{color:#f04c9d}
+@media(max-width:700px){.score-hud .record-counter,.score-hud .record-rule{display:none!important}.score-hud .mass-counter{display:flex!important}}

@@ -1,12 +1,12 @@
 import { CITIES, EARTH, GRID, project, unproject, wrapDx, randomHash, distance, clamp, Territory, updateTrail, trailHitSweep } from './core.js';
+import { steering, speedForMass, radiusForMass, SpatialHash, botTarget, AdaptiveQuality } from './arcade.js';
 
 const $ = id => document.getElementById(id);
 const STORE = 'atlasio-world-v1';
 const COLORS = ['#ff537f','#ffc260','#9e82ff','#5ef0b2','#74aaff','#f491e5','#f0e873','#ef705b'];
 const NAMES = ['CRIMSON','SOLAR','NEXUS','VIPER','ORBIT','NOVA','TITAN','BLAZE'];
 const STEP = 1 / 60;
-const CACHE_INTERVAL = 130;
-const TILE_CAMERA_INTERVAL = 340;
+const TILE_CAMERA_INTERVAL = 150;
 const WORLD_ZONE = 500;
 const fmt = n => Number(n).toLocaleString('pt-PT');
 const cleanCoord = (v, lim) => clamp(Number(v) || 0, -lim, lim);
@@ -32,6 +32,7 @@ class AtlasGame {
     this.cacheMargin = 64; this.territoryRevision = 0; this.cacheRevision = -1;
     this.cacheTime = -Infinity; this.cachedView = null; this.renderView = null;
     this.accumulator = 0; this.mapPanX = NaN; this.mapPanY = NaN;
+    this.quality = new AdaptiveQuality(); this.orbIndex = new SpatialHash(44);
     this.zoom = 17;
     this.width = 0; this.height = 0;
     this.lastFrame = performance.now();
@@ -39,7 +40,7 @@ class AtlasGame {
     this.paused = false; this.dead = false; this.inWorld = false; this.choosingPoint = false;
     this.started = false; this.helpOpen = false;
     this.actor = null; this.bots = []; this.orbs = [];
-    this.heading = { x: 0, y: 1 };
+    this.heading = { x: 0, y: 1 }; this.aim = { x:0, y:1 };
     this.input = { x: 0, y: 0, joystick: false, boost: false };
     this.keys = new Set();
     this.scoreBonus = 0; this.kills = 0;
@@ -189,7 +190,11 @@ class AtlasGame {
 
   inputDirection(x, y) {
     const d = Math.hypot(x,y);
-    if (d > 0.1) { this.heading = { x:x / d,y:y / d }; this.actor.moving = true; }
+    if (d > 0.1) {
+      this.aim = { x:x / d,y:y / d };
+      if (!this.actor.moving) this.heading = {...this.aim};
+      this.actor.moving = true;
+    }
   }
 
   setTarget(target, moveMap) {
@@ -237,13 +242,13 @@ class AtlasGame {
     this.input.joystick=false;this.input.boost=false;this.keys.clear();
     const pos = project(this.target.lat,this.target.lng);
     this.actor = { id:'you', x:pos.x,y:pos.y, spawn:{lat:this.target.lat,lng:this.target.lng}, trail:[], lastOwned:{...pos}, moving:false,
-      territory:new Territory('you',pos.x,pos.y,37), color:'#22e5ee', energy:100 };
-    this.heading = { x: 0, y: 1 };
+      territory:new Territory('you',pos.x,pos.y,37), color:'#22e5ee', energy:100, mass:24 };
+    this.heading = { x: 0, y: 1 }; this.aim = { x:0, y:1 };
     this.scoreBonus = 0;this.kills=0;this.boostCharge=100;this.boostTime=0;this.orbTimer=0;
     this.tickTime = 0; this.accumulator = 0; this.territoryRevision++;
     this.mapPanX=NaN;this.mapPanY=NaN;
     this.bots = Array.from({length:8},(_,i)=>this.makeBot(i,pos));
-    this.orbs=[];this.addOrbs(pos,38);
+    this.orbs=[];this.orbIndex.build([]);this.addOrbs(pos,38);
     this.zoom = 17;
     if (this.map) {
       this.map.dragging.disable();this.map.touchZoom.disable();
@@ -264,7 +269,7 @@ class AtlasGame {
     const rad = 215+(i%3)*52+randomSeed(center.x,center.y,i+41)*22;
     const x=center.x+Math.cos(angle)*rad, y=center.y+Math.sin(angle)*rad;
     const name=NAMES[i], color=COLORS[i];
-    return {id:`bot-${i}`,name,color, x,y,origin:{x,y},trail:[],lastOwned:{x,y},territory:new Territory(name,x,y,26+i%3*4),heading:angle,phase:i*1.2,excursion:0,respawn:0,speed:27+randomSeed(x,y,i)*6};
+    return {id:`bot-${i}`,name,color, x,y,origin:{x,y},trail:[],lastOwned:{x,y},territory:new Territory(name,x,y,26+i%3*4),heading:angle,phase:i*1.2,excursion:0,respawn:0,speed:27+randomSeed(x,y,i)*6,mass:20+i*2};
   }
 
   addOrbs(center,count=12) {
@@ -276,6 +281,7 @@ class AtlasGame {
         value:5+Math.floor(randomSeed(center.x,center.y,i+seed)*5)*3});
     }
     if(this.orbs.length>70)this.orbs=this.orbs.slice(-70);
+    this.orbIndex.build(this.orbs);
   }
 
   updateLocation(lat,lng) {
@@ -371,7 +377,7 @@ class AtlasGame {
     }catch{/* audio is optional */}
   }
 
-  score() {return this.actor ? this.actor.territory.count*10+this.scoreBonus+this.kills*80:0;}
+  score() {return this.actor ? this.actor.territory.count*10+this.scoreBonus+this.kills*80+Math.round((this.actor.mass-24)*6):0;}
   updateHud() {
     const score=this.score();
     $('score').textContent=fmt(score);
@@ -380,6 +386,7 @@ class AtlasGame {
     if(score>this.saveData.best) {this.saveData.best=score;this.persist();}
     $('record').textContent=fmt(this.saveData.best);
     $('boost-fill').style.width=this.boostCharge.toFixed(1)+'%';
+    $('mass-value').textContent=fmt(Math.round(this.actor?.mass||0));
     const ranking=[{id:'you',name:'TU',color:'#26e9eb',score},...this.bots.filter(b=>!b.respawn).map(b=>({id:b.id,name:b.name,color:b.color,score:b.territory.count*10}))].sort((a,b)=>b.score-a.score).slice(0,6);
     $('leaderboard').innerHTML=ranking.map((b,i)=>`<div class="leader-row ${b.id==='you'?'mine':''}"><span class="leader-pos">${String(i+1).padStart(2,'0')}</span><span class="leader-color" style="background:${b.color}"></span><span class="leader-name">${b.name}</span><span class="leader-score">${fmt(b.score)}</span></div>`).join('');
   }
@@ -396,7 +403,9 @@ class AtlasGame {
     if(Math.hypot(x,y)>.12) this.inputDirection(x,y);
     if(!p.moving)return;
     const boosting=(this.input.boost||this.keys.has('Space'))&&this.boostCharge>2;
-    const move=boosting?66:40;
+    // Smooth steering: no instantaneous 180-degree direction changes.
+    this.heading=steering(this.heading,this.aim,boosting?6.2:8.2,dt);
+    const move=speedForMass(p.mass,boosting);
     this.boostCharge=clamp(this.boostCharge+(boosting?-26:11)*dt,0,100);
     p.x+=this.heading.x*move*dt;
     p.y=clamp(p.y+this.heading.y*move*dt,-19900000,19900000);
@@ -407,6 +416,7 @@ class AtlasGame {
       this.territoryRevision++;
       const won=Math.round(result.captured.area/(GRID*GRID));
       this.scoreBonus+=Math.min(500,Math.round(won/4)*5);
+      p.mass=clamp(p.mass+Math.min(15,result.captured.area/900),10,500);
       this.notify(`◈ TERRITÓRIO CONQUISTADO · +${won*10} PTS`, 'positive');
       this.beep(660,.1);
     }
@@ -439,18 +449,16 @@ class AtlasGame {
       }
       const safe=bot.territory.contains(bot.x,bot.y);
       if(!safe)bot.excursion+=dt;else bot.excursion=0;
-      if(bot.excursion>2.35){
-        bot.heading=Math.atan2(bot.origin.y-bot.y,bot.origin.x-bot.x);
-      } else if(bot.excursion<1.4 && bot.phase%4.5<.04) {
-        const hunt=you.trail.length>5&&distance(bot,you)<130;
-        bot.heading=hunt ? Math.atan2(you.y-bot.y,you.x-bot.x) : Math.atan2(bot.origin.y-bot.y,bot.origin.x-bot.x) + .75*Math.sin(bot.phase*1.2);
-      }
-      bot.heading+=Math.sin(bot.phase*.45+Number(bot.id.split('-')[1]))*dt*.40;
+      // Arcade AI: chase exposed trails, retreat from larger enemies, and return home.
+      const intent=botTarget(bot,you,bot.phase);
+      const direction=steering({x:Math.cos(bot.heading),y:Math.sin(bot.heading)},intent,3.1,dt);
+      bot.heading=Math.atan2(direction.y,direction.x);
       const before={x:bot.x,y:bot.y};
-      bot.x+=Math.cos(bot.heading)*bot.speed*dt;
-      bot.y+=Math.sin(bot.heading)*bot.speed*dt;
+      const speed=speedForMass(bot.mass,false,bot.speed);
+      bot.x+=Math.cos(bot.heading)*speed*dt;
+      bot.y+=Math.sin(bot.heading)*speed*dt;
       const claim=updateTrail(bot);
-      if(claim?.captured?.area){this.transferTerritory(bot,claim.captured);this.territoryRevision++;}
+      if(claim?.captured?.area){this.transferTerritory(bot,claim.captured);bot.mass=clamp(bot.mass+Math.min(9,claim.captured.area/1200),10,450);this.territoryRevision++;}
       if(claim?.overextended){this.removeBot(bot);continue;}
       if(you.trail.length>2&&trailHitSweep(before,bot,you.trail,7)){
         this.die(`${bot.name} cortou o teu trilho.`);return;
@@ -460,9 +468,9 @@ class AtlasGame {
         this.notify(`✦ ${bot.name} ELIMINADO! +80 PTS`,'positive');this.beep(780,.08);
         continue;
       }
-      if(distance(bot,you)<11){
-        if(you.territory.count>bot.territory.count*1.22){this.removeBot(bot);this.kills++;this.notify(`⚡ ABSORVESTE ${bot.name}`,'positive');}
-        else if(!you.territory.contains(you.x,you.y)){this.die(`Foste apanhado por ${bot.name}.`);return;}
+      if(distance(bot,you)<radiusForMass(bot.mass)+radiusForMass(you.mass)-6){
+        if(you.mass>bot.mass*1.32){you.mass=clamp(you.mass+bot.mass*.23,10,500);this.removeBot(bot);this.kills++;this.notify(`⚡ ABSORVESTE ${bot.name}`,'positive');}
+        else if(bot.mass>you.mass*1.32&&!you.territory.contains(you.x,you.y)){this.die(`Foste absorvido por ${bot.name}.`);return;}
       }
     }
   }
@@ -470,13 +478,25 @@ class AtlasGame {
 
   collectOrbs(dt) {
     this.orbTimer+=dt;
-    for(let i=this.orbs.length-1;i>=0;i--) {
-      if(distance(this.orbs[i],this.actor)<14) {
-        const orb=this.orbs.splice(i,1)[0];
-        this.scoreBonus+=orb.value;this.boostCharge=clamp(this.boostCharge+5,0,100);
+    const consumed=new Set();
+    // Broadphase query avoids scanning every collectible for every actor.
+    for(const orb of this.orbIndex.near(this.actor.x,this.actor.y,15)){
+      if(distance(orb,this.actor)<14){
+        consumed.add(orb);this.scoreBonus+=orb.value;
+        this.actor.mass=clamp(this.actor.mass+orb.value*.35,10,500);
+        this.boostCharge=clamp(this.boostCharge+5,0,100);
         if(this.scoreBonus%45<orb.value)this.beep(620,.04);
       }
     }
+    for(const bot of this.bots){
+      if(bot.respawn>0)continue;
+      for(const orb of this.orbIndex.near(bot.x,bot.y,12)){
+        if(!consumed.has(orb)&&distance(orb,bot)<11){
+          consumed.add(orb);bot.mass=clamp(bot.mass+orb.value*.24,10,450);
+        }
+      }
+    }
+    if(consumed.size){this.orbs=this.orbs.filter(orb=>!consumed.has(orb));this.orbIndex.build(this.orbs);}
     if(this.orbTimer>5){this.orbTimer=0;this.addOrbs(this.actor,10);}
   }
   die(reason) {
@@ -493,7 +513,7 @@ class AtlasGame {
     this.width=Math.max(1,this.canvas.clientWidth);
     this.height=Math.max(1,this.canvas.clientHeight);
     const mobile=window.matchMedia('(pointer: coarse)').matches || this.width < 700;
-    this.dpr=Math.min(window.devicePixelRatio||1, mobile?1.35:1.65);
+    this.dpr=Math.max(.72,Math.min(window.devicePixelRatio||1, mobile?1.35:1.65)*this.quality.scale);
     this.canvas.width=Math.max(1,Math.round(this.width*this.dpr));
     this.canvas.height=Math.max(1,Math.round(this.height*this.dpr));
     this.ctx.setTransform(this.dpr,0,0,this.dpr,0,0);
@@ -524,8 +544,8 @@ class AtlasGame {
     const view=this.view;
     const previous=this.cachedView;
     const drift=previous?Math.hypot(wrapDx(view.x-previous.x)*view.ppm,(view.y-previous.y)*view.ppm):Infinity;
-    if(!previous||this.cacheRevision!==this.territoryRevision||time-this.cacheTime>CACHE_INTERVAL||
-        drift>this.cacheMargin*.7||previous.ppm!==view.ppm) {
+    if(!previous||this.cacheRevision!==this.territoryRevision||
+        drift>this.cacheMargin*.60||previous.ppm!==view.ppm) {
       const margin=this.cacheMargin;
       this.renderView={x:view.x,y:view.y,ppm:view.ppm,width:this.width+margin*2,height:this.height+margin*2};
       const c=this.compositeCtx;
@@ -594,7 +614,7 @@ class AtlasGame {
     if(!actor||actor.respawn>0)return;
     const pos=this.worldToScreen(actor),ctx=this.ctx;
     if(pos.x<-40||pos.y<-40||pos.x>this.width+40||pos.y>this.height+40)return;
-    const radius=isYou?12+Math.min(6,Math.sqrt(actor.territory.count)*.25):10+Math.min(4,Math.sqrt(actor.territory.count)*.18);
+    const radius=radiusForMass(actor.mass,isYou);
     ctx.save();
     if(isYou){ctx.beginPath();ctx.arc(pos.x,pos.y,radius+11+Math.sin(time*.004)*2,0,Math.PI*2);ctx.strokeStyle='#2debf564';ctx.lineWidth=2;ctx.stroke();}
     ctx.beginPath();ctx.arc(pos.x,pos.y,radius+4,0,Math.PI*2);ctx.fillStyle=actor.color+'40';ctx.fill();
@@ -622,10 +642,12 @@ class AtlasGame {
   }
   frame(now) {
     requestAnimationFrame(t=>this.frame(t));
-    const elapsed=Math.min(.10,Math.max(0,(now-this.lastFrame)/1000));
+    const frameMs=Math.max(0,now-this.lastFrame);
+    const elapsed=Math.min(.10,frameMs/1000);
     this.lastFrame=now;
     const active=this.started&&!this.dead&&!this.paused&&!this.inWorld&&!this.helpOpen;
     if(active){
+      if(this.quality.observe(frameMs))this.resize();
       this.accumulator=Math.min(this.accumulator+elapsed,STEP*5);
       let steps=0;
       while(this.accumulator>=STEP&&steps++<5&&!this.dead){
@@ -638,11 +660,11 @@ class AtlasGame {
       }
       if(this.map&&this.actor&&now-this.lastCamera>TILE_CAMERA_INTERVAL){
         const d=Math.hypot(this.actor.x-this.mapPanX,this.actor.y-this.mapPanY);
-        if(d>8||!Number.isFinite(d)){
+        if(d>3.5||!Number.isFinite(d)){
           this.lastCamera=now;
           this.mapPanX=this.actor.x;this.mapPanY=this.actor.y;
           const ll=unproject(this.actor.x,this.actor.y);
-          this.map.panTo([ll.lat,ll.lng],{animate:false,noMoveStart:true});
+          this.map.panTo([ll.lat,ll.lng],{animate:true,duration:.14,easeLinearity:1,noMoveStart:true});
           if(now-this.lastHud>520)this.updateLocation(ll.lat,ll.lng);
         }
       }
