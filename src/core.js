@@ -69,13 +69,27 @@ export function update(state,world,input,dt){
  }
  if(p.health<=0)state.dead=true;
 }
+// Clip the segment against each wall; props do not block reaching their own contents.
+export function clearReach(world,a,b){
+ return !world.walls.some(w=>{
+  let lo=0,hi=1;
+  for(const [origin,delta,min,max]of[[a.x,b.x-a.x,w.x,w.x+w.w],[a.y,b.y-a.y,w.y,w.y+w.h]]){
+   if(Math.abs(delta)<1e-9){if(origin<min||origin>max)return false;continue;}
+   let enter=(min-origin)/delta,leave=(max-origin)/delta;
+   if(enter>leave)[enter,leave]=[leave,enter];
+   lo=Math.max(lo,enter);hi=Math.min(hi,leave);if(lo>hi)return false;
+  }
+  return true;
+ });
+}
 export function nearby(state,world){
- const p=state.player,options=world.props.filter(o=>((o.loot&&!state.collected.includes(o.id))||o.generator)&&distance(o,p)<1.55).sort((a,b)=>distance(a,p)-distance(b,p));
+ const p=state.player,options=world.props.filter(o=>((o.loot&&!state.collected.includes(o.id))||o.generator)&&distance(o,p)<1.55&&clearReach(world,p,o)).sort((a,b)=>distance(a,p)-distance(b,p));
  if(options.length)return options[0];
  const b=world.buildings[0];if(inside(p,b)&&state.generator)return{id:'shelter',finish:true,x:p.x,y:p.y};
  return null;
 }
 export function interact(state,world){
+ if(state.dead||state.won)return{ok:false,text:'A expedição terminou.'};
  const o=nearby(state,world);if(!o)return{ok:false,text:'Aproxima-te de uma caixa ou do gerador.'};
  if(o.finish){if(state.found.food>=1&&state.found.water>=1&&state.found.medkit>=1){state.won=true;return{ok:true,text:'O abrigo está pronto. Sobreviveste ao primeiro dia.'};}return{ok:false,text:'Ainda precisas de encontrar comida, água e material médico.'};}
  if(o.generator){if(state.generator)return{ok:false,text:'O gerador já está a funcionar. Regressa ao abrigo.'};if(state.inventory.fuel<1||state.inventory.parts<2)return{ok:false,text:'Precisas de 1 combustível e 2 peças.'};state.inventory.fuel--;state.inventory.parts-=2;state.generator=true;return{ok:true,text:'Gerador ligado. Regressa ao abrigo.'};}
@@ -84,6 +98,7 @@ export function interact(state,world){
 }
 export function useItem(state,item){
  if(!['food','water','medkit'].includes(item)||state.inventory[item]<=0||state.dead||state.won)return false;
+ if(item==='water'?state.player.stamina>=100:state.player.health>=100)return false;
  state.inventory[item]--;if(item==='medkit')state.player.health=clamp(state.player.health+45,0,100);if(item==='food')state.player.health=clamp(state.player.health+18,0,100);if(item==='water')state.player.stamina=100;return true;
 }
 export function objectives(s){return[{text:'Encontrar água e conservas',done:s.found.food>0&&s.found.water>0,target:'market'},{text:'Recolher material médico',done:s.found.medkit>0,target:'clinic'},{text:'Reparar o gerador da oficina',done:s.generator,target:'workshop'},{text:'Regressar ao abrigo',done:s.won,target:'shelter'}];}
