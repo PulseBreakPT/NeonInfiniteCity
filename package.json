@@ -1,6 +1,6 @@
 {
   "name": "atlas-io-world-territory",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "private": true,
   "description": "Worldwide OpenStreetMap territory arcade game",

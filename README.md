@@ -6,17 +6,17 @@ Jogo original de conquista territorial inspirado no género arcade de captura de
 
 Site: https://pulsebreakpt.github.io/NeonInfiniteCity/
 
-Escolhe uma cidade ou abre **MUNDO** para escrever coordenadas ou selecionar um local com o dedo. Move a personagem com o joystick no telemóvel ou WASD/setas no PC. Quando sais do território azul, deixas um trilho. Volta à zona azul para fechar o percurso e conquistar tudo dentro. Não deixes rivais atravessar o teu trilho. O botão **BOOST** ou espaço acelera-te durante um período limitado. Apanha os pontos de energia dourados.
+No **menu principal**, pesquisa e escolhe uma cidade para nascer, usa o botão **Aleatório** ou toca em **Escolher no mapa** para marcar livremente o teu ponto de partida. Também podes abrir **MUNDO** para introduzir coordenadas ou selecionar um local com o dedo. Move a personagem com o joystick no telemóvel ou WASD/setas no PC. Quando sais do território azul, deixas um trilho. Volta à zona azul para fechar o percurso e conquistar um **polígono contínuo e com os contornos reais do percurso**, sem grelha nem quadrados. Não deixes rivais atravessar o teu trilho. O botão **BOOST** ou espaço acelera-te durante um período limitado. Apanha os pontos de energia dourados.
 
-O jogo inclui 12 cidades de arranque, seleção de qualquer latitude/longitude, localização opcional mediante permissão, mapas OSM, oito bots com territórios próprios, linhas vulneráveis, conquista por polígonos, colisões, classificação local, pontos, boost, recorde e áudio opcional. A viagem inicia uma partida nova; o recorde é guardado em `localStorage`.
+O jogo inclui 24 cidades de arranque, seleção de qualquer latitude/longitude, localização opcional mediante permissão, mapas OSM, oito bots com territórios próprios, linhas vulneráveis, conquista por polígonos, colisões, classificação local, pontos, boost, recorde e áudio opcional. A viagem inicia uma partida nova; o recorde é guardado em `localStorage`.
 
 **Limitação importante:** nesta versão os outros jogadores são bots simulados localmente, não jogadores online. Multiplayer global síncrono, contas, território persistente partilhado e anticheat requerem servidor e base de dados, não incluídos neste projeto estático do GitHub Pages. Não são anunciados como disponíveis.
 
 ## Código
 
-- `src/core.js` — projeção Web Mercator, células de território, geometria, fecho de percursos e colisões com testes sem browser.
+- `src/core.js` — projeção Web Mercator, polígonos contínuos de território, geometria, fecho de percursos e colisões com testes sem browser.
 - `src/game.js` — gestão da partida, Leaflet, renderizador Canvas, bots, HUD, controlos e menus.
-- `style.css` — visual do jogo responsivo e full-screen.
+- `style.css` + `light.css` — visual light mode responsivo, menus e HUD.
 - `index.html` — entrada acessível do jogo.
 - `tests/` — testes automáticos (`npm test`).
 

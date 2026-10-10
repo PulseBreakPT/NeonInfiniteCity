@@ -1,4 +1,4 @@
-import { CITIES, EARTH, GRID, project, unproject, wrapDx, randomHash, distance, clamp, Territory, updateTrail, trailHit, cellKey } from './core.js';
+import { CITIES, EARTH, GRID, project, unproject, wrapDx, randomHash, distance, clamp, Territory, updateTrail, trailHit } from './core.js';
 
 const $ = id => document.getElementById(id);
 const STORE = 'atlasio-world-v1';
@@ -23,6 +23,8 @@ class AtlasGame {
     this.map = null;
     this.canvas = $('world-layer');
     this.ctx = this.canvas.getContext('2d', { alpha: true });
+    this.territoryBuffer = document.createElement('canvas');
+    this.territoryCtx = this.territoryBuffer.getContext('2d', { alpha: true });
     this.zoom = 17;
     this.width = 0; this.height = 0;
     this.lastFrame = performance.now();
@@ -60,7 +62,7 @@ class AtlasGame {
       scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false,
       touchZoom: false, dragging: false, keyboard: false,
       zoomAnimation: false, fadeAnimation: false, markerZoomAnimation: false,
-      attributionControl: false, worldCopyJump: true,
+      attributionControl: true, worldCopyJump: true,
       inertia: false
     });
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -90,6 +92,11 @@ class AtlasGame {
       : `<button type="button" class="world-city-btn ${idx === this.chooseCity ? 'selected' : ''}" data-city="${idx}"><span>${city.emoji}</span><span>${city.name}</span></button>`;
     $('city-grid').innerHTML = CITIES.map((c, i) => cell(c, i, 'menu')).join('');
     $('world-city-grid').innerHTML = CITIES.map((c, i) => cell(c, i, 'world')).join('');
+    const search=$('city-search')?.value?.trim().toLocaleLowerCase('pt-PT')||'';
+    for(const button of $('city-grid').children)button.hidden=!!search&&!button.textContent.toLocaleLowerCase('pt-PT').includes(search);
+    const picked = this.target;
+    $('spawn-name').textContent = (picked.emoji || '🌐')+' '+picked.name;
+    $('spawn-country').textContent = picked.country+' · '+picked.lat.toFixed(3)+'°, '+picked.lng.toFixed(3)+'°';
   }
 
   bind() {
@@ -101,6 +108,9 @@ class AtlasGame {
       this.setTarget(CITIES[id], true);
     });
     $('enter-btn').addEventListener('click', () => this.startAt(this.target));
+    $('spawn-map-btn').addEventListener('click', () => this.openWorld());
+    $('spawn-random-btn').addEventListener('click', () => { const id=Math.floor(Math.random()*CITIES.length);this.chooseCity=id;this.setTarget(CITIES[id],true); });
+    $('city-search').addEventListener('input', e => {const q=e.target.value.trim().toLocaleLowerCase('pt-PT');for(const b of $('city-grid').children){b.hidden=!!q&&!b.textContent.toLocaleLowerCase('pt-PT').includes(q);}});
     $('world-btn').addEventListener('click', () => this.openWorld());
     $('world-close').addEventListener('click', () => this.closeWorld());
     $('travel-btn').addEventListener('click', () => this.startTravel());
@@ -114,6 +124,8 @@ class AtlasGame {
     $('pause-btn').addEventListener('click', () => this.togglePause());
     $('resume-btn').addEventListener('click', () => this.togglePause(false));
     $('pause-world-btn').addEventListener('click', () => { this.togglePause(false); this.openWorld(); });
+    $('pause-menu-btn').addEventListener('click', () => this.returnToMenu());
+    $('death-menu-btn').addEventListener('click', () => this.returnToMenu());
     $('again-btn').addEventListener('click', () => this.startAt({ name: this.areaLabel, lat: this.actor?.spawn.lat ?? this.target.lat, lng: this.actor?.spawn.lng ?? this.target.lng }));
     $('death-world-btn').addEventListener('click', () => { $('death-overlay').hidden = true; this.openWorld(); });
     $('help-btn').addEventListener('click', () => this.help(true));
@@ -264,11 +276,24 @@ class AtlasGame {
     $('coordinates').textContent=`${Math.abs(lat).toFixed(3)}° ${north} · ${Math.abs(lng).toFixed(3)}° ${east}`;
   }
 
+  returnToMenu() {
+    this.paused=false;this.dead=false;this.started=false;this.inWorld=false;this.choosingPoint=false;
+    this.actor=null;this.bots=[];this.orbs=[];
+    this.keys.clear();this.input.boost=false;this.input.joystick=false;
+    this.paintCities();
+    $('app').classList.remove('in-world','is-paused');$('app').classList.add('is-menu');
+    for(const id of ['world-overlay','pause-overlay','death-overlay','pick-banner','help-overlay'])$(id).hidden=true;
+    $('menu-overlay').hidden=false;
+    if(this.map){this.map.dragging.disable();this.map.touchZoom.disable();this.map.setView([this.target.lat,this.target.lng],13,{animate:false});}
+    this.updateLocation(this.target.lat,this.target.lng);this.updateHud();
+  }
+
   openWorld() {
     if (!this.mapAvailable) { this.notify('Liga-te à internet para abrir o mapa mundial.','danger');return; }
     this.inWorld = true;
     this.choosingPoint = false;
     $('world-overlay').hidden = false;
+    $('menu-overlay').hidden = true;
     $('pause-overlay').hidden = true;
     $('pick-banner').hidden = true;
     $('app').classList.add('in-world');
@@ -281,6 +306,7 @@ class AtlasGame {
   closeWorld() {
     this.inWorld=false;this.setPicking(false);
     $('world-overlay').hidden=true;$('app').classList.remove('in-world');
+    if(!this.started)$('menu-overlay').hidden=false;
     if (this.map) {
       this.map.dragging.disable();this.map.touchZoom.disable();
       const center = this.actor ? unproject(this.actor.x,this.actor.y):this.target;
@@ -291,6 +317,7 @@ class AtlasGame {
   }
   setPicking(enabled) {
     this.choosingPoint=enabled;
+    if(enabled)$('menu-overlay').hidden=true;
     $('pick-banner').hidden=!enabled;
     $('world-overlay').hidden=enabled;
     if(enabled) this.notify('Arrasta o mapa e toca onde queres começar.','positive');
@@ -341,7 +368,7 @@ class AtlasGame {
     const score=this.score();
     $('score').textContent=fmt(score);
     const lat=this.actor?unproject(this.actor.x,this.actor.y).lat:0;
-    $('surface').textContent=fmt(Math.round((this.actor?.territory.count||0)*GRID*GRID*Math.cos(lat*Math.PI/180)**2))+' m²';
+    $('surface').textContent=fmt(Math.round((this.actor?.territory.area||0)*Math.cos(lat*Math.PI/180)**2))+' m²';
     if(score>this.saveData.best) {this.saveData.best=score;this.persist();}
     $('record').textContent=fmt(this.saveData.best);
     $('boost-fill').style.width=this.boostCharge.toFixed(1)+'%';
@@ -366,20 +393,21 @@ class AtlasGame {
     p.y=clamp(p.y+this.heading.y*move*dt,-19900000,19900000);
     const result=updateTrail(p);
     if(result?.overextended){this.die('Foste longe demais sem fechar o território.');return;}
-    if(result?.captured?.length){
+    if(result?.captured?.area){
       this.transferTerritory(p,result.captured);
-      this.scoreBonus+=Math.min(500,Math.round(result.captured.length/4)*5);
-      this.notify(`◈ TERRITÓRIO CONQUISTADO · +${result.captured.length*10} PTS`, 'positive');
+      const won=Math.round(result.captured.area/(GRID*GRID));
+      this.scoreBonus+=Math.min(500,Math.round(won/4)*5);
+      this.notify(`◈ TERRITÓRIO CONQUISTADO · +${won*10} PTS`, 'positive');
       this.beep(660,.1);
     }
     if(p.trail.length>10&&trailHit(p,p.trail.slice(0,-7),5)) this.die('Cruzaste o teu próprio trilho.');
   }
-  transferTerritory(owner,keys) {
-    for(const bot of this.bots) {
-      if(bot===owner || bot.respawn)continue;
-      for(const cell of keys)bot.territory.cells.delete(cell);
+  transferTerritory(owner,claim) {
+    if(!claim?.points)return;
+    for(const bot of this.bots){
+      if(bot!==owner&&!bot.respawn)bot.territory.erase(claim.points);
     }
-    if(owner!==this.actor)for(const cell of keys) this.actor.territory.cells.delete(cell);
+    if(owner!==this.actor)this.actor.territory.erase(claim.points);
   }
 
   updateBots(dt) {
@@ -411,7 +439,7 @@ class AtlasGame {
       bot.x+=Math.cos(bot.heading)*bot.speed*dt;
       bot.y+=Math.sin(bot.heading)*bot.speed*dt;
       const claim=updateTrail(bot);
-      if(claim?.captured?.length)this.transferTerritory(bot,claim.captured);
+      if(claim?.captured?.area)this.transferTerritory(bot,claim.captured);
       if(claim?.overextended){this.removeBot(bot);continue;}
       if(you.trail.length>2&&trailHit(bot,you.trail,8)){
         this.die(`${bot.name} cortou o teu trilho.`);return;
@@ -427,7 +455,7 @@ class AtlasGame {
       }
     }
   }
-  removeBot(bot) {bot.respawn=5;bot.trail=[];bot.territory.cells.clear();}
+  removeBot(bot) {bot.respawn=5;bot.trail=[];bot.territory.clear();}
 
   collectOrbs(dt) {
     this.orbTimer+=dt;
@@ -457,6 +485,8 @@ class AtlasGame {
     this.canvas.width=Math.round(this.width*this.dpr);
     this.canvas.height=Math.round(this.height*this.dpr);
     this.ctx.setTransform(this.dpr,0,0,this.dpr,0,0);
+    this.territoryBuffer.width=this.canvas.width;this.territoryBuffer.height=this.canvas.height;
+    this.territoryCtx.setTransform(this.dpr,0,0,this.dpr,0,0);
     if(this.map) this.map.invalidateSize({pan:false});
   }
   worldToScreen(p) {
@@ -465,24 +495,30 @@ class AtlasGame {
     return { x:this.width/2+wrapDx(p.x-center.x)*ppm,y:this.height/2-(p.y-center.y)*ppm };
   }
   paintTerritory(actor) {
-    if(!actor || !actor.territory.count)return;
-    const ctx=this.ctx, cells=actor.territory.cells;
-    const ppm=this.map?256*2**this.map.getZoom()/EARTH:.78;
-    const size=GRID*ppm;
-    if(size<1)return;
-    ctx.fillStyle=actor.color+'4a';ctx.strokeStyle=actor.color+'c7';ctx.lineWidth=Math.max(1,Math.min(2.5,size*.17));
-    const center=this.map?project(this.map.getCenter().lat,this.map.getCenter().lng):project(this.target.lat,this.target.lng);
-    const originX=this.width/2,originY=this.height/2;
-    for(const key of cells){
-      const comma=key.indexOf(',');const gx=Number(key.slice(0,comma)),gy=Number(key.slice(comma+1));
-      const px=originX+wrapDx(gx*GRID-center.x)*ppm,py=originY-((gy+1)*GRID-center.y)*ppm;
-      if(px>this.width+size||px+size<0||py>this.height+size||py+size<0)continue;
-      ctx.fillRect(px,py,size+.4,size+.4);
-      if(!cells.has(cellKey(gx-1,gy))){ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px,py+size);ctx.stroke();}
-      if(!cells.has(cellKey(gx+1,gy))){ctx.beginPath();ctx.moveTo(px+size,py);ctx.lineTo(px+size,py+size);ctx.stroke();}
-      if(!cells.has(cellKey(gx,gy-1))){ctx.beginPath();ctx.moveTo(px,py+size);ctx.lineTo(px+size,py+size);ctx.stroke();}
-      if(!cells.has(cellKey(gx,gy+1))){ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+size,py);ctx.stroke();}
+    if(!actor || !actor.territory.ops.length)return;
+    const ctx=this.territoryCtx;
+    ctx.clearRect(0,0,this.width,this.height);
+    // Isolated canvas avoids cutting out other actors' territory and map objects.
+    // The actual GPS-projected vertices are used, with no cell/tile snapping.
+    // Cut operations remove land stolen by another player.
+    ctx.save();
+    ctx.lineJoin='round';ctx.lineCap='round';
+    for(const op of actor.territory.ops){
+      const pts=op.points;if(pts.length<3)continue;
+      ctx.beginPath();
+      const first=this.worldToScreen(pts[0]);ctx.moveTo(first.x,first.y);
+      for(let i=1;i<pts.length;i++){const q=this.worldToScreen(pts[i]);ctx.lineTo(q.x,q.y);}
+      ctx.closePath();
+      if(op.type==='cut'){
+        ctx.globalCompositeOperation='destination-out';ctx.fillStyle='#000';ctx.fill();
+        ctx.globalCompositeOperation='source-over';
+      }else{
+        ctx.fillStyle=actor.color+'44';ctx.strokeStyle=actor.color+'e0';
+        ctx.lineWidth=2.3;ctx.fill();ctx.stroke();
+      }
     }
+    ctx.restore();
+    this.ctx.drawImage(this.territoryBuffer,0,0,this.width,this.height);
   }
   paintTrail(actor) {
     if(!actor?.trail || actor.trail.length<2)return;

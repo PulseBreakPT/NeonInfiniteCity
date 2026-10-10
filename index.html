@@ -3,12 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="theme-color" content="#080f1d">
+  <meta name="theme-color" content="#f8fbff">
   <meta name="description" content="ATLAS.IO — conquista território nas ruas reais do planeta. Jogo mundial de browser com Leaflet e OpenStreetMap.">
   <title>ATLAS.IO · Conquista o mundo</title>
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
   <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./light.css">
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
   <script type="module" src="./src/game.js"></script>
 </head>
@@ -16,7 +17,6 @@
 <div id="app" class="app is-menu">
   <div id="map" class="world-map" aria-label="Mapa mundial OpenStreetMap"></div>
   <canvas id="world-layer" class="world-layer" aria-label="Tabuleiro da conquista territorial"></canvas>
-  <a class="osm-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>
   <div class="map-vignette" aria-hidden="true"></div>
   <div class="ambient-grain" aria-hidden="true"></div>
 
@@ -53,11 +53,14 @@
     <div class="menu-card panel-glass">
       <div class="eyebrow"><span class="live-dot"></span> O TEU PLANETA. AS TUAS REGRAS.</div>
       <h1>ATLAS<span>.IO</span></h1>
-      <p class="hero-copy">A tua arena é o <strong>mundo real.</strong> Desenha percursos, fecha territórios, cresce e elimina os rivais antes que cortem o teu trilho.</p>
+      <p class="hero-copy">A tua arena é o <strong>mundo real.</strong> Desenha percursos, fecha territórios com contornos livres, cresce e elimina os rivais antes que cortem o teu trilho.</p>
       <div class="menu-features"><span>◈ CAPTURA</span><span>⚡ CRESCE</span><span>🌐 MUNDO INTEIRO</span></div>
-      <div class="menu-divider"><span>ESCOLHE ONDE COMEÇAR</span></div>
-      <div id="city-grid" class="city-grid"></div>
-      <button id="enter-btn" class="primary-btn"><span>▶</span> CONQUISTAR AGORA <b>↗</b></button>
+      <div class="spawn-topline"><div><span class="spawn-step">01 / 02 · CRIAR PARTIDA</span><h2>Onde queres nascer?</h2><p>Seleciona uma cidade ou marca qualquer ponto do planeta.</p></div><span class="spawn-globe" aria-hidden="true">🌍</span></div>
+      <label class="spawn-search-wrap" for="city-search"><span aria-hidden="true">⌕</span><input id="city-search" type="search" placeholder="Pesquisar cidade ou país…" autocomplete="off" aria-label="Pesquisar cidade ou país"></label>
+      <div id="city-grid" class="city-grid" aria-label="Escolher cidade de nascimento"></div>
+      <div class="spawn-extras"><button type="button" id="spawn-map-btn" class="spawn-secondary">⌖ Escolher no mapa</button><button type="button" id="spawn-random-btn" class="spawn-secondary">🎲 Aleatório</button></div>
+      <div class="spawn-choice"><span class="spawn-choice-kicker">LOCAL DE NASCIMENTO SELECIONADO</span><strong id="spawn-name">🇵🇹 Lisboa</strong><small id="spawn-country">Portugal · 38.722°, -9.139°</small></div>
+      <button id="enter-btn" class="primary-btn"><span>▶</span> NASCER E CONQUISTAR <b>↗</b></button>
       <div class="menu-foot"><span>SOLO + BOTS</span><span>LEAFLET + OPENSTREETMAP</span></div>
     </div>
   </div>
@@ -76,10 +79,10 @@
   </div>
   <div id="pick-banner" class="pick-banner" hidden><span>⌖ TOCA NO MAPA PARA ESCOLHER A NOVA ZONA</span><button id="cancel-pick">CANCELAR</button></div>
 
-  <div id="pause-overlay" class="center-overlay" hidden><section class="pause-card panel-glass"><div class="pause-mark">Ⅱ</div><small>JOGO SUSPENSO</small><h2>Faz a tua jogada.</h2><button id="resume-btn" class="primary-btn">▶ CONTINUAR</button><button id="pause-world-btn" class="secondary-btn">◎ MUDAR DE REGIÃO</button></section></div>
-  <div id="death-overlay" class="center-overlay" hidden><section class="pause-card death-card panel-glass"><div class="death-mark">✕</div><small>TRILHO INTERROMPIDO</small><h2>Foste eliminado.</h2><p id="death-reason">Os rivais cortaram o teu percurso.</p><div class="death-stats"><span>PONTUAÇÃO <b id="death-score">0</b></span><span>RECORD <b id="death-record">0</b></span></div><button id="again-btn" class="primary-btn">↻ VOLTAR AO MAPA</button><button id="death-world-btn" class="secondary-btn">🌍 ESCOLHER OUTRA CIDADE</button></section></div>
+  <div id="pause-overlay" class="center-overlay" hidden><section class="pause-card panel-glass"><div class="pause-mark">Ⅱ</div><small>JOGO SUSPENSO</small><h2>Faz a tua jogada.</h2><button id="resume-btn" class="primary-btn">▶ CONTINUAR</button><button id="pause-world-btn" class="secondary-btn">◎ MUDAR DE REGIÃO</button><button id="pause-menu-btn" class="secondary-btn">⌂ MENU PRINCIPAL</button></section></div>
+  <div id="death-overlay" class="center-overlay" hidden><section class="pause-card death-card panel-glass"><div class="death-mark">✕</div><small>TRILHO INTERROMPIDO</small><h2>Foste eliminado.</h2><p id="death-reason">Os rivais cortaram o teu percurso.</p><div class="death-stats"><span>PONTUAÇÃO <b id="death-score">0</b></span><span>RECORD <b id="death-record">0</b></span></div><button id="again-btn" class="primary-btn">↻ VOLTAR AO MAPA</button><button id="death-world-btn" class="secondary-btn">🌍 ESCOLHER OUTRA CIDADE</button><button id="death-menu-btn" class="secondary-btn">⌂ MENU PRINCIPAL</button></section></div>
 
-  <div id="help-overlay" class="center-overlay" hidden><section class="help-card panel-glass"><button id="help-close" class="help-close" aria-label="Fechar ajuda">✕</button><small>COMO JOGAR</small><h2>Domina o mapa.</h2><div class="help-rule"><span>01</span><p>Sai da tua zona colorida e desenha um percurso sobre o mapa real.</p></div><div class="help-rule"><span>02</span><p>Volta ao território para fechar o laço e conquistar a área interior.</p></div><div class="help-rule"><span>03</span><p>Se um rival tocar no teu trilho enquanto estás fora, perdes. Usa o boost e apanha energia.</p></div><button id="help-play" class="primary-btn">PERCEBI · VAMOS JOGAR</button></section></div>
+  <div id="help-overlay" class="center-overlay" hidden><section class="help-card panel-glass"><button id="help-close" class="help-close" aria-label="Fechar ajuda">✕</button><small>COMO JOGAR</small><h2>Domina o mapa.</h2><div class="help-rule"><span>01</span><p>Sai da tua zona colorida e desenha um percurso sobre o mapa real.</p></div><div class="help-rule"><span>02</span><p>Volta ao território para fechar o laço. A conquista segue exatamente a linha que desenhaste, sem quadrados.</p></div><div class="help-rule"><span>03</span><p>Se um rival tocar no teu trilho enquanto estás fora, perdes. Usa o boost e apanha energia.</p></div><button id="help-play" class="primary-btn">PERCEBI · VAMOS JOGAR</button></section></div>
   <button id="help-btn" class="help-button" aria-label="Regras do jogo">?</button>
   <div id="tile-warning" class="tile-warning" hidden>O mapa requer ligação à internet. O jogo pode continuar com o fundo básico.</div>
 </div>

@@ -1,7 +1,8 @@
 /** ATLAS.IO: deterministic geometry and rule engine. No DOM or Leaflet dependency. */
 export const R = 6378137;
 export const EARTH = 2 * Math.PI * R;
-export const GRID = 9;
+export const GRID = 9; // score unit only: territory is continuous geometry
+export const MAX_CAPTURE_AREA = 1000000;
 export const MAX_LAT = 85.05112878;
 export const LIMIT = 11000;
 export const CITIES = Object.freeze([
@@ -16,7 +17,19 @@ export const CITIES = Object.freeze([
   { name: 'Paris', country: 'França', lat: 48.8566, lng: 2.3522, emoji: '🇫🇷' },
   { name: 'Dubai', country: 'EAU', lat: 25.2048, lng: 55.2708, emoji: '🇦🇪' },
   { name: 'Rio de Janeiro', country: 'Brasil', lat: -22.9068, lng: -43.1729, emoji: '🇧🇷' },
-  { name: 'Maputo', country: 'Moçambique', lat: -25.9655, lng: 32.5832, emoji: '🇲🇿' }
+  { name: 'Maputo', country: 'Moçambique', lat: -25.9655, lng: 32.5832, emoji: '🇲🇿' },
+  { name: 'Madrid', country: 'Espanha', lat: 40.4168, lng: -3.7038, emoji: '🇪🇸' },
+  { name: 'Berlim', country: 'Alemanha', lat: 52.52, lng: 13.405, emoji: '🇩🇪' },
+  { name: 'Roma', country: 'Itália', lat: 41.9028, lng: 12.4964, emoji: '🇮🇹' },
+  { name: 'Cidade do México', country: 'México', lat: 19.4326, lng: -99.1332, emoji: '🇲🇽' },
+  { name: 'Cairo', country: 'Egito', lat: 30.0444, lng: 31.2357, emoji: '🇪🇬' },
+  { name: 'Seul', country: 'Coreia do Sul', lat: 37.5665, lng: 126.978, emoji: '🇰🇷' },
+  { name: 'Mumbai', country: 'Índia', lat: 19.076, lng: 72.8777, emoji: '🇮🇳' },
+  { name: 'Cidade do Cabo', country: 'África do Sul', lat: -33.9249, lng: 18.4241, emoji: '🇿🇦' },
+  { name: 'Toronto', country: 'Canadá', lat: 43.6532, lng: -79.3832, emoji: '🇨🇦' },
+  { name: 'Buenos Aires', country: 'Argentina', lat: -34.6037, lng: -58.3816, emoji: '🇦🇷' },
+  { name: 'Banguecoque', country: 'Tailândia', lat: 13.7563, lng: 100.5018, emoji: '🇹🇭' },
+  { name: 'Singapura', country: 'Singapura', lat: 1.3521, lng: 103.8198, emoji: '🇸🇬' }
 ]);
 export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 export const randomHash = (a, b, seed = 1) => {
@@ -33,9 +46,6 @@ export function unproject(x, y) {
   return { lat: clamp((2 * Math.atan(Math.exp(y / R)) - Math.PI / 2) * 180 / Math.PI, -MAX_LAT, MAX_LAT), lng };
 }
 export function wrapDx(dx) { return ((dx + EARTH / 2) % EARTH + EARTH) % EARTH - EARTH / 2; }
-export function cellKey(ix, iy) { return `${ix},${iy}`; }
-export function toCell(p) { return { x: Math.floor(p.x / GRID), y: Math.floor(p.y / GRID) }; }
-export function cellCenter(ix, iy) { return { x: (ix + .5) * GRID, y: (iy + .5) * GRID }; }
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 export function pointInPoly(p, polygon) {
   let inside = false;
@@ -58,71 +68,75 @@ export function distanceToSegment(p, a, b) {
   const t = clamp(((p.x - a.x) * vx + (p.y - a.y) * vy) / (vx * vx + vy * vy || 1), 0, 1);
   return Math.hypot(p.x - (a.x + vx * t), p.y - (a.y + vy * t));
 }
+export function polygonBounds(points) {
+  return {minX:Math.min(...points.map(p=>p.x)),maxX:Math.max(...points.map(p=>p.x)),minY:Math.min(...points.map(p=>p.y)),maxY:Math.max(...points.map(p=>p.y))};
+}
+export function circlePolygon(x,y,radius,sides=48) {
+  return Array.from({length:sides},(_,i)=>({x:x+Math.cos(i*2*Math.PI/sides)*radius,y:y+Math.sin(i*2*Math.PI/sides)*radius}));
+}
+function estimateArea(points,test) {
+  const b=polygonBounds(points),w=b.maxX-b.minX,h=b.maxY-b.minY;
+  if(w<=0||h<=0)return 0;
+  const nx=Math.max(1,Math.min(160,Math.ceil(w/7))),ny=Math.max(1,Math.min(160,Math.ceil(h/7)));
+  let n=0;
+  for(let i=0;i<nx;i++)for(let j=0;j<ny;j++) {
+    const p={x:b.minX+(i+.5)*w/nx,y:b.minY+(j+.5)*h/ny};
+    if(pointInPoly(p,points)&&test(p))n++;
+  }
+  return n*w*h/(nx*ny);
+}
+/** Free-form territory: chronological polygon union / subtraction operations.
+ * Raster cells are never used for geometry, ownership, or rendering.
+ */
 export class Territory {
-  constructor(owner, x, y, radius = 30) {
-    this.owner = owner;
-    this.cells = new Set();
-    if (radius > 0) this.addCircle(x, y, radius);
+  constructor(owner,x,y,radius=30) {
+    this.owner=owner;this.ops=[];this.area=0;
+    if(radius>0)this.addCircle(x,y,radius);
   }
-  contains(x, y) {
-    const c = toCell({ x, y });
-    return this.cells.has(cellKey(c.x, c.y));
-  }
-  get count() { return this.cells.size; }
-  addCircle(x, y, radius) {
-    const loX = Math.floor((x - radius) / GRID), hiX = Math.ceil((x + radius) / GRID);
-    const loY = Math.floor((y - radius) / GRID), hiY = Math.ceil((y + radius) / GRID);
-    for (let ix = loX; ix <= hiX; ix++) for (let iy = loY; iy <= hiY; iy++) {
-      const c = cellCenter(ix, iy);
-      if (Math.hypot(c.x - x, c.y - y) <= radius) this.cells.add(cellKey(ix, iy));
+  contains(x,y) {
+    const p={x,y};
+    for(let i=this.ops.length-1;i>=0;i--) {
+      const op=this.ops[i],b=op.bounds;
+      if(x>=b.minX&&x<=b.maxX&&y>=b.minY&&y<=b.maxY&&pointInPoly(p,op.points))return op.type==='add';
     }
+    return false;
   }
-  /** Add enclosed cells plus the swept trail. Returns only newly acquired cell keys. */
+  get count(){return Math.max(0,Math.round(this.area/(GRID*GRID)));}
+  addCircle(x,y,radius){return this.capture(circlePolygon(x,y,radius));}
   capture(path) {
-    if (!Array.isArray(path) || path.length < 3) return [];
-    const xs = path.map(p => p.x), ys = path.map(p => p.y);
-    const loX = Math.floor(Math.min(...xs) / GRID), hiX = Math.ceil(Math.max(...xs) / GRID);
-    const loY = Math.floor(Math.min(...ys) / GRID), hiY = Math.ceil(Math.max(...ys) / GRID);
-    const candidates = (hiX - loX + 1) * (hiY - loY + 1);
-    if (candidates > 8000) return [];
-    const added = [];
-    const add = (ix, iy) => {
-      if (this.cells.size >= LIMIT) return;
-      const key = cellKey(ix, iy);
-      if (!this.cells.has(key)) { this.cells.add(key); added.push(key); }
-    };
-    for (let ix = loX; ix <= hiX; ix++) for (let iy = loY; iy <= hiY; iy++) {
-      if (pointInPoly(cellCenter(ix, iy), path)) add(ix, iy);
-    }
-    for (let n = 1; n < path.length; n++) {
-      const a = path[n - 1], b = path[n], len = distance(a, b);
-      for (let k = 0; k <= Math.ceil(len / (GRID / 2)); k++) {
-        const t = k / Math.max(1, Math.ceil(len / (GRID / 2)));
-        const c = toCell({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
-        add(c.x, c.y);
-      }
-    }
-    return added;
+    if(!Array.isArray(path)||path.length<3||path.length>300||this.ops.length>=140)return null;
+    if(!path.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)))return null;
+    const points=path.map(p=>({x:p.x,y:p.y})),b=polygonBounds(points),raw=polygonArea(points);
+    if(raw<3||raw>MAX_CAPTURE_AREA||b.maxX-b.minX>1600||b.maxY-b.minY>1600)return null;
+    const area=estimateArea(points,p=>!this.contains(p.x,p.y));
+    if(area<2)return null;
+    this.ops.push({type:'add',points,bounds:b});this.area+=area;
+    return {points,area};
   }
+  erase(points) {
+    if(!Array.isArray(points)||points.length<3||!this.ops.length||this.ops.length>=140)return 0;
+    const area=estimateArea(points,p=>this.contains(p.x,p.y));
+    if(area<2)return 0;
+    const copy=points.map(p=>({x:p.x,y:p.y}));
+    this.ops.push({type:'cut',points:copy,bounds:polygonBounds(copy)});
+    this.area=Math.max(0,this.area-area);
+    return area;
+  }
+  clear(){this.ops=[];this.area=0;}
 }
 export function updateTrail(actor) {
-  const home = actor.territory.contains(actor.x, actor.y);
-  if (home) {
-    if (actor.trail.length > 2) {
-      const points = [...actor.trail, { x: actor.x, y: actor.y }];
-      const added = actor.territory.capture(points);
-      actor.trail = [];
-      actor.lastOwned = { x: actor.x, y: actor.y };
-      return { captured: added };
+  const home=actor.territory.contains(actor.x,actor.y);
+  if(home) {
+    if(actor.trail.length>2) {
+      const captured=actor.territory.capture([...actor.trail,{x:actor.x,y:actor.y}]);
+      actor.trail=[];actor.lastOwned={x:actor.x,y:actor.y};
+      return captured?{captured}:null;
     }
-    actor.trail = [];
-    actor.lastOwned = { x: actor.x, y: actor.y };
-    return null;
+    actor.trail=[];actor.lastOwned={x:actor.x,y:actor.y};return null;
   }
-  if (actor.trail.length === 0) actor.trail.push({ ...(actor.lastOwned || { x: actor.x, y: actor.y }) });
-  const last = actor.trail[actor.trail.length - 1];
-  if (distance(last, actor) >= GRID * .47) actor.trail.push({ x: actor.x, y: actor.y });
-  if (actor.trail.length > 260) return { overextended: true };
+  if(!actor.trail.length)actor.trail.push({...actor.lastOwned||{x:actor.x,y:actor.y}});
+  if(distance(actor.trail.at(-1),actor)>=4.2)actor.trail.push({x:actor.x,y:actor.y});
+  if(actor.trail.length>260)return {overextended:true};
   return null;
 }
 export function trailHit(point, trail, radius = 5) {
