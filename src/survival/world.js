@@ -174,6 +174,17 @@ export function worldObjectsAt(x, y, seed = SEED, cachedPlan = null) {
   for (const f of plan.features) {
     if (f.x === gx && f.y === gy && f.type !== 'horta' && f.type !== 'muro') return f;
   }
+  const surface = terrainAt(gx, gy, seed);
+  const decor = hash(gx, gy, seed + 982);
+  if (surface.road && plan.kind !== 'floresta') {
+    if (decor < 0.009) return {x:gx,y:gy,type:'carro'};
+    if (decor > 0.991) return {x:gx,y:gy,type:'poste'};
+  } else if (plan.kind !== 'floresta' && decor < 0.007) {
+    return {x:gx,y:gy,type:'caixote'};
+  }
+  if (!surface.road && decor > 0.970 && (plan.kind === 'aldeia' || plan.kind === 'suburbio')) {
+    return {x:gx,y:gy,type:'arbusto'};
+  }
   if (plan.kind === 'floresta' || plan.kind === 'aldeia' || plan.kind === 'campos' || plan.kind === 'suburbio') {
     const prob = plan.kind === 'floresta' ? 0.16 : plan.kind === 'campos' ? 0.025 : 0.042;
     if (!terrainAt(gx, gy, seed).road && hash(gx, gy, seed + 53) < prob) {

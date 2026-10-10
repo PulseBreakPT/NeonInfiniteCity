@@ -47,3 +47,8 @@ Open http://localhost:8080. Publishing is automated by `.github/workflows/pages.
 This is a *playable browser survival prototype*, not the original Project Zomboid game. Buildings have exterior walls, doors and interior reveal, but limited furniture; items spawn as procedural loot. Zombies use simple local pursuit rather than global pathfinding. Vehicle driving, construction of free-form bases, multiplayer, complex infection and detailed health simulations are future extensions.
 
 Copyright © 2026 PulseBreakPT. MIT licensed for this original project; no copyrighted Project Zomboid game files included.
+
+
+## Atualização Pixel Detail v3
+
+Estilo visual isométrico com pixeis pequenos, desgaste procedural nas fachadas e estradas, telhas, caleiras, chaminés, pequenas peças de telhado, carros abandonados, postes, contentores, arbustos e copas de árvores multicamada. As estruturas são desenhadas por código, sem sprites de terceiros, e cada detalhe é determinístico por coordenada e semente.

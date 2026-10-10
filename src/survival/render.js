@@ -1,3 +1,4 @@
+import { installPixelDetail } from './pixelDetail.js';
 import { REGION, regionMiniMap, regionOf, terrainAt, hash, mod, worldObjectsAt, lootAt } from './world.js';
 
 const COLORS = {
@@ -307,3 +308,5 @@ export class SurvivalRenderer {
     if(g.mapOpen)this.drawMap();
   }
 }
+
+installPixelDetail(SurvivalRenderer);
