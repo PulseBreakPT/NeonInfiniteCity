@@ -58,3 +58,5 @@ Os testes verificam colisões, recursos, caminho aos objetivos, conclusão, grav
 A biblioteca [Premium500](assets/premium500/gallery.html) adiciona **500 assets SVG individuais** e **10 atlas vetoriais**. São 120 terrenos, 120 elementos naturais, 60 arquitetónicos, 65 interiores, 35 veículos, 45 urbanos, 35 de sobrevivência e 20 personagens. Explora e descarrega os SVG individualmente na [galeria online](https://pulsebreakpt.github.io/NeonInfiniteCity/assets/premium500/gallery.html).
 
 O motor carrega apenas os dez atlas e mantém os 104 sprites originais. Os 120 terrenos são utilizados na geração do mapa; as outras 380 peças são colocadas deterministicamente como decoração isométrica em ruas, edifícios e natureza. Para garantir que os objetivos e gravações existentes continuam funcionais, a nova decoração não acrescenta colisões nem interações de recolha. O jogo mantém a jogabilidade anterior. Não há dependências externas.
+
+**Pack completo:** [Descarregar PREMIUM500.zip](https://pulsebreakpt.github.io/NeonInfiniteCity/assets/premium500/PREMIUM500.zip). O ZIP é gerado automaticamente pelo build e contém os 500 SVG, 10 atlas, manifesto e galeria.
