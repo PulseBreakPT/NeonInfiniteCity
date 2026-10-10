@@ -1,0 +1,201 @@
+/* VIDA NOVA 3.1 — the original bright life-sim layout, evolved in pink and electric blue.
+   Visual-only layer: no gameplay behaviours, IDs or save keys are modified. */
+:root {
+  color-scheme: light;
+  --pink: #f44d9c;
+  --pink-dark: #d92678;
+  --blue: #4776fa;
+  --blue-dark: #2355d7;
+  --text: #222d49;
+  --muted: #7884a2;
+  --line: #e4eafb;
+  --card: #ffffff;
+  --shadow: 0 10px 32px rgba(47,78,154,.075),0 2px 9px rgba(244,77,156,.032);
+}
+html,body {background:#f6f8ff;color:var(--text)}
+body::selection {background:#f9c9e2;color:#23305b}
+.app {
+  position:relative;
+  isolation:isolate;
+  background:
+    radial-gradient(ellipse 630px 450px at 3% 4%,rgba(255,111,185,.16),transparent 72%),
+    radial-gradient(ellipse 680px 490px at 103% 18%,rgba(96,155,255,.15),transparent 76%),
+    linear-gradient(145deg,#fdf8fe 0%,#f5f8ff 53%,#f9f9ff 100%);
+}
+.app::before {
+  content:'';pointer-events:none;position:absolute;z-index:0;top:76px;left:0;right:0;height:520px;
+  background-image:linear-gradient(rgba(71,118,250,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(71,118,250,.025) 1px,transparent 1px);
+  background-size:38px 38px;mask-image:linear-gradient(#000,transparent);
+}
+.screen,.create-screen,.gameover-screen {position:relative;z-index:1}
+button {transition:transform .18s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease}
+button:active:not(:disabled) {transform:scale(.978)}
+button:focus-visible,input:focus-visible,select:focus-visible {outline:3px solid #90b0ff;outline-offset:3px}
+.topbar {
+  border-bottom:1px solid rgba(124,145,207,.16);
+  background:rgba(255,255,255,.83);
+  box-shadow:0 4px 28px rgba(56,84,175,.055);
+}
+.brand-mark {
+  background:linear-gradient(145deg,#ff69b2 6%,#e644a2 45%,#518cfb 100%);
+  box-shadow:0 9px 25px rgba(241,71,154,.22),inset 0 1px 0 #ffffff90;
+  border:1px solid rgba(255,255,255,.75);
+}
+.brand-name {color:#253051;letter-spacing:-1.6px}
+.brand-name span {color:#ef4d9b}
+.brand-tag {color:#8b94b3;letter-spacing:2px}
+.version-pill {
+  color:#4a69ce;background:#eaf0ff;border:1px solid #dce6ff;
+  box-shadow:inset 0 1px #fff;font-weight:900;
+}
+.top-icon {color:#4e67a5;border-color:#e0e7f6;box-shadow:0 3px 14px #4476bd0b}
+.top-icon:hover {border-color:#91afff;color:#3867ec;background:#f4f7ff}
+.page-shell {gap:27px}
+.profile-card {
+  background:linear-gradient(121deg,#fa65a2 0%,#eb60b8 42%,#777ff5 100%)!important;
+  box-shadow:0 20px 48px rgba(226,77,164,.19),0 5px 19px rgba(85,119,235,.10);
+  border:1px solid rgba(255,255,255,.38);
+  border-radius:27px;
+}
+.profile-card.rose {background:linear-gradient(121deg,#ff70aa 0%,#ed5cb3 48%,#608bf5 100%)!important}
+.profile-card.blue {background:linear-gradient(120deg,#508ffb 0%,#6f81f6 48%,#eb75b3 100%)!important}
+.profile-card.gold {background:linear-gradient(120deg,#fabf7a,#f18ca5 56%,#8294ed)!important}
+.profile-card.mint {background:linear-gradient(120deg,#54cbbf,#5fbad9 52%,#e89acd)!important}
+.profile-card.lilac {background:linear-gradient(120deg,#ad86ee,#8a91ed 55%,#f083c3)!important}
+.profile-card.coral {background:linear-gradient(120deg,#fb9687,#f47fae 52%,#8d96f7)!important}
+.profile-card::before {
+  content:'';position:absolute;pointer-events:none;width:360px;height:360px;right:-76px;top:-230px;
+  border-radius:50%;border:1px solid rgba(255,255,255,.26);box-shadow:0 0 0 26px rgba(255,255,255,.055),0 0 0 70px rgba(255,255,255,.055);
+}
+.profile-card::after {
+  content:'';position:absolute;pointer-events:none;right:-78px;bottom:-178px;width:370px;height:370px;
+  background:radial-gradient(circle,rgba(255,255,255,.21),transparent 63%);
+}
+.profile-primary,.profile-footer {position:relative;z-index:2}
+.avatar {background:rgba(255,255,255,.20);border:2px solid rgba(255,255,255,.60);box-shadow:0 7px 25px rgba(42,39,109,.11),inset 0 2px 9px #ffffff30}
+.profile-details h1 {text-shadow:0 2px 8px #262b6326}
+.mood-tag {background:rgba(255,255,255,.23);border:1px solid #ffffff40}
+.stats {gap:10px}
+.stat-card,.wealth-strip,.moment-card,.action-card,.person-card,.finance-item,.job-card,.sim-overview>div,.sim-meter,.sim-action {
+  background:rgba(255,255,255,.94);
+  border-color:#e3e9f8;
+  box-shadow:var(--shadow);
+}
+.stat-card {position:relative;overflow:hidden;border-radius:19px}
+.stat-card::after {content:'';position:absolute;right:-25px;top:-30px;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,#88a9ff13,transparent 70%);pointer-events:none}
+.stat-title {color:#8390ac}
+.stat-value {color:#33416d}
+.stat-track {background:#e9eefb}
+.stat-track>div {box-shadow:0 0 10px #7d8df52d}
+.wealth-strip {border-radius:20px;border:1px solid #e0e9f6;position:relative;overflow:hidden}
+.wealth-strip::before {content:'';position:absolute;top:0;left:0;width:48%;height:3px;background:linear-gradient(90deg,#fb6dab,#668eff,transparent)}
+.wealth-icon {background:linear-gradient(135deg,#e3efff,#f9e9f8);color:#4268d9}
+.wealth-strip small {color:#7e8ea9}
+.wealth-strip strong {color:#263758}
+.wealth-right strong {color:#5273e4}
+.section-head h2 {color:#253250}
+.section-head small,.intro-copy {color:#8692aa}
+.section-count {background:#fbe9f6;color:#d83789;border:1px solid #fbd2e9}
+.decision-card {border-color:#dfe6fa;box-shadow:0 16px 48px rgba(81,105,214,.11);border-radius:22px}
+.decision-ribbon {background:linear-gradient(100deg,#ffe5f3,#e9f0ff);color:#d63d92}
+.decision-inner h3 {color:#243557}
+.decision-inner p {color:#6c7895}
+.decision-options button {color:#365dc7;background:#f6f9ff;border-color:#dbe4fd}
+.decision-options button:hover {color:#cb267d;background:#fff0f8;border-color:#f5a5cb}
+.moment-card {border-radius:18px}
+.moment-icon {background:linear-gradient(140deg,#ffebf4,#eef1ff)}
+.moment-info>small,.action-info .action-cost {color:#e05a9f}
+.moment-info p,.action-info p {color:#7987a1}
+.mini-promo {background:linear-gradient(120deg,#e7efff,#fbebf8);border:1px solid #e0e9ff}
+.mini-promo p {color:#6f8ab6}
+.category-filter,.sim-groups {scrollbar-color:#b6c6f3 transparent}
+.filter-btn,.sim-chip {color:#7e89a4;border-color:#dfe5f4;box-shadow:0 3px 12px #4672be08}
+.filter-btn.selected,.sim-chip.selected {background:linear-gradient(105deg,#ef5b9f,#657bf4);color:white;border-color:transparent;box-shadow:0 6px 17px #ed67be25}
+.action-card,.job-card {border-radius:17px}
+.action-icon,.sim-action-icon {background:linear-gradient(145deg,#feeaf5,#eaf1ff)}
+.action-go,.job-apply,.sim-do {background:linear-gradient(140deg,#6b92ff,#5373ed);color:white;box-shadow:0 5px 14px #5775e936}
+.action-go:hover,.job-apply:hover,.sim-do:not(:disabled):hover {background:linear-gradient(140deg,#ef62a8,#527ef5)}
+.action-go:disabled,.job-apply:disabled,.sim-do:disabled {background:#eef1f8;color:#a9b2c7;box-shadow:none}
+.person-card,.finance-item {border-radius:19px}
+.people-grid,.finance-grid {gap:12px}
+.person-progress div,.sim-meter-track span {background:linear-gradient(90deg,#648cfb,#fc68ac)}
+.desktop-aside {border-color:#e0e8fa;background:rgba(255,255,255,.87);box-shadow:var(--shadow)}
+.aside-title {color:#3a5488}
+.aside-art {background:linear-gradient(140deg,#e9edff,#fce6f4)}
+.aside-art>span {color:#ef5ca2}
+.aside-art strong {color:#2f4282}
+.aside-fact small,.aside-bottom {color:#8d98ad}
+/* Controls feel tactile but keep the classic layout. */
+.bottom-nav {
+  background:rgba(255,255,255,.96);border-top:1px solid #e5eafb;
+  box-shadow:0 -13px 45px rgba(73,95,173,.11);backdrop-filter:blur(18px);
+}
+.nav-item {color:#8a96b4;position:relative}
+.nav-item.active {background:linear-gradient(145deg,#fff0f8,#e8f0ff);color:#d64091;box-shadow:inset 0 0 0 1px #f6d9f0}
+.nav-item.active::before {content:'';position:absolute;top:0;left:27%;right:27%;height:3px;border-radius:0 0 6px 6px;background:linear-gradient(90deg,#f64da2,#5688fa)}
+.mobile-actionbar {background:linear-gradient(0deg,#f7f9ff 58%,rgba(247,249,255,0))}
+.age-btn {background:linear-gradient(104deg,#fb61a6 0%,#e956ae 45%,#577ff7 100%);border:1px solid #ffffff7d;border-radius:18px;box-shadow:0 13px 30px rgba(229,74,154,.20),0 7px 18px rgba(69,112,250,.13);position:relative;overflow:hidden}
+.age-btn::after {content:'';position:absolute;pointer-events:none;inset:0;background:linear-gradient(112deg,transparent 40%,rgba(255,255,255,.15) 54%,transparent 70%);transform:translateX(-140%);transition:transform .65s ease}
+.age-btn:hover::after {transform:translateX(140%)}
+.age-icon {background:#ffffff26;border:1px solid #ffffff40}
+.age-btn strong {letter-spacing:.4px}
+.toast {background:#273251;box-shadow:0 14px 33px #1c306d2b;border:1px solid #809bee53}
+/* Character creator maintains the older pleasant white-card composition. */
+.create-screen {background:transparent}
+.create-hero {isolation:isolate}
+.create-corner {color:#5277e2}
+.create-symbol {color:#a3bbff;opacity:.29;filter:drop-shadow(0 15px 18px #f671b455)}
+.create-hero h1 {color:#263253}
+.create-hero h1 em,.end-card h2 em {background:linear-gradient(90deg,#f0529e 13%,#568afa 97%);background-clip:text;-webkit-background-clip:text;color:transparent}
+.create-hero>p {color:#71809f}
+.create-pills span {background:#ffffffd9;color:#5275bc;border-color:#dfe7ff;box-shadow:0 4px 17px #5e82de14}
+.create-form {border-color:#e3e9fb;box-shadow:0 26px 75px rgba(68,88,180,.11);background:#fffffff2;position:relative;overflow:hidden}
+.create-form::before {content:'';position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#f65ba4,#9c7eee,#5087ff)}
+.form-eyebrow {color:#e74d9b}
+.create-form h2 {color:#233252}
+.create-form>p {color:#8a95aa}
+.create-form label,.label-row {color:#60708d}
+.create-form input,.create-form select {background:#f8faff;border-color:#dce5f6;color:#273550}
+.create-form input:focus,.create-form select:focus {border-color:#719bfb;box-shadow:0 0 0 3px #9ac0ff3b}
+.color-chip.selected {outline-color:#5687f5}
+.start-button {background:linear-gradient(110deg,#fa5aa2,#e854ac 48%,#5c7ff3);box-shadow:0 10px 23px #ed77bb30}
+.random-btn {border-color:#dce7fc;color:#5370ad;background:#f7faff}
+.create-disclaimer {color:#8b96ac}
+.modal,.end-card {border:1px solid #dfe6f9;box-shadow:0 25px 80px #3949881c}
+.sim-intro {background:linear-gradient(124deg,#233f88 0%,#695ac6 45%,#d657a4 100%);box-shadow:0 18px 43px #596bc236}
+.sim-intro::after {color:#ffffff20}
+.sim-eyebrow {color:#fbe1ff}
+.sim-intro p {color:#eef0ff}
+.sim-overview>div,.sim-meter,.sim-action {border-color:#e0e8f8}
+.sim-overview strong {color:#3456ac}
+.sim-overview small {color:#7381a4}
+.sim-meter b {color:#4569d6}
+.sim-meter-track {background:#e9eefb}
+.sim-controls input {border-color:#dde6f8;background:#fff}
+.sim-controls input:focus {border-color:#6598ff;box-shadow:0 0 0 3px #92afff35}
+.sim-action h3 {color:#263657}
+.sim-action p {color:#74829b}
+.sim-meta span {background:#f1f5ff;color:#7183a8}
+.sim-disabled {color:#cb4f89}
+@media(max-width:960px) {
+  .page-shell {gap:18px}
+}
+@media(max-width:700px) {
+  .topbar {background:#fffffff0;border-bottom:1px solid #e6ebfa}
+  .brand-mark {border-radius:12px}
+  .brand-tag {letter-spacing:1.15px}
+  .page-shell {padding-bottom:230px}
+  .profile-card {border-radius:21px;box-shadow:0 14px 35px #ed75af2a}
+  .profile-card::before {width:230px;height:230px;right:-74px;top:-146px}
+  .stat-card {border-radius:15px}
+  .wealth-strip {border-radius:16px}
+  .decision-card {border-radius:18px}
+  .nav-item.active {box-shadow:inset 0 0 0 1px #f8dbef}
+  .bottom-nav {padding-bottom:max(5px,env(safe-area-inset-bottom))}
+  .mobile-actionbar {padding-bottom:10px}
+  .age-btn {border-radius:15px}
+  .create-hero {padding-bottom:16px}
+  .create-form {border-radius:20px}
+  .sim-intro {border-radius:19px}
+}
+@media(prefers-reduced-motion:reduce) {.age-btn::after {display:none}}

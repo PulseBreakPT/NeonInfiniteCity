@@ -1,5 +1,7 @@
 # VIDA NOVA 2.0 — Simulador de Vida
 
+> **Vida Nova 3.1**: regressa à interface clara original, agora com identidade visual rosa e azul, sem alterar o motor de vida ou gravações.
+
 Jogo original em português para browsers e Android, inspirado na ideia de escolhas anuais de jogos de simulação de vida.
 
 ## Joga
@@ -38,10 +40,3 @@ npm test
 ```
 
 A publicação automática está configurada em `.github/workflows/pages.yml`.
-
-
-## Nova interface SSS Tier · edição 3.0
-
-Visual integralmente reformulado para videojogo: panorama urbano vetorial original, criador de personagem cinematográfico, HUD de capítulo, retrato, indicadores premium, linha do destino, decisões em cartas de narrativa, inventário de ações e dock de navegação permanente. Adaptado a Android e desktop e respeita `prefers-reduced-motion`.
-
-Os ficheiros visuais ativos são `game.css` e `assets/cityscape.svg`. A lógica de simulação e os progressos guardados mantêm-se.
