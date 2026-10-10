@@ -1,10 +1,12 @@
-import { CITIES, EARTH, GRID, project, unproject, wrapDx, randomHash, distance, clamp, Territory, updateTrail, trailHit } from './core.js';
+import { CITIES, EARTH, GRID, project, unproject, wrapDx, randomHash, distance, clamp, Territory, updateTrail, trailHitSweep } from './core.js';
 
 const $ = id => document.getElementById(id);
 const STORE = 'atlasio-world-v1';
 const COLORS = ['#ff537f','#ffc260','#9e82ff','#5ef0b2','#74aaff','#f491e5','#f0e873','#ef705b'];
 const NAMES = ['CRIMSON','SOLAR','NEXUS','VIPER','ORBIT','NOVA','TITAN','BLAZE'];
-const FPS_LIMIT = 1 / 58;
+const STEP = 1 / 60;
+const CACHE_INTERVAL = 130;
+const TILE_CAMERA_INTERVAL = 340;
 const WORLD_ZONE = 500;
 const fmt = n => Number(n).toLocaleString('pt-PT');
 const cleanCoord = (v, lim) => clamp(Number(v) || 0, -lim, lim);
@@ -25,6 +27,11 @@ class AtlasGame {
     this.ctx = this.canvas.getContext('2d', { alpha: true });
     this.territoryBuffer = document.createElement('canvas');
     this.territoryCtx = this.territoryBuffer.getContext('2d', { alpha: true });
+    this.compositeBuffer = document.createElement('canvas');
+    this.compositeCtx = this.compositeBuffer.getContext('2d', { alpha: true });
+    this.cacheMargin = 64; this.territoryRevision = 0; this.cacheRevision = -1;
+    this.cacheTime = -Infinity; this.cachedView = null; this.renderView = null;
+    this.accumulator = 0; this.mapPanX = NaN; this.mapPanY = NaN;
     this.zoom = 17;
     this.width = 0; this.height = 0;
     this.lastFrame = performance.now();
@@ -67,7 +74,7 @@ class AtlasGame {
     });
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       minZoom: 3, maxZoom: 18, maxNativeZoom: 18,
-      keepBuffer: 1, updateWhenIdle: true, crossOrigin: false,
+      keepBuffer: 2, updateWhenIdle: true, updateInterval: 300, crossOrigin: false,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
     }).addTo(this.map);
     let tileErrors = 0;
@@ -233,7 +240,8 @@ class AtlasGame {
       territory:new Territory('you',pos.x,pos.y,37), color:'#22e5ee', energy:100 };
     this.heading = { x: 0, y: 1 };
     this.scoreBonus = 0;this.kills=0;this.boostCharge=100;this.boostTime=0;this.orbTimer=0;
-    this.tickTime = 0;
+    this.tickTime = 0; this.accumulator = 0; this.territoryRevision++;
+    this.mapPanX=NaN;this.mapPanY=NaN;
     this.bots = Array.from({length:8},(_,i)=>this.makeBot(i,pos));
     this.orbs=[];this.addOrbs(pos,38);
     this.zoom = 17;
@@ -253,10 +261,10 @@ class AtlasGame {
 
   makeBot(i,center) {
     const angle = i/8*Math.PI*2+randomSeed(center.x,center.y,i)*.4;
-    const rad = 130+(i%3)*38+randomSeed(center.x,center.y,i+41)*18;
+    const rad = 215+(i%3)*52+randomSeed(center.x,center.y,i+41)*22;
     const x=center.x+Math.cos(angle)*rad, y=center.y+Math.sin(angle)*rad;
     const name=NAMES[i], color=COLORS[i];
-    return {id:`bot-${i}`,name,color, x,y,origin:{x,y},trail:[],lastOwned:{x,y},territory:new Territory(name,x,y,26+i%3*4),heading:angle,phase:i*1.2,excursion:0,respawn:0,speed:29+randomSeed(x,y,i)*7};
+    return {id:`bot-${i}`,name,color, x,y,origin:{x,y},trail:[],lastOwned:{x,y},territory:new Territory(name,x,y,26+i%3*4),heading:angle,phase:i*1.2,excursion:0,respawn:0,speed:27+randomSeed(x,y,i)*6};
   }
 
   addOrbs(center,count=12) {
@@ -278,7 +286,7 @@ class AtlasGame {
 
   returnToMenu() {
     this.paused=false;this.dead=false;this.started=false;this.inWorld=false;this.choosingPoint=false;
-    this.actor=null;this.bots=[];this.orbs=[];
+    this.actor=null;this.bots=[];this.orbs=[];this.territoryRevision++;this.accumulator=0;
     this.keys.clear();this.input.boost=false;this.input.joystick=false;
     this.paintCities();
     $('app').classList.remove('in-world','is-paused');$('app').classList.add('is-menu');
@@ -378,6 +386,7 @@ class AtlasGame {
 
   movePlayer(dt) {
     const p=this.actor;
+    const from={x:p.x,y:p.y};
     let x=0,y=0;
     if(this.keys.has('KeyW')||this.keys.has('ArrowUp'))y++;
     if(this.keys.has('KeyS')||this.keys.has('ArrowDown'))y--;
@@ -395,19 +404,20 @@ class AtlasGame {
     if(result?.overextended){this.die('Foste longe demais sem fechar o território.');return;}
     if(result?.captured?.area){
       this.transferTerritory(p,result.captured);
+      this.territoryRevision++;
       const won=Math.round(result.captured.area/(GRID*GRID));
       this.scoreBonus+=Math.min(500,Math.round(won/4)*5);
       this.notify(`◈ TERRITÓRIO CONQUISTADO · +${won*10} PTS`, 'positive');
       this.beep(660,.1);
     }
-    if(p.trail.length>10&&trailHit(p,p.trail.slice(0,-7),5)) this.die('Cruzaste o teu próprio trilho.');
+    if(p.trail.length>7&&trailHitSweep(from,p,p.trail,4.5,5))this.die('Cruzaste o teu próprio trilho.');
   }
   transferTerritory(owner,claim) {
     if(!claim?.points)return;
     for(const bot of this.bots){
-      if(bot!==owner&&!bot.respawn)bot.territory.erase(claim.points);
+      if(bot!==owner&&!bot.respawn){if(bot.territory.erase(claim.points)>0)this.territoryRevision++;}
     }
-    if(owner!==this.actor)this.actor.territory.erase(claim.points);
+    if(owner!==this.actor){if(this.actor.territory.erase(claim.points)>0)this.territoryRevision++;}
   }
 
   updateBots(dt) {
@@ -417,14 +427,14 @@ class AtlasGame {
         bot.respawn-=dt;
         if(bot.respawn<=0){
           const re=this.makeBot(Number(bot.id.split('-')[1]),you);
-          Object.assign(bot,re);
+          Object.assign(bot,re);this.territoryRevision++;
         }
         continue;
       }
       bot.phase+=dt;
       if(distance(bot,you)>620) {
         const re=this.makeBot(Number(bot.id.split('-')[1]),you);
-        Object.assign(bot,re);
+        Object.assign(bot,re);this.territoryRevision++;
         continue;
       }
       const safe=bot.territory.contains(bot.x,bot.y);
@@ -436,15 +446,16 @@ class AtlasGame {
         bot.heading=hunt ? Math.atan2(you.y-bot.y,you.x-bot.x) : Math.atan2(bot.origin.y-bot.y,bot.origin.x-bot.x) + .75*Math.sin(bot.phase*1.2);
       }
       bot.heading+=Math.sin(bot.phase*.45+Number(bot.id.split('-')[1]))*dt*.40;
+      const before={x:bot.x,y:bot.y};
       bot.x+=Math.cos(bot.heading)*bot.speed*dt;
       bot.y+=Math.sin(bot.heading)*bot.speed*dt;
       const claim=updateTrail(bot);
-      if(claim?.captured?.area)this.transferTerritory(bot,claim.captured);
+      if(claim?.captured?.area){this.transferTerritory(bot,claim.captured);this.territoryRevision++;}
       if(claim?.overextended){this.removeBot(bot);continue;}
-      if(you.trail.length>2&&trailHit(bot,you.trail,8)){
+      if(you.trail.length>2&&trailHitSweep(before,bot,you.trail,7)){
         this.die(`${bot.name} cortou o teu trilho.`);return;
       }
-      if(bot.trail.length>2&&trailHit(you,bot.trail,8)){
+      if(bot.trail.length>2&&trailHitSweep(this.previousPlayerPosition||you,you,bot.trail,7)){
         this.removeBot(bot);this.kills++;
         this.notify(`✦ ${bot.name} ELIMINADO! +80 PTS`,'positive');this.beep(780,.08);
         continue;
@@ -455,7 +466,7 @@ class AtlasGame {
       }
     }
   }
-  removeBot(bot) {bot.respawn=5;bot.trail=[];bot.territory.clear();}
+  removeBot(bot) {bot.respawn=5;bot.trail=[];bot.territory.clear();this.territoryRevision++;}
 
   collectOrbs(dt) {
     this.orbTimer+=dt;
@@ -481,44 +492,83 @@ class AtlasGame {
   resize() {
     this.width=Math.max(1,this.canvas.clientWidth);
     this.height=Math.max(1,this.canvas.clientHeight);
-    this.dpr=Math.min(window.devicePixelRatio||1,2);
-    this.canvas.width=Math.round(this.width*this.dpr);
-    this.canvas.height=Math.round(this.height*this.dpr);
+    const mobile=window.matchMedia('(pointer: coarse)').matches || this.width < 700;
+    this.dpr=Math.min(window.devicePixelRatio||1, mobile?1.35:1.65);
+    this.canvas.width=Math.max(1,Math.round(this.width*this.dpr));
+    this.canvas.height=Math.max(1,Math.round(this.height*this.dpr));
     this.ctx.setTransform(this.dpr,0,0,this.dpr,0,0);
-    this.territoryBuffer.width=this.canvas.width;this.territoryBuffer.height=this.canvas.height;
+    const cacheW=Math.ceil((this.width+this.cacheMargin*2)*this.dpr);
+    const cacheH=Math.ceil((this.height+this.cacheMargin*2)*this.dpr);
+    for(const buffer of [this.territoryBuffer,this.compositeBuffer]) {
+      buffer.width=cacheW;buffer.height=cacheH;
+    }
     this.territoryCtx.setTransform(this.dpr,0,0,this.dpr,0,0);
-    if(this.map) this.map.invalidateSize({pan:false});
+    this.compositeCtx.setTransform(this.dpr,0,0,this.dpr,0,0);
+    this.cachedView=null;this.cacheRevision=-1;
+    if(this.map)this.map.invalidateSize({pan:false});
+  }
+  getView() {
+    const center=this.map?this.map.getCenter():(this.started&&this.actor?unproject(this.actor.x,this.actor.y):this.target);
+    const pos=project(center.lat,center.lng);
+    return {x:pos.x,y:pos.y,ppm:this.map?256*2**this.map.getZoom()/EARTH:.78,
+      width:this.width,height:this.height};
   }
   worldToScreen(p) {
-    const center=this.map ? project(this.map.getCenter().lat,this.map.getCenter().lng) : project(this.target.lat,this.target.lng);
-    const ppm=this.map?256*2**this.map.getZoom()/EARTH:.78;
-    return { x:this.width/2+wrapDx(p.x-center.x)*ppm,y:this.height/2-(p.y-center.y)*ppm };
+    const v=this.renderView||this.view||this.getView();
+    return {x:v.width*.5+wrapDx(p.x-v.x)*v.ppm,y:v.height*.5-(p.y-v.y)*v.ppm};
+  }
+  /** All map polygons are composited at ~8 fps, then shifted smoothly each animation frame.
+   * Live players, trails, and pickups always draw at display refresh rate.
+   */
+  paintTerritories(time) {
+    const view=this.view;
+    const previous=this.cachedView;
+    const drift=previous?Math.hypot(wrapDx(view.x-previous.x)*view.ppm,(view.y-previous.y)*view.ppm):Infinity;
+    if(!previous||this.cacheRevision!==this.territoryRevision||time-this.cacheTime>CACHE_INTERVAL||
+        drift>this.cacheMargin*.7||previous.ppm!==view.ppm) {
+      const margin=this.cacheMargin;
+      this.renderView={x:view.x,y:view.y,ppm:view.ppm,width:this.width+margin*2,height:this.height+margin*2};
+      const c=this.compositeCtx;
+      c.clearRect(0,0,this.renderView.width,this.renderView.height);
+      for(const bot of this.bots)this.paintTerritory(bot);
+      this.paintTerritory(this.actor);
+      this.renderView=null;
+      this.cachedView={...view};
+      this.cacheTime=time;
+      this.cacheRevision=this.territoryRevision;
+    }
+    const dx=wrapDx(this.cachedView.x-view.x)*view.ppm;
+    const dy=(view.y-this.cachedView.y)*view.ppm;
+    this.ctx.drawImage(this.compositeBuffer,-this.cacheMargin+dx,-this.cacheMargin+dy,
+      this.width+this.cacheMargin*2,this.height+this.cacheMargin*2);
   }
   paintTerritory(actor) {
-    if(!actor || !actor.territory.ops.length)return;
+    if(!actor||actor.respawn>0||!actor.territory.ops.length)return;
     const ctx=this.territoryCtx;
-    ctx.clearRect(0,0,this.width,this.height);
-    // Isolated canvas avoids cutting out other actors' territory and map objects.
-    // The actual GPS-projected vertices are used, with no cell/tile snapping.
-    // Cut operations remove land stolen by another player.
-    ctx.save();
-    ctx.lineJoin='round';ctx.lineCap='round';
+    const v=this.renderView;
+    ctx.clearRect(0,0,v.width,v.height);
+    ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
+    const left=v.x-(v.width*.5+12)/v.ppm,right=v.x+(v.width*.5+12)/v.ppm;
+    const bottom=v.y-(v.height*.5+12)/v.ppm,top=v.y+(v.height*.5+12)/v.ppm;
+    const wrapNearEdge=Math.abs(v.x)>EARTH*.5-3000;
     for(const op of actor.territory.ops){
-      const pts=op.points;if(pts.length<3)continue;
+      const b=op.bounds;
+      if(!wrapNearEdge&&(b.maxX<left||b.minX>right)||b.maxY<bottom||b.minY>top)continue;
+      const pts=op.points;
       ctx.beginPath();
       const first=this.worldToScreen(pts[0]);ctx.moveTo(first.x,first.y);
-      for(let i=1;i<pts.length;i++){const q=this.worldToScreen(pts[i]);ctx.lineTo(q.x,q.y);}
+      for(let i=1;i<pts.length;i++){const p=this.worldToScreen(pts[i]);ctx.lineTo(p.x,p.y);}
       ctx.closePath();
       if(op.type==='cut'){
         ctx.globalCompositeOperation='destination-out';ctx.fillStyle='#000';ctx.fill();
         ctx.globalCompositeOperation='source-over';
       }else{
-        ctx.fillStyle=actor.color+'44';ctx.strokeStyle=actor.color+'e0';
-        ctx.lineWidth=2.3;ctx.fill();ctx.stroke();
+        ctx.fillStyle=actor.color+'44';ctx.strokeStyle=actor.color+'dc';ctx.lineWidth=2.3;
+        ctx.fill();ctx.stroke();
       }
     }
     ctx.restore();
-    this.ctx.drawImage(this.territoryBuffer,0,0,this.width,this.height);
+    this.compositeCtx.drawImage(this.territoryBuffer,0,0,v.width,v.height);
   }
   paintTrail(actor) {
     if(!actor?.trail || actor.trail.length<2)return;
@@ -563,8 +613,7 @@ class AtlasGame {
       ctx.beginPath();ctx.arc(p.x,p.y,7,0,Math.PI*2);ctx.fillStyle='#32eaf2';ctx.fill();return;
     }
     if(this.inWorld)return;
-    for(const bot of this.bots)this.paintTerritory(bot);
-    this.paintTerritory(this.actor);
+    this.paintTerritories(time);
     this.paintOrbs(time);
     for(const bot of this.bots)this.paintTrail(bot);
     this.paintTrail(this.actor);
@@ -573,23 +622,39 @@ class AtlasGame {
   }
   frame(now) {
     requestAnimationFrame(t=>this.frame(t));
-    const dt=Math.min(.05,Math.max(0,(now-this.lastFrame)/1000));
+    const elapsed=Math.min(.10,Math.max(0,(now-this.lastFrame)/1000));
     this.lastFrame=now;
-    if(this.started&&!this.dead&&!this.paused&&!this.inWorld&&!this.helpOpen&&dt){
-      this.tickTime+=dt;
-      this.movePlayer(dt);
-      if(!this.dead)this.updateBots(dt);
-      if(!this.dead)this.collectOrbs(dt);
-      if(this.map&&this.actor&&now-this.lastCamera>180){
-        this.lastCamera=now;
-        const ll=unproject(this.actor.x,this.actor.y);
-        this.map.panTo([ll.lat,ll.lng],{animate:false,noMoveStart:true});
-        if(now-this.lastHud>540){this.updateLocation(ll.lat,ll.lng);}
+    const active=this.started&&!this.dead&&!this.paused&&!this.inWorld&&!this.helpOpen;
+    if(active){
+      this.accumulator=Math.min(this.accumulator+elapsed,STEP*5);
+      let steps=0;
+      while(this.accumulator>=STEP&&steps++<5&&!this.dead){
+        this.previousPlayerPosition={x:this.actor.x,y:this.actor.y};
+        this.tickTime+=STEP;
+        this.movePlayer(STEP);
+        if(!this.dead)this.updateBots(STEP);
+        if(!this.dead)this.collectOrbs(STEP);
+        this.accumulator-=STEP;
       }
-      if(now-this.lastHud>300){this.lastHud=now;this.updateHud();}
-    }
-    if(dt>=FPS_LIMIT/2)this.draw(now);
+      if(this.map&&this.actor&&now-this.lastCamera>TILE_CAMERA_INTERVAL){
+        const d=Math.hypot(this.actor.x-this.mapPanX,this.actor.y-this.mapPanY);
+        if(d>8||!Number.isFinite(d)){
+          this.lastCamera=now;
+          this.mapPanX=this.actor.x;this.mapPanY=this.actor.y;
+          const ll=unproject(this.actor.x,this.actor.y);
+          this.map.panTo([ll.lat,ll.lng],{animate:false,noMoveStart:true});
+          if(now-this.lastHud>520)this.updateLocation(ll.lat,ll.lng);
+        }
+      }
+      if(now-this.lastHud>480){this.lastHud=now;this.updateHud();}
+    }else this.accumulator=0;
+    if(this.inWorld)return;
+    if(!active&&now-(this.lastIdleDraw||0)<120)return;
+    this.lastIdleDraw=now;
+    this.view=this.getView();
+    this.draw(now);
   }
+
 }
 
 new AtlasGame();

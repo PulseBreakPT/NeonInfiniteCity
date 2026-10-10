@@ -47,3 +47,28 @@ test('spawn cities span many countries',()=>{
  assert.ok(CITIES.length>=20);assert.ok(new Set(CITIES.map(c=>c.country)).size>=14);
  assert.notEqual(randomHash(1,2),randomHash(3,4));
 });
+
+test('fast moving players collide with a crossed trail between frames',async()=>{
+  const {trailHitSweep,segmentDistance}=await import('../src/core.js');
+  const trail=[{x:0,y:-25},{x:0,y:25}];
+  assert.equal(trailHitSweep({x:-45,y:0},{x:45,y:0},trail,3),true);
+  assert.equal(trailHitSweep({x:-45,y:40},{x:45,y:40},trail,3),false);
+  assert.equal(segmentDistance({x:0,y:0},{x:10,y:10},{x:0,y:10},{x:10,y:0}),0);
+});
+test('capturing a large polygon remains bounded and stable',()=>{
+  const t=new Territory('me',0,0,32);
+  const start=performance.now();
+  for(let i=0;i<12;i++) {
+    const x=50+i*30;
+    assert.ok(t.capture([{x,y:-30},{x:x+26,y:-30},{x:x+26,y:30},{x,y:30}]));
+  }
+  assert.ok(performance.now()-start<1200,'normal capture computations must be bounded');
+  assert.ok(t.area>10000);
+});
+test('overlapping claims keep continuous shapes rather than rectangular cells',()=>{
+  const t=new Territory('you',0,0,25);
+  const a=t.capture([{x:10,y:10},{x:60,y:22},{x:25,y:75}]);
+  assert.ok(a&&a.points.length===3);
+  assert.ok(t.contains(32,34));
+  assert.ok(!t.contains(55,60));
+});

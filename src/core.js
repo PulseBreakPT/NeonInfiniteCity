@@ -77,7 +77,8 @@ export function circlePolygon(x,y,radius,sides=48) {
 function estimateArea(points,test) {
   const b=polygonBounds(points),w=b.maxX-b.minX,h=b.maxY-b.minY;
   if(w<=0||h<=0)return 0;
-  const nx=Math.max(1,Math.min(160,Math.ceil(w/7))),ny=Math.max(1,Math.min(160,Math.ceil(h/7)));
+  // Adaptive bounded area sampling: max 2304 samples instead of 25600, preventing capture freezes.
+  const nx=Math.max(8,Math.min(48,Math.ceil(w/6))),ny=Math.max(8,Math.min(48,Math.ceil(h/6)));
   let n=0;
   for(let i=0;i<nx;i++)for(let j=0;j<ny;j++) {
     const p={x:b.minX+(i+.5)*w/nx,y:b.minY+(j+.5)*h/ny};
@@ -143,6 +144,24 @@ export function trailHit(point, trail, radius = 5) {
   if (!trail?.length) return false;
   for (let i = 1; i < trail.length; i++) {
     if (distanceToSegment(point, trail[i - 1], trail[i]) < radius) return true;
+  }
+  return false;
+}
+
+/** Closest distance between two segments, including crossing and endpoint touches. */
+export function segmentDistance(a,b,c,d) {
+  const cross=(u,v,w)=>(v.x-u.x)*(w.y-u.y)-(v.y-u.y)*(w.x-u.x);
+  const ab1=cross(a,b,c),ab2=cross(a,b,d),cd1=cross(c,d,a),cd2=cross(c,d,b);
+  if((ab1===0&&distanceToSegment(c,a,b)<1e-8)||(ab2===0&&distanceToSegment(d,a,b)<1e-8)||
+     (cd1===0&&distanceToSegment(a,c,d)<1e-8)||(cd2===0&&distanceToSegment(b,c,d)<1e-8)||
+     (ab1*ab2<0&&cd1*cd2<0))return 0;
+  return Math.min(distanceToSegment(a,c,d),distanceToSegment(b,c,d),distanceToSegment(c,a,b),distanceToSegment(d,a,b));
+}
+/** Swept collision detects fast-moving actors passing through trails between frames. */
+export function trailHitSweep(from,to,trail,radius=5,ignoreLast=0) {
+  if(!trail||trail.length<2)return false;
+  for(let i=1;i<trail.length-ignoreLast;i++) {
+    if(segmentDistance(from,to,trail[i-1],trail[i])<radius)return true;
   }
   return false;
 }

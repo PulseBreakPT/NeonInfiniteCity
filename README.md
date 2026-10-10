@@ -28,3 +28,15 @@ Verificação: `npm run check && npm test`.
 Os mosaicos são pedidos **apenas para a zona visualizada**, diretamente a `https://tile.openstreetmap.org/{z}/{x}/{y}.png`, sem downloads antecipados ou offline. É necessária ligação à Internet. Mantemos a atribuição visível `© OpenStreetMap contributors`. A política de tiles da OSM Foundation aplica-se: https://operations.osmfoundation.org/policies/tiles/. Para tráfego elevado ou distribuição comercial, migrar para um fornecedor de mosaicos com capacidade e licença adequadas.
 
 Leaflet 1.9.4 é obtido por CDN. O código do jogo é original, sem recursos ou código proprietários de Paper.io ou Agar.io.
+
+## Versão 2.1 — estabilidade e fluidez
+
+- Movimento em passos fixos de 60 Hz, evitando deslocamentos irregulares quando o FPS varia.
+- Cache de territórios com deslocação suave entre atualizações, sem recalcular todos os polígonos em cada frame.
+- Limite adaptativo de cálculo de área para impedir bloqueios após capturas.
+- Leaflet com atualizações de câmara menos frequentes para reduzir carregamento de mosaicos.
+- Colisão contínua entre movimento e trilhos, mesmo com frames atrasados.
+- Escala de resolução adaptada para ecrãs de elevada densidade e menos bots demasiado próximos da origem.
+- Modo de mapa indisponível mantém a câmara centrada no jogador sobre o fundo simplificado.
+
+Testes: `npm run check` e `npm test`. O mapa OpenStreetMap requer internet; o teste visual local foi efetuado sem acesso aos mosaicos externos.
