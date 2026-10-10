@@ -21,7 +21,7 @@
         <div class="brand-text"><small>PROJETO · NEON INFINITE // SOBREVIVÊNCIA</small><h1>AFTER<span>FALL</span><sup>01</sup></h1></div>
       </div>
       <div class="top-center"><span class="pulse"></span> ZONA DE QUARENTENA <span class="separator"></span> <span id="clock">DIA 1 · 08:10</span></div>
-      <div class="top-actions"><button id="map-btn" class="icon-btn" aria-label="Mapa">▦ <span>MAPA</span></button><button id="inventory-btn" class="icon-btn" aria-label="Inventário">◫ <span>MOCHILA</span></button><button id="pause-btn" class="icon-btn square" aria-label="Pausa">Ⅱ</button></div>
+      <div class="top-actions"><button id="hud-btn" class="icon-btn" aria-label="Mostrar informações de sobrevivência" title="Informações">☷</button><button id="map-btn" class="icon-btn" aria-label="Mapa">▦ <span>MAPA</span></button><button id="inventory-btn" class="icon-btn" aria-label="Inventário">◫ <span>MOCHILA</span></button><button id="flash-btn" class="icon-btn" aria-label="Lanterna" title="Lanterna">✦</button><button id="pause-btn" class="icon-btn square" aria-label="Pausa">Ⅱ</button></div>
     </header>
 
     <aside class="left-hud">
@@ -58,6 +58,7 @@
 
     <div id="messages" class="messages" role="status" aria-live="polite"></div>
     <div class="crosshair" aria-hidden="true">⌖</div>
+    <div class="mini-status" aria-live="off"><span id="mini-area">ALDEIA ABANDONADA</span><span class="mini-vitals">♥ <b id="mini-health">100</b>%</span></div>
     <div class="bottom-left"><span class="legend-tile">⬡</span> TERRITÓRIO CONTAMINADO <span class="sep">/</span> 2026</div>
     <div class="bottom-right">WASD MOVER · SHIFT CORRER · ESPAÇO ATACAR · E INTERAGIR · I INVENTÁRIO · M MAPA</div>
 
@@ -68,7 +69,7 @@
       <div class="bar-divider"></div>
       <button id="interact" class="quick-slot action-slot"><span class="slot-icon">↳</span><b>REVISTAR</b><small>E</small></button>
       <button id="attack" class="quick-slot action-slot"><span class="slot-icon">⚒</span><b>ATACAR</b><small>ESPAÇO</small></button>
-      <button id="craft-btn" class="quick-slot action-slot craft"><span class="slot-icon">⚙</span><b>CRIAR</b><small>C</small></button>
+      <button id="craft-btn" class="quick-slot action-slot craft"><span class="slot-icon">⚙</span><b>CRIAR</b><small>C</small></button><button id="supplies-btn" type="button" class="quick-slot action-slot" aria-label="Mostrar comida, água e medicamentos" aria-expanded="false"><span class="slot-icon">▦</span><b>ITENS</b></button>
     </div>
 
     <div class="touch-ui">

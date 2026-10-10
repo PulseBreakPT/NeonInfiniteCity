@@ -115,6 +115,14 @@ export class SurvivalGame {
     $('interact').addEventListener('click',()=>this.interact());
     $('inventory-btn').addEventListener('click',()=>this.toggleInventory());
     $('map-btn').addEventListener('click',()=>{this.mapOpen=!this.mapOpen;this.updateHUD();});
+    $('hud-btn').addEventListener('click',()=>{
+      document.body.classList.toggle('hud-open');
+      $('hud-btn').setAttribute('aria-expanded',String(document.body.classList.contains('hud-open')));
+    });
+    $('supplies-btn').addEventListener('click',()=>{
+      const open=document.body.classList.toggle('supplies-open');
+      $('supplies-btn').setAttribute('aria-expanded',String(open));
+    });
     $('craft-btn').addEventListener('click',()=>this.craft());
     $('flash-btn').addEventListener('click',()=>{this.player.flashlight=!this.player.flashlight;this.showMessage('LANTERNA '+(this.player.flashlight?'LIGADA':'DESLIGADA'));});
     $('pause-btn').addEventListener('click',()=>this.togglePause());
@@ -319,10 +327,14 @@ export class SurvivalGame {
     $('kills').textContent=this.kills;$('distance').textContent=Math.floor(this.distance*10)+' m';
     $('zombie-count').textContent=this.zombies.filter(z=>!!z.inside===!!p.inside&&dist(z,p)<17).length;
     $('survival-days').textContent=this.days;
+    $('mini-area').textContent=plan.title;
+    $('mini-health').textContent=Math.round(p.health);
+    document.body.classList.toggle('vitals-alert',p.health<75||p.hunger<28||p.thirst<28);
     $('map-btn').classList.toggle('selected',this.mapOpen);
     for(const kind of ITEM_KINDS){const el=$('num-'+kind);if(el)el.textContent=this.inventory[kind]||0;const inv=$('inv-'+kind);if(inv)inv.textContent=this.inventory[kind]||0;}
     $('pause-overlay').hidden=!this.paused||this.gameOver;
     $('inventory-panel').hidden=!this.inventoryOpen;
+    if(this.inventoryOpen||this.paused||this.mapOpen)document.body.classList.remove('supplies-open');
   }
   frame(now){
     requestAnimationFrame(t=>this.frame(t));

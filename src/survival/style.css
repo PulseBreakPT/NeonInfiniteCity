@@ -6,3 +6,63 @@
 @media(max-width:700px){.topbar{height:64px;padding:0 12px;gap:8px}.brand-icon{width:33px;height:33px;font-size:20px}.brand-icon span{font-size:12px}.brand-text small{font-size:6px;letter-spacing:.5px}.brand-text h1{font-size:21px}.top-actions{margin-left:auto;gap:3px}.icon-btn{min-height:35px;min-width:35px;padding:8px;font-size:14px;justify-content:center}.icon-btn span{display:none}.left-hud{top:73px;left:10px;width:174px}.location-panel{padding:11px 12px}.area{font-size:18px;margin:8px 0}.eyebrow{font-size:7px;letter-spacing:1px}.small-detail{font-size:7px}.status-pill{display:none}.landscape-rule{margin:10px 0}.survival-heading{font-size:7px;margin-bottom:5px}.stat{margin:7px 0}.stat>div:first-child{font-size:7px}.track{height:4px;margin-top:3px}.task-panel{margin-top:6px;padding:10px 12px}.task-panel h2{font-size:18px;margin:7px 0}.task-panel p{display:none}.quest{font-size:7px;margin-top:6px;padding-top:6px}.right-hud{top:74px;right:10px;width:123px}.world-state{padding:10px}.right-hud .eyebrow{font-size:7px}.day-display{margin:9px 0 7px}.day-display span{font-size:36px}.day-display small{font-size:10px}.report-line{font-size:6px;line-height:1.4;padding:7px 0;letter-spacing:0}.report-line b{font-size:10px}.live-indicator{font-size:6px;line-height:1.4;margin:6px 0}.quick-bar{bottom:calc(10px + env(safe-area-inset-bottom));left:8px;right:8px;width:auto;transform:none;justify-content:center;padding:4px;gap:3px}.quick-slot{min-width:0;flex:1;height:57px;gap:2px}.quick-slot .slot-icon{font-size:16px}.quick-slot.action-slot .slot-icon{font-size:19px}.quick-slot b{font-size:7px}.quick-slot small{font-size:7px}.bar-divider{margin:8px 1px}.quick-slot.craft{display:none}.touch-ui{position:absolute;z-index:5;bottom:calc(82px + env(safe-area-inset-bottom));left:14px;right:14px;display:flex;justify-content:space-between;align-items:end;pointer-events:none}.joystick,.touch-run{pointer-events:auto;touch-action:none}.joystick{width:105px;height:105px;border:2px solid #a8baa285;border-radius:50%;background:#142a2b88;display:grid;place-items:center;position:relative;box-shadow:inset 0 0 22px #0b1b1ab2}.joystick:before,.joystick:after{content:'';position:absolute;background:#b6cbab44}.joystick:before{width:1px;height:85%}.joystick:after{height:1px;width:85%}#joystick-knob{height:38px;width:38px;border-radius:50%;background:linear-gradient(140deg,#d6c795,#577765);box-shadow:0 0 18px #e0d6a63d;border:1px solid #e0dfb0;position:relative;z-index:1}.touch-run{height:56px;width:64px;background:#1b312dc9;border:1px solid #c0d2ad77;display:flex;justify-content:center;flex-direction:column;align-items:center;font-size:9px;font-weight:800;gap:4px}.touch-run strong{font-size:20px}.weather-btn{bottom:auto;top:318px;right:12px;padding:6px;font-size:7px}.messages{top:auto;bottom:270px;font-size:9px;padding:11px 13px;max-width:85vw}.inventory-grid{gap:4px}.inventory-grid>div{padding:9px;font-size:14px}.inventory-grid span{font-size:8px}.overlay-panel{padding:20px}.overlay-header h2{font-size:29px}.recipe{gap:8px}.recipe b{font-size:8px}.recipe button{padding:9px;font-size:8px}}
 @media(max-width:360px){.brand-text small{display:none}.left-hud{width:150px}.right-hud{width:108px}.location-panel{padding:10px}.area{font-size:16px}.task-panel{padding:9px}.task-panel h2{font-size:16px}.day-display span{font-size:30px}.quick-slot{height:50px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+
+/* AFTERFALL UI v2.1 — world-first HUD for phones. Desktop HUD remains available. */
+#hud-btn,#supplies-btn,.mini-status{display:none}
+@media(max-width:760px){
+  #app{background:#243c37}
+  .vignette{opacity:.38}
+  .grain{opacity:.025}
+  .brand,.top-center,.right-hud,.bottom-left,.bottom-right,.crosshair,.weather-btn{display:none!important}
+  .topbar{z-index:12;height:56px;padding:7px 10px;justify-content:flex-end;gap:0;background:none;border:0;box-shadow:none;backdrop-filter:none;pointer-events:none}
+  .top-actions{display:flex;margin-left:auto;padding:3px;gap:2px;border:1px solid rgba(232,242,232,.20);border-radius:14px;background:rgba(8,19,22,.71);backdrop-filter:blur(9px);pointer-events:auto;box-shadow:0 3px 18px #07101322}
+  .top-actions .icon-btn{min-width:38px;height:37px;min-height:37px;padding:5px 8px;border:0;border-radius:10px;background:none;display:flex;align-items:center;justify-content:center;font-size:20px;color:#f5e6c5}
+  .top-actions .icon-btn span{display:none}
+  #hud-btn{display:flex}
+  #flash-btn{display:none}
+  body.hud-open #flash-btn{display:flex}
+  .mini-status{position:absolute;top:13px;left:10px;z-index:9;display:flex;align-items:center;gap:7px;padding:9px 11px;min-height:37px;max-width:38vw;background:rgba(8,20,22,.75);border:1px solid rgba(229,234,217,.13);border-radius:11px;backdrop-filter:blur(8px);font-size:10px;color:#f0e4c9;font-weight:800;letter-spacing:.3px}
+  #mini-area{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32vw}
+  .mini-vitals{display:none}
+  body.vitals-alert .mini-vitals{display:inline-flex;white-space:nowrap;gap:4px;color:#f28d79}
+  body.vitals-alert #mini-area{max-width:20vw}
+  .left-hud,.right-hud{display:none!important}
+  body.hud-open .left-hud{display:grid!important;position:absolute;z-index:11;left:10px;right:10px;top:63px;bottom:auto;width:min(320px,calc(100vw - 20px));max-width:none;gap:8px;max-height:min(69dvh,570px);overflow:auto}
+  body.hud-open .panel{padding:13px 15px;background:rgba(9,22,24,.92);border-radius:12px}
+  body.hud-open .area{font-size:26px;line-height:1}
+  body.hud-open .stat{margin-top:8px;gap:4px}
+  body.hud-open .track{height:5px}
+  body.hud-open .task-panel h2{font-size:23px}
+  body.hud-open .task-panel p,body.hud-open .tip-box{display:none}
+  .touch-ui{display:flex;z-index:10;position:absolute;left:14px;right:auto;bottom:calc(16px + env(safe-area-inset-bottom));width:168px;align-items:flex-end;justify-content:flex-start;pointer-events:none}
+  .joystick{width:92px;height:92px;flex:none;border:1.5px solid rgba(237,242,227,.36);background:rgba(9,26,28,.35)}
+  .joystick::before{top:9px;bottom:9px}
+  .joystick::after{left:9px;right:9px}
+  .joystick span{width:35px;height:35px;box-shadow:none}
+  .touch-run{position:absolute;left:101px;bottom:3px;pointer-events:auto;min-width:62px;min-height:43px;max-width:62px;padding:5px;background:rgba(12,25,27,.74);border-radius:12px;font-size:9px;letter-spacing:0}
+  .touch-run strong{display:block;font-size:17px}
+  .quick-bar{display:flex;align-items:center;justify-content:flex-end;position:absolute;left:auto;right:12px;bottom:calc(17px + env(safe-area-inset-bottom));width:auto;gap:8px;transform:none;padding:0;border:0;background:none;box-shadow:none;backdrop-filter:none;z-index:10}
+  .quick-bar .bar-divider,.quick-bar .craft,.quick-bar .quick-slot{display:none}
+  .quick-bar #interact,.quick-bar #attack,.quick-bar #supplies-btn{display:flex;align-items:center;justify-content:center;min-width:0;width:52px;height:52px;min-height:52px;padding:0;gap:0;border-radius:15px;border:1px solid rgba(238,239,214,.22);background:rgba(9,24,27,.78);box-shadow:0 3px 18px rgba(1,8,12,.17);backdrop-filter:blur(8px)}
+  .quick-bar #supplies-btn{order:-1}
+  .quick-bar .quick-slot .slot-icon{font-size:24px}
+  .quick-bar .quick-slot b,.quick-bar .quick-slot small{display:none}
+  body.supplies-open .quick-bar #use-comida,body.supplies-open .quick-bar #use-agua,body.supplies-open .quick-bar #use-medicamentos{display:flex;position:absolute;bottom:66px;width:52px;height:52px;min-width:0;min-height:52px;align-items:center;justify-content:center;padding:0;border-radius:15px;background:rgba(11,29,31,.94)}
+  body.supplies-open .quick-bar #use-comida{right:120px}
+  body.supplies-open .quick-bar #use-agua{right:60px}
+  body.supplies-open .quick-bar #use-medicamentos{right:0}
+  .messages{bottom:calc(125px + env(safe-area-inset-bottom));left:50%;width:max-content;max-width:86vw;border-radius:10px;font-size:10px;line-height:1.45;letter-spacing:.5px;padding:9px 12px;text-align:center}
+  .overlay-panel{padding:12px}
+  .overlay-panel>div{max-height:90dvh;overflow:auto;border-radius:16px}
+  .center-card{border-radius:16px}
+}
+@media(max-width:360px){
+  .top-actions .icon-btn{min-width:34px;padding:4px 5px}
+  .quick-bar{gap:5px;right:8px}
+  .quick-bar #interact,.quick-bar #attack,.quick-bar #supplies-btn{width:46px;height:46px;min-height:46px}
+  .touch-ui{left:10px}
+  .joystick{width:82px;height:82px}
+  .touch-run{left:88px;min-width:50px;max-width:50px}
+  .mini-status{font-size:9px;max-width:37vw;padding:8px}
+}
