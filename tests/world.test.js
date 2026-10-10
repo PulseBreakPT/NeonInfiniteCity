@@ -56,4 +56,4 @@ test('terrain, homes, loot and minimap stay in valid ranges',()=>{
   assert.equal(worldObjectsAt(b.x+1,b.y+1,SEED),null);
 });
 
-test('world props stay deterministic and within known types',()=>{const kinds=new Set(['arvore','poco','placa','acampamento','silo','deposito','bunker','torre','antena','carro','poste','caixote','arbusto']);for(let x=-30;x<80;x+=3)for(let y=-20;y<80;y+=3){const a=worldObjectsAt(x,y,SEED);assert.deepEqual(a,worldObjectsAt(x,y,SEED));if(a)assert.ok(kinds.has(a.type));}});
+test('world props stay deterministic and within known types',()=>{const kinds=new Set(['arvore','poco','placa','lago','acampamento','silo','deposito','bunker','torre','antena','carro','poste','caixote','arbusto']);for(let x=-30;x<80;x+=3)for(let y=-20;y<80;y+=3){const a=worldObjectsAt(x,y,SEED);assert.deepEqual(a,worldObjectsAt(x,y,SEED));if(a)assert.ok(kinds.has(a.type));}});
