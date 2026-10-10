@@ -1,3 +1,4 @@
+import {ensureSystems,tickSystems} from './systems.js';
 // VIDA NOVA — deterministic, testable life simulation. No DOM or external dependencies.
 export const VERSION = 1;
 export const MAX_AGE = 115;
@@ -28,6 +29,7 @@ export function makePerson({first='Leonor',last='Silva',gender='Mulher',country=
   const person={v:VERSION,seed,rng:seed,first:chosenFirst,last:chosenLast,gender,country,color:COLORS.includes(color)?color:'rose',age:0,alive:true,year:2026,
     stats,cash:0,savings:0,investments:0,home:null,car:null,job:null,jobYears:0,education:'none',universityYears:0,universityCourse:null,
     partner:null,married:false,children:0,friends:0,family:76,karma:55,criminal:0,prison:0,illness:0,lifeScore:0,actions:[],events:[],pending:null,achievements:[],habits:{},lastChoice:null};
+  ensureSystems(person);
   addEvent(person,'🎀','Bem-vindo ao mundo!',chosenFirst+' '+chosenLast+' nasceu em '+country+'. Uma história inteira espera por ti.','birth');
   return person;
 }
@@ -169,6 +171,7 @@ export function advance(p){
   if(p.stats.health<25)change(p,{happiness:-4});
   if(p.cash<0)change(p,{happiness:-4,stress:8});
   if(p.age>18&&roll(p,.23))change(p,{happiness:Math.round(rand(p)*8-3)});
+  tickSystems(p);
   if(updateMortality(p)||p.stats.health<=0){p.alive=false;p.pending=null;p.lifeScore=rate(p);addEvent(p,'🕊️','Uma vida para recordar',p.first+' viveu '+p.age+' anos. O legado continua nas escolhas que fez.','death');return {ok:true,dead:true,msg:'A tua história chegou ao fim.'};}
   if(p.age>=5&&roll(p,.49)){
     const eligible=INCIDENTS.filter(i=>p.age>=i.min&&p.age<=i.max&&(!i.requireJob||p.job));
@@ -177,4 +180,4 @@ export function advance(p){
   if(!p.pending){const moments=p.age<6?['Uma infância cheia de descobertas.','Aprendeste mais sobre o mundo à tua volta.']:p.age<18?['Mais um ano de escola, amigos e pequenas aventuras.','Cresceste e descobriste novos interesses.']:['Um novo capítulo para construir a tua vida.','O tempo avançou, e as tuas escolhas deixaram marcas.'];addEvent(p,'✨','Mais um ano',pick(p,moments),'age');}
   p.lifeScore=rate(p);return {ok:true,dead:false,pending:!!p.pending,msg:'Chegaste aos '+p.age+' anos.'};
 }
-export function loadSave(raw){try{const p=typeof raw==='string'?JSON.parse(raw):raw;if(!p||p.v!==VERSION||typeof p.first!=='string'||!Number.isFinite(p.age)||p.age<0||p.age>MAX_AGE||!p.stats||!Array.isArray(p.events))return null;const out={...p,stats:{...p.stats},events:p.events.slice(0,220),achievements:Array.isArray(p.achievements)?p.achievements.slice(0,80):[],habits:typeof p.habits==='object'&&p.habits?p.habits:{}};for(const k of ['health','happiness','intelligence','charisma','stress'])out.stats[k]=clamp(Number(out.stats[k]));for(const k of ['cash','savings','investments'])out[k]=clamp(Number(out[k]),k==='cash'?-1e8:0,1e10);out.family=clamp(out.family);out.karma=clamp(out.karma);out.age=Math.floor(out.age);out.year=2026+out.age;out.children=clamp(Number(out.children),0,50);out.friends=clamp(Number(out.friends),0,999);out.jobYears=clamp(Number(out.jobYears),0,80);out.universityYears=clamp(Number(out.universityYears),0,5);out.pending=out.pending&&Array.isArray(out.pending.options)?out.pending:null;return out;}catch{return null;}}
+export function loadSave(raw){try{const p=typeof raw==='string'?JSON.parse(raw):raw;if(!p||p.v!==VERSION||typeof p.first!=='string'||!Number.isFinite(p.age)||p.age<0||p.age>MAX_AGE||!p.stats||!Array.isArray(p.events))return null;const out={...p,stats:{...p.stats},events:p.events.slice(0,220),achievements:Array.isArray(p.achievements)?p.achievements.slice(0,80):[],habits:typeof p.habits==='object'&&p.habits?p.habits:{}};for(const k of ['health','happiness','intelligence','charisma','stress'])out.stats[k]=clamp(Number(out.stats[k]));for(const k of ['cash','savings','investments'])out[k]=clamp(Number(out[k]),k==='cash'?-1e8:0,1e10);out.family=clamp(out.family);out.karma=clamp(out.karma);out.age=Math.floor(out.age);out.year=2026+out.age;out.children=clamp(Number(out.children),0,50);out.friends=clamp(Number(out.friends),0,999);out.jobYears=clamp(Number(out.jobYears),0,80);out.universityYears=clamp(Number(out.universityYears),0,5);out.pending=out.pending&&Array.isArray(out.pending.options)?out.pending:null;ensureSystems(out);return out;}catch{return null;}}

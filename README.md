@@ -1,35 +1,40 @@
-# ✳ VIDA NOVA
+# VIDA NOVA 2.0 — Simulador de Vida
 
-Um simulador de vida original, inspirado na mecânica de escolhas anuais popularizada por jogos como BitLife. Interface em português europeu, desenhada para Android e browser desktop.
+Jogo original em português para browsers e Android, inspirado na ideia de escolhas anuais de jogos de simulação de vida.
 
-## Jogabilidade
+## Joga
 
-Cria uma pessoa, personaliza nome, país, identidade e cor de perfil. Avança um ano de cada vez, lida com acontecimentos aleatórios, gere saúde, felicidade, inteligência, carisma, relações, família, educação, trabalho, salários, despesas, poupanças, investimentos, automóveis e imóveis. No fim da vida, vê o legado e começa outra história.
+https://pulsebreakpt.github.io/NeonInfiniteCity/
 
-As decisões têm efeitos persistentes, e o jogo grava automaticamente em `localStorage`. A vida anterior não é importada do antigo projeto AFTERFALL; o novo jogo começa do zero.
+## Conteúdos
 
-## Como executar
+- Criação de personagem, infância, educação, trabalho, salário, património, família, relações, acontecimentos e escolhas.
+- **100 ações de simulação adicionais** distribuídas por 10 áreas: tempo e rotinas, aprendizagem, relações sociais, trabalho, comércio, habitação, medicina, justiça, tecnologia e mundo.
+- Cada ação tem requisitos, custo, risco de resultado desfavorável, uma utilização anual e impacto em atributos ou nos indicadores da simulação.
+- **4 pontos anuais de tempo** para as ações adicionais. Não é possível obter mais pontos repetindo a mesma ação no mesmo ano.
+- Simulação anual de inflação, procura, abastecimentos, tecnologia, serviços, riscos, custos de habitação e automóvel e benefícios com duração limitada.
+- Histórico dos acontecimentos, estado guardado em `localStorage` e migração das vidas iniciadas na v1.
+- Página `Sistemas` com pesquisa, categorias e 10 indicadores.
 
-Sem dependências nem instalação, exceto um navegador moderno e acesso à internet para a fonte opcional da Google.
+## Notas sobre profundidade
+
+A versão 2.0 implementa as **100 mecânicas como ações jogáveis com efeitos persistentes e risco, integradas no motor anual**. Sistemas como consultas, litígios, cadeias logísticas e redes sociais estão representados por abstrações de gestão, e não por simulações completas de cada indústria, profissão ou entidade real. É uma base extensível, não uma simulação exaustiva do mundo.
+
+## Estrutura
+
+- `src/engine.js`: progressão de vida, carreiras e eventos existentes.
+- `src/systems.js`: 100 mecânicas, validação, risco, efeitos e evolução anual dos 10 domínios.
+- `src/app.js`: interface e ações.
+- `style-*.css`: interface responsiva.
+- `tests/`: validações de consistência e sistemas.
+
+## Testes locais
+
+Com Node.js 20+:
 
 ```sh
-python3 -m http.server 8080
-# abrir http://localhost:8080
 npm run check
 npm test
 ```
 
-## Publicação
-
-GitHub Pages é publicado a partir de `.github/workflows/pages.yml` quando há push para `main`. O endereço é https://pulsebreakpt.github.io/NeonInfiniteCity/.
-
-## Arquitetura
-
-- `src/engine.js`: motor de jogo puro e testável, progressão anual, eventos, profissões, atividades, economia e gravação validada.
-- `src/app.js`: renderização, navegação, feedback e ligação entre UI e motor.
-- `style-1.css`, `style-2.css`, `style-3.css`: design responsivo mobile-first, sem bibliotecas de interface.
-- `tests/engine.test.js`: testes de lógica, proteção de estados e progressão.
-
-## Nota
-
-O nome, os textos, a interface e as regras foram escritos para este projeto. Não inclui recursos, código ou marcas de BitLife. O jogo está num repositório que anteriormente continha AFTERFALL; os ficheiros antigos são substituídos, mas o histórico Git continua acessível.
+A publicação automática está configurada em `.github/workflows/pages.yml`.
