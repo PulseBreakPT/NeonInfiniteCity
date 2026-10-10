@@ -1,0 +1,35 @@
+ASSETS ISOMETRICOS DE SOBREVIVENCIA v1.0
+
+32 assets estaticos originais: 16 terrenos e 16 objetos.
+Imagens RGBA com transparencia real, 1254 x 1254 cada.
+As imagens fonte foram preservadas. O recorte e feito por regioes de atlas.
+
+GODOT 4
+Copiar a pasta z_survival para a raiz do projeto, mantendo o nome.
+Arrastar um ficheiro de scenes/ para uma cena 2D.
+Cada cena tem textura, regiao, escala sugerida e ponto de apoio configurados.
+Os objetos usam o centro inferior como apoio. Os terrenos usam o centro.
+Ativar y_sort_enabled no Node2D pai dos objetos, se adequado ao jogo.
+Os terrenos sao apresentados numa caixa de 128 x 64; a geometria foi gerada
+por IA e pode precisar de ajuste nas bordas para uma grelha sem falhas.
+
+OUTROS MOTORES
+Importar textures/*.png e consultar atlas.json.
+region = [x, y, largura, altura], origem no canto superior esquerdo.
+pivot_px e relativo a regiao. recommended_scale e apenas uma sugestao.
+Os sprites nao seguem uma grelha regular: usar as regioes individuais.
+
+CONTEUDO
+Terrenos: relva verde e seca, terra, areia, gravilha, asfalto, asfalto
+rachado, betao, calcada, tijoleira, madeira, ceramica, musgo, folhas,
+lama e betao industrial.
+Objetos: caixa, bidon, caixote do lixo, paletes, cone, barreira, sacos,
+pneu, sofa, mesa, cadeira, frigorifico, gerador, cacifo, arbusto e entulho.
+
+LIMITES DESTA VERSAO
+Nao inclui personagens, animacoes, edificios, transicoes automaticas,
+colisoes, navegacao ou modelos 3D. Terrenos sem garantia de encaixe perfeito.
+Os recursos Godot foram verificados estruturalmente; nao executados no motor.
+Os assets podem exigir pequenos retoques de contorno para producao final.
+Criados com geracao de imagens a partir das referencias visuais fornecidas.
+Designs originais, sem extracao de assets de Project Zomboid.

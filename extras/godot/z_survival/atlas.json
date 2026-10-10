@@ -1,0 +1,620 @@
+{
+  "version": "1.0",
+  "format": "RGBA PNG + atlas regions",
+  "assets": [
+    {
+      "id": "terrain_grass_green",
+      "texture": "textures/terrain.png",
+      "region": [
+        2,
+        95,
+        310,
+        196
+      ],
+      "pivot_px": [
+        155.0,
+        98.0
+      ],
+      "recommended_scale": [
+        0.4129032258064516,
+        0.32653061224489793
+      ],
+      "static": true
+    },
+    {
+      "id": "terrain_grass_dry",
+      "texture": "textures/terrain.png",
+      "region": [
+        315,
+        95,
+        310,
+        196
+      ],
+      "pivot_px": [
+        155.0,
+        98.0
+      ],
+      "recommended_scale": [
+        0.4129032258064516,
+        0.32653061224489793
+      ],
+      "static": true
+    },
+    {
+      "id": "terrain_dirt",
+      "texture": "textures/terrain.png",
+      "region": [
+        629,
+        95,
+        309,
+        196
+      ],
+      "pivot_px": [
+        154.5,
+        98.0
+      ],
+      "recommended_scale": [
+        0.41423948220064727,
+        0.32653061224489793
+      ],
+      "static": true
+    },
+    {
+      "id": "terrain_sand",
+      "texture": "textures/terrain.png",
+      "region": [
+        943,
+        95,
+        309,
+        197
+      ],
+      "pivot_px": [
+        154.5,
+        98.5
+      ],
+      "recommended_scale": [
+        0.41423948220064727,
+        0.3248730964467005
+      ],
+      "static": true
+    },
+    {
+      "id": "terrain_gravel",
+      "texture": "textures/terrain.png",
+      "region": [
+        3,
+        408,
+        309,
+        197
+      ],
+      "pivot_px": [
+        154.5,
+        98.5
+      ],
+      "recommended_scale": [
+        0.41423948220064727,
+        0.3248730964467005
+      ],
+      "static": true
+    },
+    {
+      "id": "terrain_asphalt",
+      "texture": "textures/terrain.png",
+      "region": [
+        315,
+        408,
+        309,
+        198
+      ],
+      "pivot_px": [
+        154.5,
+        99.0
+      ],
+      "recommended_scale": [
+        0.41423948220064727,
+        0.32323232323232326
+      ],
+      "static": true
+    },
+    {
+      "id": "terrain_asphalt_cracked",
+      "texture": "textures/terrain.png",
+      "region": [
+        629,
+        408,
+        309,
+        198
+      ],
+      "pivot_px": [
+        154.5,
+        99.0
+      ],
+      "recommended_scale": [
+        0.41423948220064727,
+        0.32323232323232326
+      ],
+      "static": true
+    },
+    {
+      "id": "terrain_concrete",
+      "texture": "textures/terrain.png",
+      "region": [
+        942,
+        408,
+        310,
+        198
+      ],
+      "pivot_px": [
+        155.0,
+        99.0
+      ],
+      "recommended_scale": [
+        0.4129032258064516,
+        0.32323232323232326
+      ],
+      "static": true
+    },
+    {
+      "id": "terrain_cobblestone",
+      "texture": "textures/terrain.png",
+      "region": [
+        3,
+        722,
+        308,
+        197
+      ],
+      "pivot_px": [
+        154.0,
+        98.5
+      ],
+      "recommended_scale": [
+        0.4155844155844156,
+        0.3248730964467005
+      ],
+      "static": true
+    },
+    {
+      "id": "terrain_brick_paving",
+      "texture": "textures/terrain.png",
+      "region": [
+        316,
+        722,
+        308,
+        197
+      ],
+      "pivot_px": [
+        154.0,
+        98.5
+      ],
+      "recommended_scale": [
+        0.4155844155844156,
+        0.3248730964467005
+      ],
+      "static": true
+    },
+    {
+      "id": "terrain_wood_floor",
+      "texture": "textures/terrain.png",
+      "region": [
+        629,
+        722,
+        308,
+        197
+      ],
+      "pivot_px": [
+        154.0,
+        98.5
+      ],
+      "recommended_scale": [
+        0.4155844155844156,
+        0.3248730964467005
+      ],
+      "static": true
+    },
+    {
+      "id": "terrain_ceramic_floor",
+      "texture": "textures/terrain.png",
+      "region": [
+        943,
+        723,
+        309,
+        197
+      ],
+      "pivot_px": [
+        154.5,
+        98.5
+      ],
+      "recommended_scale": [
+        0.41423948220064727,
+        0.3248730964467005
+      ],
+      "static": true
+    },
+    {
+      "id": "terrain_moss_soil",
+      "texture": "textures/terrain.png",
+      "region": [
+        2,
+        1035,
+        310,
+        198
+      ],
+      "pivot_px": [
+        155.0,
+        99.0
+      ],
+      "recommended_scale": [
+        0.4129032258064516,
+        0.32323232323232326
+      ],
+      "static": true
+    },
+    {
+      "id": "terrain_forest_floor",
+      "texture": "textures/terrain.png",
+      "region": [
+        315,
+        1035,
+        310,
+        198
+      ],
+      "pivot_px": [
+        155.0,
+        99.0
+      ],
+      "recommended_scale": [
+        0.4129032258064516,
+        0.32323232323232326
+      ],
+      "static": true
+    },
+    {
+      "id": "terrain_mud",
+      "texture": "textures/terrain.png",
+      "region": [
+        629,
+        1035,
+        309,
+        198
+      ],
+      "pivot_px": [
+        154.5,
+        99.0
+      ],
+      "recommended_scale": [
+        0.41423948220064727,
+        0.32323232323232326
+      ],
+      "static": true
+    },
+    {
+      "id": "terrain_industrial_concrete",
+      "texture": "textures/terrain.png",
+      "region": [
+        942,
+        1035,
+        309,
+        198
+      ],
+      "pivot_px": [
+        154.5,
+        99.0
+      ],
+      "recommended_scale": [
+        0.41423948220064727,
+        0.32323232323232326
+      ],
+      "static": true
+    },
+    {
+      "id": "props_wood_crate",
+      "texture": "textures/props.png",
+      "region": [
+        48,
+        46,
+        261,
+        275
+      ],
+      "pivot_px": [
+        130.5,
+        275
+      ],
+      "recommended_scale": [
+        0.210727969348659,
+        0.210727969348659
+      ],
+      "static": true
+    },
+    {
+      "id": "props_rust_barrel",
+      "texture": "textures/props.png",
+      "region": [
+        401,
+        28,
+        177,
+        293
+      ],
+      "pivot_px": [
+        88.5,
+        293
+      ],
+      "recommended_scale": [
+        0.22598870056497175,
+        0.22598870056497175
+      ],
+      "static": true
+    },
+    {
+      "id": "props_rubbish_bin",
+      "texture": "textures/props.png",
+      "region": [
+        681,
+        28,
+        207,
+        296
+      ],
+      "pivot_px": [
+        103.5,
+        296
+      ],
+      "recommended_scale": [
+        0.2028985507246377,
+        0.2028985507246377
+      ],
+      "static": true
+    },
+    {
+      "id": "props_pallets",
+      "texture": "textures/props.png",
+      "region": [
+        941,
+        75,
+        299,
+        233
+      ],
+      "pivot_px": [
+        149.5,
+        233
+      ],
+      "recommended_scale": [
+        0.22742474916387959,
+        0.22742474916387959
+      ],
+      "static": true
+    },
+    {
+      "id": "props_traffic_cone",
+      "texture": "textures/props.png",
+      "region": [
+        73,
+        351,
+        201,
+        260
+      ],
+      "pivot_px": [
+        100.5,
+        260
+      ],
+      "recommended_scale": [
+        0.11940298507462686,
+        0.11940298507462686
+      ],
+      "static": true
+    },
+    {
+      "id": "props_road_barrier",
+      "texture": "textures/props.png",
+      "region": [
+        326,
+        354,
+        318,
+        251
+      ],
+      "pivot_px": [
+        159.0,
+        251
+      ],
+      "recommended_scale": [
+        0.31446540880503143,
+        0.31446540880503143
+      ],
+      "static": true
+    },
+    {
+      "id": "props_sandbags",
+      "texture": "textures/props.png",
+      "region": [
+        653,
+        411,
+        275,
+        188
+      ],
+      "pivot_px": [
+        137.5,
+        188
+      ],
+      "recommended_scale": [
+        0.21818181818181817,
+        0.21818181818181817
+      ],
+      "static": true
+    },
+    {
+      "id": "props_tire",
+      "texture": "textures/props.png",
+      "region": [
+        967,
+        383,
+        260,
+        211
+      ],
+      "pivot_px": [
+        130.0,
+        211
+      ],
+      "recommended_scale": [
+        0.1346153846153846,
+        0.1346153846153846
+      ],
+      "static": true
+    },
+    {
+      "id": "props_sofa",
+      "texture": "textures/props.png",
+      "region": [
+        17,
+        645,
+        325,
+        265
+      ],
+      "pivot_px": [
+        162.5,
+        265
+      ],
+      "recommended_scale": [
+        0.3230769230769231,
+        0.3230769230769231
+      ],
+      "static": true
+    },
+    {
+      "id": "props_table",
+      "texture": "textures/props.png",
+      "region": [
+        348,
+        629,
+        310,
+        260
+      ],
+      "pivot_px": [
+        155.0,
+        260
+      ],
+      "recommended_scale": [
+        0.2903225806451613,
+        0.2903225806451613
+      ],
+      "static": true
+    },
+    {
+      "id": "props_chair",
+      "texture": "textures/props.png",
+      "region": [
+        684,
+        629,
+        186,
+        287
+      ],
+      "pivot_px": [
+        93.0,
+        287
+      ],
+      "recommended_scale": [
+        0.20430107526881722,
+        0.20430107526881722
+      ],
+      "static": true
+    },
+    {
+      "id": "props_fridge",
+      "texture": "textures/props.png",
+      "region": [
+        998,
+        613,
+        193,
+        299
+      ],
+      "pivot_px": [
+        96.5,
+        299
+      ],
+      "recommended_scale": [
+        0.24352331606217617,
+        0.24352331606217617
+      ],
+      "static": true
+    },
+    {
+      "id": "props_generator",
+      "texture": "textures/props.png",
+      "region": [
+        50,
+        944,
+        260,
+        246
+      ],
+      "pivot_px": [
+        130.0,
+        246
+      ],
+      "recommended_scale": [
+        0.21153846153846154,
+        0.21153846153846154
+      ],
+      "static": true
+    },
+    {
+      "id": "props_locker",
+      "texture": "textures/props.png",
+      "region": [
+        401,
+        887,
+        165,
+        323
+      ],
+      "pivot_px": [
+        82.5,
+        323
+      ],
+      "recommended_scale": [
+        0.2545454545454545,
+        0.2545454545454545
+      ],
+      "static": true
+    },
+    {
+      "id": "props_bush",
+      "texture": "textures/props.png",
+      "region": [
+        608,
+        922,
+        324,
+        288
+      ],
+      "pivot_px": [
+        162.0,
+        288
+      ],
+      "recommended_scale": [
+        0.2222222222222222,
+        0.2222222222222222
+      ],
+      "static": true
+    },
+    {
+      "id": "props_rubble",
+      "texture": "textures/props.png",
+      "region": [
+        943,
+        967,
+        296,
+        222
+      ],
+      "pivot_px": [
+        148.0,
+        222
+      ],
+      "recommended_scale": [
+        0.21621621621621623,
+        0.21621621621621623
+      ],
+      "static": true
+    }
+  ],
+  "limitations": [
+    "Static assets only; no characters or animations.",
+    "Terrain seams and transitions are not production-validated.",
+    "Godot resources generated but not tested in a running Godot editor.",
+    "No collision shapes or navigation data."
+  ]
+}

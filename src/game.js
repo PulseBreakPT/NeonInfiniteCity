@@ -1,682 +1,83 @@
-import { CITIES, EARTH, GRID, project, unproject, wrapDx, randomHash, distance, clamp, Territory, updateTrail, trailHitSweep } from './core.js';
-import { steering, speedForMass, radiusForMass, SpatialHash, botTarget, AdaptiveQuality } from './arcade.js';
-
-const $ = id => document.getElementById(id);
-const STORE = 'atlasio-world-v1';
-const COLORS = ['#ff537f','#ffc260','#9e82ff','#5ef0b2','#74aaff','#f491e5','#f0e873','#ef705b'];
-const NAMES = ['CRIMSON','SOLAR','NEXUS','VIPER','ORBIT','NOVA','TITAN','BLAZE'];
-const STEP = 1 / 60;
-const TILE_CAMERA_INTERVAL = 150;
-const WORLD_ZONE = 500;
-const fmt = n => Number(n).toLocaleString('pt-PT');
-const cleanCoord = (v, lim) => clamp(Number(v) || 0, -lim, lim);
-const randomSeed = (a, b, i) => randomHash(Math.floor(a / 10) + i * 7, Math.floor(b / 10) - i * 11, 593);
-
-function loadRecord() {
-  try {
-    const v = JSON.parse(localStorage.getItem(STORE) || '{}');
-    return { best: clamp(Math.floor(Number(v.best) || 0), 0, 9999999), matches: clamp(Math.floor(Number(v.matches) || 0), 0, 9999999), sound: Boolean(v.sound), lastCity: Number.isInteger(v.lastCity) && v.lastCity >= 0 && v.lastCity < CITIES.length ? v.lastCity : 0 };
-  } catch { return { best: 0, matches: 0, sound: false, lastCity: 0 }; }
+import{createWorld,createState,update,interact,nearby,useItem,objectives,inside,SAVE_KEY,serialize,restore,clamp}from'./core.js';
+import{Renderer}from'./renderer.js';
+const $=id=>document.getElementById(id);
+let world=createWorld(),state=createState(),renderer,selected='male',playing=false,paused=false,last=0,uiTick=0,saveTick=0,toastTimer,ended=false,restartArmed=false,expandedMap=false;
+const keys=new Set(),joy={x:0,y:0},input={x:0,y:0,run:false};let touchRun=false,joystickPointer=null,audio=null,audioEnabled=false;
+const gameplay=['topbar','mission','map-widget','location','quickbar','desktop-help','zoom','touch'];
+function toast(text){$('toast').textContent=text;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3500);}
+function storageRead(){try{return localStorage.getItem(SAVE_KEY);}catch{return null;}}
+function save(silent=false){if(!playing||state.dead)return false;try{localStorage.setItem(SAVE_KEY,serialize(state));if(!silent)toast('Expedição guardada neste dispositivo.');return true;}catch{if(!silent)toast('Não foi possível guardar. Verifica o armazenamento do navegador.');return false;}}
+function resetInput(){keys.clear();joy.x=joy.y=0;touchRun=false;joystickPointer=null;$('stick').style.transform='translate(0,0)';$('run-touch').classList.remove('pressed');}
+function soundState(){if(!audio)return;const on=audioEnabled&&playing&&!paused&&!ended;if(on)audio.ctx.resume().catch(()=>{});else audio.ctx.suspend().catch(()=>{});}
+function pause(value){if(!playing||ended)return;paused=value;$('pause-panel').hidden=!value;resetInput();restartArmed=false;$('restart').textContent='Recomeçar expedição';soundState();if(value){save(true);$('resume').focus();}else $('world').focus();}
+function start(resume=false){
+ world=createWorld();renderer.world=world;const stored=resume?restore(storageRead(),world):null;if(resume&&!stored){toast('A gravação já não está disponível. Iniciámos uma nova expedição.');}
+ state=stored||createState(selected);playing=true;paused=false;ended=false;saveTick=0;resetInput();
+ for(const id of gameplay)$(id).hidden=false;
+ for(const id of ['welcome','pause-panel','end-panel','credits'])$(id).hidden=true;
+ document.body.classList.add('playing');const p={x:(state.player.x-state.player.y)*48,y:(state.player.x+state.player.y)*24};renderer.camera=p;updateUI();soundState();save(true);toast(resume&&stored?'De volta a Vale Sereno.':'Encontra as caixas marcadas. Mantém distância dos errantes.');
 }
-
-class AtlasGame {
-  constructor() {
-    this.saveData = loadRecord();
-    this.map = null;
-    this.canvas = $('world-layer');
-    this.ctx = this.canvas.getContext('2d', { alpha: true });
-    this.territoryBuffer = document.createElement('canvas');
-    this.territoryCtx = this.territoryBuffer.getContext('2d', { alpha: true });
-    this.compositeBuffer = document.createElement('canvas');
-    this.compositeCtx = this.compositeBuffer.getContext('2d', { alpha: true });
-    this.cacheMargin = 64; this.territoryRevision = 0; this.cacheRevision = -1;
-    this.cacheTime = -Infinity; this.cachedView = null; this.renderView = null;
-    this.accumulator = 0; this.mapPanX = NaN; this.mapPanY = NaN;
-    this.quality = new AdaptiveQuality(); this.orbIndex = new SpatialHash(44);
-    this.zoom = 17;
-    this.width = 0; this.height = 0;
-    this.lastFrame = performance.now();
-    this.lastCamera = 0; this.lastHud = 0;
-    this.paused = false; this.dead = false; this.inWorld = false; this.choosingPoint = false;
-    this.started = false; this.helpOpen = false;
-    this.actor = null; this.bots = []; this.orbs = [];
-    this.heading = { x: 0, y: 1 }; this.aim = { x:0, y:1 };
-    this.input = { x: 0, y: 0, joystick: false, boost: false };
-    this.keys = new Set();
-    this.scoreBonus = 0; this.kills = 0;
-    this.boostCharge = 100; this.boostTime = 0;
-    this.tickTime = 0; this.orbTimer = 0;
-    this.chooseCity = this.saveData.lastCity;
-    this.target = { ...CITIES[this.chooseCity] };
-    this.areaLabel = this.target.name;
-    this.sound = this.saveData.sound;
-    this.audio = null;
-    this.mapAvailable = Boolean(window.L);
-    this.paintCities(); this.bind();
-    if (this.mapAvailable) this.initializeMap();
-    else { $('tile-warning').textContent = 'Não foi possível carregar o Leaflet. Precisas de internet para usar o mapa.'; $('tile-warning').hidden = false; }
-    this.resize();
-    window.addEventListener('resize', () => this.resize());
-    this.updateLocation(this.target.lat, this.target.lng);
-    this.updateHud();
-    requestAnimationFrame(time => this.frame(time));
-  }
-
-  initializeMap() {
-    const L = window.L;
-    this.map = L.map('map', {
-      center: [this.target.lat, this.target.lng], zoom: this.zoom,
-      minZoom: 3, maxZoom: 18, zoomControl: false,
-      scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false,
-      touchZoom: false, dragging: false, keyboard: false,
-      zoomAnimation: false, fadeAnimation: false, markerZoomAnimation: false,
-      attributionControl: true, worldCopyJump: true,
-      inertia: false
-    });
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      minZoom: 3, maxZoom: 18, maxNativeZoom: 18,
-      keepBuffer: 2, updateWhenIdle: true, updateInterval: 300, crossOrigin: false,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
-    }).addTo(this.map);
-    let tileErrors = 0;
-    this.map.eachLayer(layer => {
-      if (layer instanceof L.TileLayer) {
-        layer.on('tileerror', () => { tileErrors += 1; if (tileErrors >= 4) $('tile-warning').hidden = false; });
-        layer.on('tileload', () => { tileErrors = 0; $('tile-warning').hidden = true; });
-      }
-    });
-    this.map.on('click', e => {
-      if (!this.choosingPoint) return;
-      const lat = cleanCoord(e.latlng.lat, 80), lng = cleanCoord(e.latlng.lng, 180);
-      this.setTarget({ name: 'Zona selecionada', country: 'Mundo', lat, lng, emoji: '🌍' }, true);
-      this.setPicking(false);
-      this.notify('⌖ Localização marcada. Toca em JOGAR NESTA ZONA.', 'positive');
-    });
-  }
-
-  paintCities() {
-    const cell = (city, idx, type) => type === 'menu'
-      ? `<button type="button" class="city-btn ${idx === this.chooseCity ? 'selected' : ''}" data-city="${idx}"><span class="city-flag">${city.emoji}</span><span class="city-name">${city.name}</span><small class="city-country">${city.country}</small></button>`
-      : `<button type="button" class="world-city-btn ${idx === this.chooseCity ? 'selected' : ''}" data-city="${idx}"><span>${city.emoji}</span><span>${city.name}</span></button>`;
-    $('city-grid').innerHTML = CITIES.map((c, i) => cell(c, i, 'menu')).join('');
-    $('world-city-grid').innerHTML = CITIES.map((c, i) => cell(c, i, 'world')).join('');
-    const search=$('city-search')?.value?.trim().toLocaleLowerCase('pt-PT')||'';
-    for(const button of $('city-grid').children)button.hidden=!!search&&!button.textContent.toLocaleLowerCase('pt-PT').includes(search);
-    const picked = this.target;
-    $('spawn-name').textContent = (picked.emoji || '🌐')+' '+picked.name;
-    $('spawn-country').textContent = picked.country+' · '+picked.lat.toFixed(3)+'°, '+picked.lng.toFixed(3)+'°';
-  }
-
-  bind() {
-    for (const grid of ['city-grid','world-city-grid']) $(grid).addEventListener('click', e => {
-      const button = e.target.closest('[data-city]');
-      if (!button) return;
-      const id = Number(button.dataset.city);
-      this.chooseCity = id;
-      this.setTarget(CITIES[id], true);
-    });
-    $('enter-btn').addEventListener('click', () => this.startAt(this.target));
-    $('spawn-map-btn').addEventListener('click', () => this.openWorld());
-    $('spawn-random-btn').addEventListener('click', () => { const id=Math.floor(Math.random()*CITIES.length);this.chooseCity=id;this.setTarget(CITIES[id],true); });
-    $('city-search').addEventListener('input', e => {const q=e.target.value.trim().toLocaleLowerCase('pt-PT');for(const b of $('city-grid').children){b.hidden=!!q&&!b.textContent.toLocaleLowerCase('pt-PT').includes(q);}});
-    $('world-btn').addEventListener('click', () => this.openWorld());
-    $('world-close').addEventListener('click', () => this.closeWorld());
-    $('travel-btn').addEventListener('click', () => this.startTravel());
-    $('pick-btn').addEventListener('click', () => this.setPicking(true));
-    $('cancel-pick').addEventListener('click', () => this.setPicking(false));
-    $('geo-btn').addEventListener('click', () => this.geolocate());
-    $('zoom-out').addEventListener('click', () => { if (this.map) this.map.setZoom(Math.max(3, this.map.getZoom() - 1)); });
-    $('zoom-in').addEventListener('click', () => { if (this.map) this.map.setZoom(Math.min(18, this.map.getZoom() + 1)); });
-    $('lat-input').addEventListener('change', () => this.useCoordinates(false));
-    $('lng-input').addEventListener('change', () => this.useCoordinates(false));
-    $('pause-btn').addEventListener('click', () => this.togglePause());
-    $('resume-btn').addEventListener('click', () => this.togglePause(false));
-    $('pause-world-btn').addEventListener('click', () => { this.togglePause(false); this.openWorld(); });
-    $('pause-menu-btn').addEventListener('click', () => this.returnToMenu());
-    $('death-menu-btn').addEventListener('click', () => this.returnToMenu());
-    $('again-btn').addEventListener('click', () => this.startAt({ name: this.areaLabel, lat: this.actor?.spawn.lat ?? this.target.lat, lng: this.actor?.spawn.lng ?? this.target.lng }));
-    $('death-world-btn').addEventListener('click', () => { $('death-overlay').hidden = true; this.openWorld(); });
-    $('help-btn').addEventListener('click', () => this.help(true));
-    $('help-close').addEventListener('click', () => this.help(false));
-    $('help-play').addEventListener('click', () => this.help(false));
-    $('sound-btn').addEventListener('click', () => { this.sound = !this.sound; this.saveData.sound = this.sound; this.persist(); this.updateSound(); this.beep(460, .07); });
-    this.updateSound();
-    this.bindJoystick();
-    $('boost-btn').addEventListener('pointerdown', e => { e.preventDefault(); $('boost-btn').setPointerCapture(e.pointerId); this.input.boost = true; });
-    for (const type of ['pointerup','pointercancel','lostpointercapture']) $('boost-btn').addEventListener(type, () => { this.input.boost = false; });
-    window.addEventListener('keydown', e => {
-      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
-      if (e.code === 'KeyM' && !e.repeat) { if (this.inWorld) this.closeWorld(); else this.openWorld(); }
-      if (e.code === 'KeyP' && !e.repeat) this.togglePause();
-      if (e.code === 'Escape' && !e.repeat) { if (this.choosingPoint) this.setPicking(false); else if (this.inWorld) this.closeWorld(); else if (this.helpOpen) this.help(false); else if (this.paused) this.togglePause(false); }
-      this.keys.add(e.code);
-    });
-    window.addEventListener('keyup', e => this.keys.delete(e.code));
-    window.addEventListener('blur', () => {
-      this.keys.clear(); this.input.boost = false; this.input.joystick = false;
-      if (this.started && !this.dead && !this.inWorld) this.togglePause(true);
-    });
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden && this.started && !this.dead && !this.inWorld) this.togglePause(true);
-    });
-    this.canvas.addEventListener('pointerdown', e => {
-      if (!this.started || this.paused || this.dead || this.inWorld || this.helpOpen) return;
-      const dx = e.clientX - this.width / 2, dy = -(e.clientY - this.height / 2);
-      if (Math.hypot(dx, dy) > 30) this.inputDirection(dx, dy);
-    });
-  }
-
-  bindJoystick() {
-    const pad = $('joystick'), knob = $('stick');
-    let pointer = null;
-    const update = e => {
-      const rect = pad.getBoundingClientRect();
-      const x = (e.clientX - (rect.left + rect.width / 2)) / (rect.width * .32);
-      const y = (e.clientY - (rect.top + rect.height / 2)) / (rect.height * .32);
-      const len = Math.max(1, Math.hypot(x, y));
-      this.input.x = clamp(x / len, -1, 1); this.input.y = -clamp(y / len, -1, 1);
-      this.input.joystick = true;
-      knob.style.transform = `translate(calc(-50% + ${this.input.x * rect.width * .25}px),calc(-50% + ${-this.input.y * rect.height * .25}px))`;
-    };
-    pad.addEventListener('pointerdown', e => { e.preventDefault(); pointer = e.pointerId; pad.setPointerCapture(pointer); update(e); });
-    pad.addEventListener('pointermove', e => { if (e.pointerId === pointer) update(e); });
-    const stop = e => {
-      if (e.pointerId !== pointer) return;
-      pointer = null; this.input.joystick = false; this.input.x = 0; this.input.y = 0;
-      knob.style.transform = 'translate(-50%,-50%)';
-    };
-    pad.addEventListener('pointerup', stop); pad.addEventListener('pointercancel', stop);
-  }
-
-  inputDirection(x, y) {
-    const d = Math.hypot(x,y);
-    if (d > 0.1) {
-      this.aim = { x:x / d,y:y / d };
-      if (!this.actor.moving) this.heading = {...this.aim};
-      this.actor.moving = true;
-    }
-  }
-
-  setTarget(target, moveMap) {
-    this.target = { ...target, lat: cleanCoord(target.lat,80), lng: cleanCoord(target.lng,180) };
-    this.areaLabel = this.target.name;
-    $('lat-input').value = this.target.lat.toFixed(5);
-    $('lng-input').value = this.target.lng.toFixed(5);
-    this.paintCities();
-    this.updateLocation(this.target.lat, this.target.lng);
-    if (moveMap && this.map) {
-      const zoom = this.inWorld ? Math.min(15, this.map.getZoom()) : this.zoom;
-      this.map.setView([this.target.lat,this.target.lng],zoom,{animate:false});
-    }
-  }
-
-  useCoordinates(moveMap=true) {
-    const lat = Number($('lat-input').value), lng = Number($('lng-input').value);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat)>80 || Math.abs(lng)>180) {
-      this.notify('Coordenadas inválidas. Latitude até ±80, longitude até ±180.', 'danger');return false;
-    }
-    this.chooseCity = -1;
-    this.setTarget({ name:'Coordenadas livres',lat,lng,country:'Mundo',emoji:'🌍' },moveMap);
-    return true;
-  }
-
-  startTravel() {
-    const lat = Number($('lat-input').value), lng = Number($('lng-input').value);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 80 || Math.abs(lng) > 180) {
-      this.notify('Coordenadas inválidas. Latitude até ±80, longitude até ±180.', 'danger');
-      return;
-    }
-    if (Math.abs(lat - this.target.lat) > .00002 || Math.abs(lng - this.target.lng) > .00002) {
-      this.chooseCity = -1;
-      this.setTarget({ name: 'Coordenadas livres', country: 'Mundo', emoji: '🌍', lat, lng }, false);
-    }
-    this.startAt(this.target);
-  }
-
-  startAt(target) {
-    this.target = { ...target,lat:cleanCoord(target.lat,80),lng:cleanCoord(target.lng,180) };
-    this.areaLabel = target.name || 'Zona livre';
-    this.started = true;this.dead = false;this.paused = false;this.helpOpen = false;this.inWorld = false;this.choosingPoint = false;
-    $('app').classList.remove('is-menu','in-world','is-paused');
-    for (const id of ['menu-overlay','world-overlay','pick-banner','pause-overlay','death-overlay','help-overlay']) $(id).hidden = true;
-    this.input.joystick=false;this.input.boost=false;this.keys.clear();
-    const pos = project(this.target.lat,this.target.lng);
-    this.actor = { id:'you', x:pos.x,y:pos.y, spawn:{lat:this.target.lat,lng:this.target.lng}, trail:[], lastOwned:{...pos}, moving:false,
-      territory:new Territory('you',pos.x,pos.y,37), color:'#22e5ee', energy:100, mass:24 };
-    this.heading = { x: 0, y: 1 }; this.aim = { x:0, y:1 };
-    this.scoreBonus = 0;this.kills=0;this.boostCharge=100;this.boostTime=0;this.orbTimer=0;
-    this.tickTime = 0; this.accumulator = 0; this.territoryRevision++;
-    this.mapPanX=NaN;this.mapPanY=NaN;
-    this.bots = Array.from({length:8},(_,i)=>this.makeBot(i,pos));
-    this.orbs=[];this.orbIndex.build([]);this.addOrbs(pos,38);
-    this.zoom = 17;
-    if (this.map) {
-      this.map.dragging.disable();this.map.touchZoom.disable();
-      this.map.setView([this.target.lat,this.target.lng],this.zoom,{animate:false});
-      setTimeout(()=>this.map?.invalidateSize(),40);
-    }
-    this.saveData.matches++;
-    if (this.chooseCity>=0)this.saveData.lastCity=this.chooseCity;
-    this.persist();
-    this.updateLocation(this.target.lat,this.target.lng);
-    this.updateHud();
-    this.notify('◈ Sai da zona azul e regressa para conquistar!', 'positive');
-    this.beep(510,.09);
-  }
-
-  makeBot(i,center) {
-    const angle = i/8*Math.PI*2+randomSeed(center.x,center.y,i)*.4;
-    const rad = 215+(i%3)*52+randomSeed(center.x,center.y,i+41)*22;
-    const x=center.x+Math.cos(angle)*rad, y=center.y+Math.sin(angle)*rad;
-    const name=NAMES[i], color=COLORS[i];
-    return {id:`bot-${i}`,name,color, x,y,origin:{x,y},trail:[],lastOwned:{x,y},territory:new Territory(name,x,y,26+i%3*4),heading:angle,phase:i*1.2,excursion:0,respawn:0,speed:27+randomSeed(x,y,i)*6,mass:20+i*2};
-  }
-
-  addOrbs(center,count=12) {
-    const seed = Math.round(this.tickTime*1000);
-    for(let i=0;i<count;i++) {
-      const angle=randomSeed(center.x+seed,center.y,i+5)*Math.PI*2;
-      const r=35+randomSeed(center.x+seed,center.y,i+29)*320;
-      this.orbs.push({x:center.x+Math.cos(angle)*r,y:center.y+Math.sin(angle)*r,
-        value:5+Math.floor(randomSeed(center.x,center.y,i+seed)*5)*3});
-    }
-    if(this.orbs.length>70)this.orbs=this.orbs.slice(-70);
-    this.orbIndex.build(this.orbs);
-  }
-
-  updateLocation(lat,lng) {
-    const north = lat >= 0?'N':'S', east=lng>=0?'E':'O';
-    $('zone-name').textContent=(this.areaLabel||'MUNDO').toUpperCase();
-    $('coordinates').textContent=`${Math.abs(lat).toFixed(3)}° ${north} · ${Math.abs(lng).toFixed(3)}° ${east}`;
-  }
-
-  returnToMenu() {
-    this.paused=false;this.dead=false;this.started=false;this.inWorld=false;this.choosingPoint=false;
-    this.actor=null;this.bots=[];this.orbs=[];this.territoryRevision++;this.accumulator=0;
-    this.keys.clear();this.input.boost=false;this.input.joystick=false;
-    this.paintCities();
-    $('app').classList.remove('in-world','is-paused');$('app').classList.add('is-menu');
-    for(const id of ['world-overlay','pause-overlay','death-overlay','pick-banner','help-overlay'])$(id).hidden=true;
-    $('menu-overlay').hidden=false;
-    if(this.map){this.map.dragging.disable();this.map.touchZoom.disable();this.map.setView([this.target.lat,this.target.lng],13,{animate:false});}
-    this.updateLocation(this.target.lat,this.target.lng);this.updateHud();
-  }
-
-  openWorld() {
-    if (!this.mapAvailable) { this.notify('Liga-te à internet para abrir o mapa mundial.','danger');return; }
-    this.inWorld = true;
-    this.choosingPoint = false;
-    $('world-overlay').hidden = false;
-    $('menu-overlay').hidden = true;
-    $('pause-overlay').hidden = true;
-    $('pick-banner').hidden = true;
-    $('app').classList.add('in-world');
-    this.map.dragging.enable();this.map.touchZoom.enable();
-    const center = this.started && this.actor ? unproject(this.actor.x,this.actor.y) : this.target;
-    this.map.setView([center.lat,center.lng],12,{animate:false});
-    if (this.started && this.actor) this.setTarget({ ...center, name:this.areaLabel },false);
-    setTimeout(()=>this.map?.invalidateSize(),50);
-  }
-  closeWorld() {
-    this.inWorld=false;this.setPicking(false);
-    $('world-overlay').hidden=true;$('app').classList.remove('in-world');
-    if(!this.started)$('menu-overlay').hidden=false;
-    if (this.map) {
-      this.map.dragging.disable();this.map.touchZoom.disable();
-      const center = this.actor ? unproject(this.actor.x,this.actor.y):this.target;
-      this.map.setView([center.lat,center.lng],this.zoom,{animate:false});
-    }
-    if (this.started && !this.dead) this.paused=false;
-    if (this.dead) $('death-overlay').hidden=false;
-  }
-  setPicking(enabled) {
-    this.choosingPoint=enabled;
-    if(enabled)$('menu-overlay').hidden=true;
-    $('pick-banner').hidden=!enabled;
-    $('world-overlay').hidden=enabled;
-    if(enabled) this.notify('Arrasta o mapa e toca onde queres começar.','positive');
-    else if(this.inWorld)$('world-overlay').hidden=false;
-  }
-  geolocate() {
-    if (!navigator.geolocation) {this.notify('Geolocalização indisponível.','danger');return;}
-    this.notify('A pedir a tua localização…');
-    navigator.geolocation.getCurrentPosition(pos=>{
-      this.chooseCity=-1;this.setTarget({name:'Perto de ti',country:'Mundo',emoji:'📍',lat:pos.coords.latitude,lng:pos.coords.longitude},true);
-      this.notify('Localização encontrada. Já podes começar.','positive');
-    },()=>this.notify('Não foi possível aceder à localização.','danger'),{enableHighAccuracy:false,timeout:8000,maximumAge:60000});
-  }
-
-  help(show) { this.helpOpen=show; $('help-overlay').hidden=!show; }
-  togglePause(force) {
-    if(!this.started||this.dead||this.inWorld)return;
-    this.paused=typeof force==='boolean'?force:!this.paused;
-    $('pause-overlay').hidden=!this.paused;
-    $('app').classList.toggle('is-paused',this.paused);
-  }
-  notify(message,type='') {
-    const item = document.createElement('div');
-    item.className=`event-item ${type}`;item.textContent=message;
-    const feed=$('event-feed');feed.prepend(item);
-    while(feed.children.length>3)feed.lastChild.remove();
-    setTimeout(()=>item.remove(),4000);
-    $('status-text').textContent=message.replace(/^[^\p{L}\p{N}]+/u,'').slice(0,100);
-  }
-  persist() {try{localStorage.setItem(STORE,JSON.stringify(this.saveData));}catch{/* Browsers may block persistence. */}}
-  updateSound() {$('sound-btn').textContent=this.sound?'♫':'♪';$('sound-btn').setAttribute('aria-pressed',String(this.sound));}
-  beep(freq,duration=.075) {
-    if (!this.sound) return;
-    try {
-      const Audio = window.AudioContext||window.webkitAudioContext;
-      if(!Audio)return;
-      this.audio ||=new Audio();
-      if(this.audio.state==='suspended')this.audio.resume();
-      const osc=this.audio.createOscillator(),gain=this.audio.createGain();
-      osc.type='sine';osc.frequency.value=freq;gain.gain.setValueAtTime(.035,this.audio.currentTime);
-      gain.gain.exponentialRampToValueAtTime(.001,this.audio.currentTime+duration);
-      osc.connect(gain).connect(this.audio.destination);osc.start();osc.stop(this.audio.currentTime+duration);
-    }catch{/* audio is optional */}
-  }
-
-  score() {return this.actor ? this.actor.territory.count*10+this.scoreBonus+this.kills*80+Math.round((this.actor.mass-24)*6):0;}
-  updateHud() {
-    const score=this.score();
-    $('score').textContent=fmt(score);
-    const lat=this.actor?unproject(this.actor.x,this.actor.y).lat:0;
-    $('surface').textContent=fmt(Math.round((this.actor?.territory.area||0)*Math.cos(lat*Math.PI/180)**2))+' m²';
-    if(score>this.saveData.best) {this.saveData.best=score;this.persist();}
-    $('record').textContent=fmt(this.saveData.best);
-    $('boost-fill').style.width=this.boostCharge.toFixed(1)+'%';
-    $('mass-value').textContent=fmt(Math.round(this.actor?.mass||0));
-    const ranking=[{id:'you',name:'TU',color:'#26e9eb',score},...this.bots.filter(b=>!b.respawn).map(b=>({id:b.id,name:b.name,color:b.color,score:b.territory.count*10}))].sort((a,b)=>b.score-a.score).slice(0,6);
-    $('leaderboard').innerHTML=ranking.map((b,i)=>`<div class="leader-row ${b.id==='you'?'mine':''}"><span class="leader-pos">${String(i+1).padStart(2,'0')}</span><span class="leader-color" style="background:${b.color}"></span><span class="leader-name">${b.name}</span><span class="leader-score">${fmt(b.score)}</span></div>`).join('');
-  }
-
-  movePlayer(dt) {
-    const p=this.actor;
-    const from={x:p.x,y:p.y};
-    let x=0,y=0;
-    if(this.keys.has('KeyW')||this.keys.has('ArrowUp'))y++;
-    if(this.keys.has('KeyS')||this.keys.has('ArrowDown'))y--;
-    if(this.keys.has('KeyA')||this.keys.has('ArrowLeft'))x--;
-    if(this.keys.has('KeyD')||this.keys.has('ArrowRight'))x++;
-    if(this.input.joystick) {x=this.input.x;y=this.input.y;}
-    if(Math.hypot(x,y)>.12) this.inputDirection(x,y);
-    if(!p.moving)return;
-    const boosting=(this.input.boost||this.keys.has('Space'))&&this.boostCharge>2;
-    // Smooth steering: no instantaneous 180-degree direction changes.
-    this.heading=steering(this.heading,this.aim,boosting?6.2:8.2,dt);
-    const move=speedForMass(p.mass,boosting);
-    this.boostCharge=clamp(this.boostCharge+(boosting?-26:11)*dt,0,100);
-    p.x+=this.heading.x*move*dt;
-    p.y=clamp(p.y+this.heading.y*move*dt,-19900000,19900000);
-    const result=updateTrail(p);
-    if(result?.overextended){this.die('Foste longe demais sem fechar o território.');return;}
-    if(result?.captured?.area){
-      this.transferTerritory(p,result.captured);
-      this.territoryRevision++;
-      const won=Math.round(result.captured.area/(GRID*GRID));
-      this.scoreBonus+=Math.min(500,Math.round(won/4)*5);
-      p.mass=clamp(p.mass+Math.min(15,result.captured.area/900),10,500);
-      this.notify(`◈ TERRITÓRIO CONQUISTADO · +${won*10} PTS`, 'positive');
-      this.beep(660,.1);
-    }
-    if(p.trail.length>7&&trailHitSweep(from,p,p.trail,4.5,5))this.die('Cruzaste o teu próprio trilho.');
-  }
-  transferTerritory(owner,claim) {
-    if(!claim?.points)return;
-    for(const bot of this.bots){
-      if(bot!==owner&&!bot.respawn){if(bot.territory.erase(claim.points)>0)this.territoryRevision++;}
-    }
-    if(owner!==this.actor){if(this.actor.territory.erase(claim.points)>0)this.territoryRevision++;}
-  }
-
-  updateBots(dt) {
-    const you=this.actor;
-    for(const bot of this.bots) {
-      if(bot.respawn>0){
-        bot.respawn-=dt;
-        if(bot.respawn<=0){
-          const re=this.makeBot(Number(bot.id.split('-')[1]),you);
-          Object.assign(bot,re);this.territoryRevision++;
-        }
-        continue;
-      }
-      bot.phase+=dt;
-      if(distance(bot,you)>620) {
-        const re=this.makeBot(Number(bot.id.split('-')[1]),you);
-        Object.assign(bot,re);this.territoryRevision++;
-        continue;
-      }
-      const safe=bot.territory.contains(bot.x,bot.y);
-      if(!safe)bot.excursion+=dt;else bot.excursion=0;
-      // Arcade AI: chase exposed trails, retreat from larger enemies, and return home.
-      const intent=botTarget(bot,you,bot.phase);
-      const direction=steering({x:Math.cos(bot.heading),y:Math.sin(bot.heading)},intent,3.1,dt);
-      bot.heading=Math.atan2(direction.y,direction.x);
-      const before={x:bot.x,y:bot.y};
-      const speed=speedForMass(bot.mass,false,bot.speed);
-      bot.x+=Math.cos(bot.heading)*speed*dt;
-      bot.y+=Math.sin(bot.heading)*speed*dt;
-      const claim=updateTrail(bot);
-      if(claim?.captured?.area){this.transferTerritory(bot,claim.captured);bot.mass=clamp(bot.mass+Math.min(9,claim.captured.area/1200),10,450);this.territoryRevision++;}
-      if(claim?.overextended){this.removeBot(bot);continue;}
-      if(you.trail.length>2&&trailHitSweep(before,bot,you.trail,7)){
-        this.die(`${bot.name} cortou o teu trilho.`);return;
-      }
-      if(bot.trail.length>2&&trailHitSweep(this.previousPlayerPosition||you,you,bot.trail,7)){
-        this.removeBot(bot);this.kills++;
-        this.notify(`✦ ${bot.name} ELIMINADO! +80 PTS`,'positive');this.beep(780,.08);
-        continue;
-      }
-      if(distance(bot,you)<radiusForMass(bot.mass)+radiusForMass(you.mass)-6){
-        if(you.mass>bot.mass*1.32){you.mass=clamp(you.mass+bot.mass*.23,10,500);this.removeBot(bot);this.kills++;this.notify(`⚡ ABSORVESTE ${bot.name}`,'positive');}
-        else if(bot.mass>you.mass*1.32&&!you.territory.contains(you.x,you.y)){this.die(`Foste absorvido por ${bot.name}.`);return;}
-      }
-    }
-  }
-  removeBot(bot) {bot.respawn=5;bot.trail=[];bot.territory.clear();this.territoryRevision++;}
-
-  collectOrbs(dt) {
-    this.orbTimer+=dt;
-    const consumed=new Set();
-    // Broadphase query avoids scanning every collectible for every actor.
-    for(const orb of this.orbIndex.near(this.actor.x,this.actor.y,15)){
-      if(distance(orb,this.actor)<14){
-        consumed.add(orb);this.scoreBonus+=orb.value;
-        this.actor.mass=clamp(this.actor.mass+orb.value*.35,10,500);
-        this.boostCharge=clamp(this.boostCharge+5,0,100);
-        if(this.scoreBonus%45<orb.value)this.beep(620,.04);
-      }
-    }
-    for(const bot of this.bots){
-      if(bot.respawn>0)continue;
-      for(const orb of this.orbIndex.near(bot.x,bot.y,12)){
-        if(!consumed.has(orb)&&distance(orb,bot)<11){
-          consumed.add(orb);bot.mass=clamp(bot.mass+orb.value*.24,10,450);
-        }
-      }
-    }
-    if(consumed.size){this.orbs=this.orbs.filter(orb=>!consumed.has(orb));this.orbIndex.build(this.orbs);}
-    if(this.orbTimer>5){this.orbTimer=0;this.addOrbs(this.actor,10);}
-  }
-  die(reason) {
-    if(this.dead)return;
-    this.dead=true;this.input.boost=false;
-    $('death-reason').textContent=reason;
-    $('death-score').textContent=fmt(this.score());
-    if(this.score()>this.saveData.best)this.saveData.best=this.score();
-    $('death-record').textContent=fmt(this.saveData.best);
-    this.persist();$('death-overlay').hidden=false;
-    this.beep(170,.23);
-  }
-  resize() {
-    this.width=Math.max(1,this.canvas.clientWidth);
-    this.height=Math.max(1,this.canvas.clientHeight);
-    const mobile=window.matchMedia('(pointer: coarse)').matches || this.width < 700;
-    this.dpr=Math.max(.72,Math.min(window.devicePixelRatio||1, mobile?1.35:1.65)*this.quality.scale);
-    this.canvas.width=Math.max(1,Math.round(this.width*this.dpr));
-    this.canvas.height=Math.max(1,Math.round(this.height*this.dpr));
-    this.ctx.setTransform(this.dpr,0,0,this.dpr,0,0);
-    const cacheW=Math.ceil((this.width+this.cacheMargin*2)*this.dpr);
-    const cacheH=Math.ceil((this.height+this.cacheMargin*2)*this.dpr);
-    for(const buffer of [this.territoryBuffer,this.compositeBuffer]) {
-      buffer.width=cacheW;buffer.height=cacheH;
-    }
-    this.territoryCtx.setTransform(this.dpr,0,0,this.dpr,0,0);
-    this.compositeCtx.setTransform(this.dpr,0,0,this.dpr,0,0);
-    this.cachedView=null;this.cacheRevision=-1;
-    if(this.map)this.map.invalidateSize({pan:false});
-  }
-  getView() {
-    const center=this.map?this.map.getCenter():(this.started&&this.actor?unproject(this.actor.x,this.actor.y):this.target);
-    const pos=project(center.lat,center.lng);
-    return {x:pos.x,y:pos.y,ppm:this.map?256*2**this.map.getZoom()/EARTH:.78,
-      width:this.width,height:this.height};
-  }
-  worldToScreen(p) {
-    const v=this.renderView||this.view||this.getView();
-    return {x:v.width*.5+wrapDx(p.x-v.x)*v.ppm,y:v.height*.5-(p.y-v.y)*v.ppm};
-  }
-  /** All map polygons are composited at ~8 fps, then shifted smoothly each animation frame.
-   * Live players, trails, and pickups always draw at display refresh rate.
-   */
-  paintTerritories(time) {
-    const view=this.view;
-    const previous=this.cachedView;
-    const drift=previous?Math.hypot(wrapDx(view.x-previous.x)*view.ppm,(view.y-previous.y)*view.ppm):Infinity;
-    if(!previous||this.cacheRevision!==this.territoryRevision||
-        drift>this.cacheMargin*.60||previous.ppm!==view.ppm) {
-      const margin=this.cacheMargin;
-      this.renderView={x:view.x,y:view.y,ppm:view.ppm,width:this.width+margin*2,height:this.height+margin*2};
-      const c=this.compositeCtx;
-      c.clearRect(0,0,this.renderView.width,this.renderView.height);
-      for(const bot of this.bots)this.paintTerritory(bot);
-      this.paintTerritory(this.actor);
-      this.renderView=null;
-      this.cachedView={...view};
-      this.cacheTime=time;
-      this.cacheRevision=this.territoryRevision;
-    }
-    const dx=wrapDx(this.cachedView.x-view.x)*view.ppm;
-    const dy=(view.y-this.cachedView.y)*view.ppm;
-    this.ctx.drawImage(this.compositeBuffer,-this.cacheMargin+dx,-this.cacheMargin+dy,
-      this.width+this.cacheMargin*2,this.height+this.cacheMargin*2);
-  }
-  paintTerritory(actor) {
-    if(!actor||actor.respawn>0||!actor.territory.ops.length)return;
-    const ctx=this.territoryCtx;
-    const v=this.renderView;
-    ctx.clearRect(0,0,v.width,v.height);
-    ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
-    const left=v.x-(v.width*.5+12)/v.ppm,right=v.x+(v.width*.5+12)/v.ppm;
-    const bottom=v.y-(v.height*.5+12)/v.ppm,top=v.y+(v.height*.5+12)/v.ppm;
-    const wrapNearEdge=Math.abs(v.x)>EARTH*.5-3000;
-    for(const op of actor.territory.ops){
-      const b=op.bounds;
-      if(!wrapNearEdge&&(b.maxX<left||b.minX>right)||b.maxY<bottom||b.minY>top)continue;
-      const pts=op.points;
-      ctx.beginPath();
-      const first=this.worldToScreen(pts[0]);ctx.moveTo(first.x,first.y);
-      for(let i=1;i<pts.length;i++){const p=this.worldToScreen(pts[i]);ctx.lineTo(p.x,p.y);}
-      ctx.closePath();
-      if(op.type==='cut'){
-        ctx.globalCompositeOperation='destination-out';ctx.fillStyle='#000';ctx.fill();
-        ctx.globalCompositeOperation='source-over';
-      }else{
-        ctx.fillStyle=actor.color+'44';ctx.strokeStyle=actor.color+'dc';ctx.lineWidth=2.3;
-        ctx.fill();ctx.stroke();
-      }
-    }
-    ctx.restore();
-    this.compositeCtx.drawImage(this.territoryBuffer,0,0,v.width,v.height);
-  }
-  paintTrail(actor) {
-    if(!actor?.trail || actor.trail.length<2)return;
-    const ctx=this.ctx, path=[...actor.trail, {x:actor.x,y:actor.y}];
-    const first=this.worldToScreen(path[0]);
-    ctx.save();ctx.beginPath();ctx.moveTo(first.x,first.y);
-    for(let i=1;i<path.length;i++){const p=this.worldToScreen(path[i]);ctx.lineTo(p.x,p.y);}
-    ctx.strokeStyle=actor.color+'55';ctx.lineWidth=15;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();
-    ctx.strokeStyle=actor.color;ctx.lineWidth=5;ctx.stroke();
-    ctx.strokeStyle='#ffffffdd';ctx.lineWidth=1.5;ctx.setLineDash([5,8]);ctx.stroke();ctx.restore();
-  }
-  paintOrbs(time) {
-    const ctx=this.ctx;
-    for(const orb of this.orbs){
-      const p=this.worldToScreen(orb);
-      if(p.x<-20||p.x>this.width+20||p.y<-20||p.y>this.height+20)continue;
-      const radius=3+Math.sin(time*.004+orb.x)*.8;
-      ctx.beginPath();ctx.arc(p.x,p.y,radius+4,0,Math.PI*2);ctx.fillStyle='#f8d57722';ctx.fill();
-      ctx.beginPath();ctx.arc(p.x,p.y,radius,0,Math.PI*2);ctx.fillStyle='#ffe29a';ctx.fill();
-    }
-  }
-  paintActor(actor,isYou,time){
-    if(!actor||actor.respawn>0)return;
-    const pos=this.worldToScreen(actor),ctx=this.ctx;
-    if(pos.x<-40||pos.y<-40||pos.x>this.width+40||pos.y>this.height+40)return;
-    const radius=radiusForMass(actor.mass,isYou);
-    ctx.save();
-    if(isYou){ctx.beginPath();ctx.arc(pos.x,pos.y,radius+11+Math.sin(time*.004)*2,0,Math.PI*2);ctx.strokeStyle='#2debf564';ctx.lineWidth=2;ctx.stroke();}
-    ctx.beginPath();ctx.arc(pos.x,pos.y,radius+4,0,Math.PI*2);ctx.fillStyle=actor.color+'40';ctx.fill();
-    ctx.beginPath();ctx.arc(pos.x,pos.y,radius,0,Math.PI*2);ctx.fillStyle=actor.color;ctx.shadowBlur=22;ctx.shadowColor=actor.color;ctx.fill();ctx.shadowBlur=0;
-    ctx.beginPath();ctx.arc(pos.x-radius*.24,pos.y-radius*.24,radius*.52,0,Math.PI*2);ctx.fillStyle='#ffffff70';ctx.fill();
-    ctx.font=`900 ${Math.max(11,radius*.88)}px DM Sans, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#052035';ctx.fillText(isYou?'◆':'✦',pos.x,pos.y+1);
-    ctx.font='800 10px DM Sans, sans-serif';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.shadowColor='#000';ctx.shadowBlur=8;
-    ctx.fillText(isYou?'TU':actor.name,pos.x,pos.y-radius-11);ctx.restore();
-  }
-  draw(time) {
-    const ctx=this.ctx;ctx.clearRect(0,0,this.width,this.height);
-    if(!this.started){
-      const p=this.worldToScreen(project(this.target.lat,this.target.lng));
-      ctx.beginPath();ctx.arc(p.x,p.y,28+5*Math.sin(time*.002),0,Math.PI*2);
-      ctx.strokeStyle='#23eff6a7';ctx.lineWidth=3;ctx.stroke();
-      ctx.beginPath();ctx.arc(p.x,p.y,7,0,Math.PI*2);ctx.fillStyle='#32eaf2';ctx.fill();return;
-    }
-    if(this.inWorld)return;
-    this.paintTerritories(time);
-    this.paintOrbs(time);
-    for(const bot of this.bots)this.paintTrail(bot);
-    this.paintTrail(this.actor);
-    for(const bot of this.bots)this.paintActor(bot,false,time);
-    this.paintActor(this.actor,true,time);
-  }
-  frame(now) {
-    requestAnimationFrame(t=>this.frame(t));
-    const frameMs=Math.max(0,now-this.lastFrame);
-    const elapsed=Math.min(.10,frameMs/1000);
-    this.lastFrame=now;
-    const active=this.started&&!this.dead&&!this.paused&&!this.inWorld&&!this.helpOpen;
-    if(active){
-      if(this.quality.observe(frameMs))this.resize();
-      this.accumulator=Math.min(this.accumulator+elapsed,STEP*5);
-      let steps=0;
-      while(this.accumulator>=STEP&&steps++<5&&!this.dead){
-        this.previousPlayerPosition={x:this.actor.x,y:this.actor.y};
-        this.tickTime+=STEP;
-        this.movePlayer(STEP);
-        if(!this.dead)this.updateBots(STEP);
-        if(!this.dead)this.collectOrbs(STEP);
-        this.accumulator-=STEP;
-      }
-      if(this.map&&this.actor&&now-this.lastCamera>TILE_CAMERA_INTERVAL){
-        const d=Math.hypot(this.actor.x-this.mapPanX,this.actor.y-this.mapPanY);
-        if(d>3.5||!Number.isFinite(d)){
-          this.lastCamera=now;
-          this.mapPanX=this.actor.x;this.mapPanY=this.actor.y;
-          const ll=unproject(this.actor.x,this.actor.y);
-          this.map.panTo([ll.lat,ll.lng],{animate:true,duration:.14,easeLinearity:1,noMoveStart:true});
-          if(now-this.lastHud>520)this.updateLocation(ll.lat,ll.lng);
-        }
-      }
-      if(now-this.lastHud>480){this.lastHud=now;this.updateHud();}
-    }else this.accumulator=0;
-    if(this.inWorld)return;
-    if(!active&&now-(this.lastIdleDraw||0)<120)return;
-    this.lastIdleDraw=now;
-    this.view=this.getView();
-    this.draw(now);
-  }
-
+function home(){playing=false;paused=false;ended=false;resetInput();document.body.classList.remove('playing');for(const id of gameplay)$(id).hidden=true;for(const id of ['pause-panel','end-panel','interact-prompt','credits'])$(id).hidden=true;$('welcome').hidden=false;$('continue').hidden=!restore(storageRead(),createWorld());soundState();}
+function action(){if(!playing||paused||ended)return;const r=interact(state,world);toast(r.text);if(r.ok)save(true);updateUI();}
+function consume(item){if(!playing||paused||ended)return;if(useItem(state,item)){toast(item==='medkit'?'Kit médico usado. +45 saúde.':item==='food'?'Comeste conservas. +18 saúde.':'Bebeste água. Fôlego recuperado.');save(true);updateUI();}else toast('Não tens esse recurso. Procura nas caixas da vila.');}
+function toggleLantern(){renderer.lantern=!renderer.lantern;$('lantern').setAttribute('aria-pressed',String(renderer.lantern));$('lantern').querySelector('b').textContent=renderer.lantern?'●':'○';}
+function toggleMap(){expandedMap=!expandedMap;$('map-widget').classList.toggle('expanded',expandedMap);$('map-toggle').setAttribute('aria-label',expandedMap?'Reduzir mapa':'Ampliar mapa');$('minimap').width=$('minimap').height=expandedMap?384:168;renderer.drawMap(state,expandedMap);}
+function end(){ended=true;paused=true;resetInput();soundState();$('interact-prompt').hidden=true;$('end-panel').hidden=false;
+ $('end-label').textContent=state.won?'PRIMEIRO DIA CONCLUÍDO':'A EXPEDIÇÃO TERMINOU';$('end-title').textContent=state.won?'Uma luz na escuridão.':'A vila não perdoa.';
+ $('end-message').textContent=state.won?'Há mantimentos, medicamentos e eletricidade. Esta noite, Vale Sereno tem um abrigo.':'Os errantes alcançaram-te. Procura caminhos alternativos, guarda o fôlego e usa os kits médicos.';
+ $('end-stats').textContent=`${Math.floor(state.time/60)} min ${Math.floor(state.time%60)} s · ${state.collected.length} caixas exploradas · ${Math.floor(state.steps)} m percorridos`;
+ if(state.won)save(true);$('play-again').focus();
 }
-
-new AtlasGame();
+function updateUI(){
+ const p=state.player;$('health-text').textContent=Math.ceil(p.health);$('stamina-text').textContent=Math.ceil(p.stamina);$('health-bar').style.width=p.health+'%';$('stamina-bar').style.width=p.stamina+'%';
+ for(const [key,value]of Object.entries(state.inventory))$('count-'+key).textContent=value;
+ const tasks=objectives(state);$('objectives').replaceChildren(...tasks.map(t=>{const li=document.createElement('li');li.textContent=t.text;li.className=t.done?'done':'';return li;}));$('mission-progress').textContent=tasks.filter(t=>t.done).length+' / 4';
+ const total=18*60+10+Math.floor(state.time/12);$('clock').textContent=String(Math.floor(total/60)%24).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
+ const b=world.buildings.find(b=>inside(p,b,1));$('location-text').textContent=b?b.name:'Rua dos Plátanos';
+ const o=nearby(state,world);$('interact-prompt').hidden=!o||!playing||paused||ended;if(o)$('interact-label').textContent=o.finish?'Preparar abrigo e concluir':o.generator?(state.generator?'Gerador ligado':'Reparar · 1 combustível + 2 peças'):'Recolher recursos';
+ $('action-touch').style.opacity=o?'1':'.5';renderer.drawMap(state,expandedMap);
+}
+function frame(now){
+ const dt=Math.min(.05,(now-last)/1000||.016);last=now;
+ if(playing&&!paused&&!ended){
+  input.x=(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0)+joy.x;
+  input.y=(keys.has('s')||keys.has('arrowdown')?1:0)-(keys.has('w')||keys.has('arrowup')?1:0)+joy.y;
+  input.run=keys.has('shift')||touchRun;update(state,world,input,dt);saveTick+=dt;
+  if(saveTick>15){save(true);saveTick=0;}if(state.dead||state.won)end();
+ }
+ renderer.draw(state,dt,playing);uiTick+=dt;if(uiTick>.15){updateUI();uiTick=0;}requestAnimationFrame(frame);
+}
+function bind(){
+ document.querySelectorAll('[data-character]').forEach(b=>b.addEventListener('click',()=>{selected=b.dataset.character;state.player.character=selected;document.querySelectorAll('[data-character]').forEach(el=>{const active=el===b;el.classList.toggle('selected',active);el.setAttribute('aria-pressed',String(active));});}));
+ $('start').onclick=()=>start();$('continue').onclick=()=>start(true);$('pause-btn').onclick=()=>pause(!paused);$('resume').onclick=()=>pause(false);$('save').onclick=()=>save();
+ $('quit').onclick=()=>{save(true);home();};$('restart').onclick=()=>{if(restartArmed){start();}else{restartArmed=true;$('restart').textContent='Confirmar nova expedição';}};
+ $('play-again').onclick=()=>start();$('end-home').onclick=home;$('action-touch').onclick=action;$('lantern').onclick=toggleLantern;$('map-toggle').onclick=toggleMap;
+ $('zoom-in').onclick=()=>renderer.zoom=clamp(renderer.zoom+.15,.65,1.75);$('zoom-out').onclick=()=>renderer.zoom=clamp(renderer.zoom-.15,.65,1.75);
+ $('rain').onclick=()=>{renderer.rain=!renderer.rain;$('rain').setAttribute('aria-pressed',String(renderer.rain));$('rain').textContent='Chuva ambiente: '+(renderer.rain?'ligada':'desligada');};
+ $('sound').onclick=()=>{
+  try{if(!audio){const Audio=window.AudioContext||window.webkitAudioContext;const ctx=new Audio(),gain=ctx.createGain(),osc=ctx.createOscillator();osc.type='sine';osc.frequency.value=65;gain.gain.value=.018;osc.connect(gain);gain.connect(ctx.destination);osc.start();audio={ctx};}audioEnabled=!audioEnabled;$('sound').setAttribute('aria-pressed',String(audioEnabled));$('sound').textContent='Som ambiente: '+(audioEnabled?'ligado':'desligado');soundState();}catch{toast('O áudio não está disponível neste navegador.');}
+ };
+ $('credits-link').onclick=e=>{e.preventDefault();$('credits').hidden=false;$('close-credits').focus();};$('close-credits').onclick=()=>{$('credits').hidden=true;$('credits-link').focus();};
+ document.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>consume(b.dataset.item));
+ addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();if(!playing)return;
+  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();
+  if(k==='escape'&&!e.repeat){pause(!paused);return;}if(paused||ended)return;keys.add(k);if(e.repeat)return;
+  if(k==='e')action();if(k==='f')toggleLantern();if(k==='m')toggleMap();if(['1','2','3'].includes(k))consume(['food','water','medkit'][Number(k)-1]);
+ });
+ addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));addEventListener('blur',()=>{resetInput();if(playing&&!ended)pause(true);});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden){resetInput();save(true);if(playing&&!ended)pause(true);}});
+ addEventListener('pagehide',()=>save(true));addEventListener('resize',()=>renderer.resize());
+ const stick=$('joystick');function stickMove(e){if(e.pointerId!==joystickPointer)return;const r=stick.getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2;const length=Math.hypot(dx,dy),m=Math.min(length,38);joy.x=length>5?dx/length*m/38:0;joy.y=length>5?dy/length*m/38:0;$('stick').style.transform=`translate(${joy.x*32}px,${joy.y*32}px)`;}
+ stick.addEventListener('pointerdown',e=>{if(!playing||paused)return;joystickPointer=e.pointerId;stick.setPointerCapture(e.pointerId);stickMove(e);});stick.addEventListener('pointermove',stickMove);
+ for(const event of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(event,e=>{if(joystickPointer===e.pointerId){joystickPointer=null;joy.x=joy.y=0;$('stick').style.transform='translate(0,0)';}});
+ $('run-touch').addEventListener('pointerdown',e=>{e.preventDefault();touchRun=true;$('run-touch').setPointerCapture(e.pointerId);$('run-touch').classList.add('pressed');});for(const event of ['pointerup','pointercancel','lostpointercapture'])$('run-touch').addEventListener(event,()=>{touchRun=false;$('run-touch').classList.remove('pressed');});
+}
+async function load(){
+ try{
+  const response=await fetch('assets/atlas.json');if(!response.ok)throw new Error('atlas');const atlas=await response.json(),assets={};let loaded=0;
+  await Promise.all(Object.keys(atlas).map(name=>new Promise((resolve,reject)=>{const img=new Image(),timeout=setTimeout(()=>reject(new Error(name)),30000);img.onload=()=>{clearTimeout(timeout);assets[name]=img;$('load-progress').value=++loaded;resolve();};img.onerror=()=>{clearTimeout(timeout);reject(new Error(name));};img.src='assets/'+name+'.png';})));
+  renderer=new Renderer($('world'),$('minimap'),world,assets,atlas);renderer.camera={x:-168,y:636};bind();$('start').disabled=false;$('loading').hidden=true;home();requestAnimationFrame(frame);
+ }catch(error){$('load-text').textContent='Não foi possível carregar os assets. Verifica a ligação e recarrega a página.';const button=document.createElement('button');button.textContent='Tentar novamente';button.className='secondary';button.style.width='220px';button.onclick=()=>location.reload();$('loading').append(button);console.error('Asset loading failed',error);}
+}
+load();

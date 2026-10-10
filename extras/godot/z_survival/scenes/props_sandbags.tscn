@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://z_survival/sprites/props_sandbags.tres" id="1"]
+
+[node name="props_sandbags" type="Sprite2D"]
+texture = ExtResource("1")
+offset = Vector2(0, -94.0)
+scale = Vector2(0.21818181818181817, 0.21818181818181817)

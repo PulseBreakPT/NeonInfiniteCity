@@ -1,92 +1,20 @@
 <!doctype html>
-<html lang="pt-PT">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="theme-color" content="#f8fbff">
-  <meta name="description" content="ATLAS.IO — conquista território nas ruas reais do planeta. Jogo mundial de browser com Leaflet e OpenStreetMap.">
-  <title>ATLAS.IO 3 · Conquista o mundo</title>
-  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
-  <link rel="stylesheet" href="./style.css">
-  <link rel="stylesheet" href="./light.css?v=3.0">
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-  <script type="module" src="./src/game.js?v=3.0"></script>
-</head>
+<html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#233a31"><meta name="description" content="Explora Vale Sereno. Recolhe recursos, repara o gerador e prepara o teu último abrigo. Jogo isométrico original para PC e telemóvel."><title>Último Abrigo · Vale Sereno</title><link rel="icon" href="assets/icon.svg"><link rel="stylesheet" href="style.css"></head>
 <body>
-<div id="app" class="app is-menu">
-  <div id="map" class="world-map" aria-label="Mapa mundial OpenStreetMap"></div>
-  <canvas id="world-layer" class="world-layer" aria-label="Tabuleiro da conquista territorial"></canvas>
-  <div class="map-vignette" aria-hidden="true"></div>
-  <div class="ambient-grain" aria-hidden="true"></div>
-
-  <header class="topbar">
-    <div class="brand"><span class="brand-glyph">◈</span><div class="brand-copy"><strong>ATLAS<span>.IO</span></strong><small>DOMINA O PLANETA</small></div></div>
-    <div class="location-badge"><span class="live-dot"></span><span id="zone-name">LISBOA</span><small id="coordinates">38.7223° N · 9.1393° O</small></div>
-    <div class="top-controls"><button id="sound-btn" class="icon-btn" title="Áudio" aria-label="Áudio ligado ou desligado">♫</button><button id="pause-btn" class="icon-btn" title="Pausar (P)" aria-label="Pausa">Ⅱ</button></div>
-  </header>
-
-  <aside class="scoreboard panel-glass" aria-label="Tabela de classificação">
-    <div class="panel-title"><span>◉</span> CLASSIFICAÇÃO <small>LOCAL</small></div>
-    <div id="leaderboard" class="leaderboard"></div>
-    <div class="panel-foot"><span>🌐 </span> Jogadores simulados nesta região</div>
-  </aside>
-
-  <section class="score-hud panel-glass" aria-label="Estatísticas da partida">
-    <div class="score-pill"><span class="score-symbol">◆</span><div><small>TERRITÓRIO</small><strong id="score">0</strong></div></div>
-    <span class="score-rule"></span>
-    <div class="score-pill"><span class="score-symbol pink">✦</span><div><small>ÁREA</small><strong id="surface">0 m²</strong></div></div>
-    <span class="score-rule"></span>
-    <div class="score-pill compact mass-counter"><span class="score-symbol gold">⬡</span><div><small>MASSA</small><strong id="mass-value">24</strong></div></div>
-    <span class="score-rule record-rule"></span>
-    <div class="score-pill compact record-counter"><span class="score-symbol gold">★</span><div><small>RECORD</small><strong id="record">0</strong></div></div>
-  </section>
-
-  <div class="status-ribbon"><span class="ribbon-icon">⚡</span><span id="status-text">Move-te para começar a conquistar</span></div>
-  <div id="event-feed" class="event-feed" aria-live="polite"></div>
-
-  <div class="game-controls">
-    <div class="joystick-zone"><div id="joystick" class="joystick" role="application" aria-label="Direção do jogador"><span class="joystick-cross"></span><span id="stick" class="joystick-knob"></span></div><div class="joystick-hint">DIREÇÃO</div></div>
-    <div class="action-stack"><button id="world-btn" class="utility-btn" aria-label="Abrir mapa mundial"><span>◎</span>MUNDO</button><button id="boost-btn" class="boost-btn" aria-label="Usar velocidade extra"><span class="boost-icon">⚡</span><span>BOOST</span><span class="boost-track"><i id="boost-fill"></i></span></button></div>
-  </div>
-  <div class="keyboard-tips">WASD / SETAS <span>•</span> ESPAÇO: BOOST <span>•</span> M: MUNDO</div>
-
-  <div id="menu-overlay" class="overlay" aria-hidden="false">
-    <div class="menu-card panel-glass">
-      <div class="eyebrow"><span class="live-dot"></span> O TEU PLANETA. AS TUAS REGRAS.</div>
-      <h1>ATLAS<span>.IO</span></h1>
-      <p class="hero-copy">A tua arena é o <strong>mundo real.</strong> Conquista zonas de forma livre, recolhe energia para crescer e corta os trilhos dos rivais antes que eles cortem o teu.</p>
-      <div class="menu-features"><span>◈ CAPTURA</span><span>⚡ CRESCE</span><span>🌐 MUNDO INTEIRO</span></div>
-      <div class="spawn-topline"><div><span class="spawn-step">01 / 02 · CRIAR PARTIDA</span><h2>Onde queres nascer?</h2><p>Seleciona uma cidade ou marca qualquer ponto do planeta.</p></div><span class="spawn-globe" aria-hidden="true">🌍</span></div>
-      <label class="spawn-search-wrap" for="city-search"><span aria-hidden="true">⌕</span><input id="city-search" type="search" placeholder="Pesquisar cidade ou país…" autocomplete="off" aria-label="Pesquisar cidade ou país"></label>
-      <div id="city-grid" class="city-grid" aria-label="Escolher cidade de nascimento"></div>
-      <div class="spawn-extras"><button type="button" id="spawn-map-btn" class="spawn-secondary">⌖ Escolher no mapa</button><button type="button" id="spawn-random-btn" class="spawn-secondary">🎲 Aleatório</button></div>
-      <div class="spawn-choice"><span class="spawn-choice-kicker">LOCAL DE NASCIMENTO SELECIONADO</span><strong id="spawn-name">🇵🇹 Lisboa</strong><small id="spawn-country">Portugal · 38.722°, -9.139°</small></div>
-      <button id="enter-btn" class="primary-btn"><span>▶</span> NASCER E CONQUISTAR <b>↗</b></button>
-      <div class="menu-foot"><span>SOLO + BOTS</span><span>LEAFLET + OPENSTREETMAP</span></div>
-    </div>
-  </div>
-
-  <div id="world-overlay" class="world-overlay" hidden>
-    <section class="world-panel panel-glass">
-      <div class="world-panel-head"><div><small>PORTAL DE VIAGEM</small><h2>O mundo é teu.</h2></div><button id="world-close" class="icon-btn" aria-label="Fechar mapa mundial">✕</button></div>
-      <p>Escolhe uma cidade, escreve coordenadas ou ativa a seleção no mapa para jogar em qualquer ponto do planeta.</p>
-      <div id="world-city-grid" class="world-city-grid"></div>
-      <div class="coord-fields"><label>LATITUDE<input id="lat-input" type="number" min="-85" max="85" step="any" value="38.7223" inputmode="decimal"></label><label>LONGITUDE<input id="lng-input" type="number" min="-180" max="180" step="any" value="-9.1393" inputmode="decimal"></label></div>
-      <div class="world-commands"><button id="pick-btn" class="secondary-btn">⌖ MARCAR NO MAPA</button><button id="geo-btn" class="secondary-btn">⌾ MINHA POSIÇÃO</button></div>
-      <div class="world-map-zoom"><button id="zoom-out" aria-label="Afastar mapa">−</button><span>MAPA</span><button id="zoom-in" aria-label="Aproximar mapa">＋</button></div>
-      <button id="travel-btn" class="primary-btn">▶ JOGAR NESTA ZONA <b>↗</b></button>
-      <small class="world-footnote">Viajar inicia uma nova disputa local. O recorde mundial fica guardado no dispositivo.</small>
-    </section>
-  </div>
-  <div id="pick-banner" class="pick-banner" hidden><span>⌖ TOCA NO MAPA PARA ESCOLHER A NOVA ZONA</span><button id="cancel-pick">CANCELAR</button></div>
-
-  <div id="pause-overlay" class="center-overlay" hidden><section class="pause-card panel-glass"><div class="pause-mark">Ⅱ</div><small>JOGO SUSPENSO</small><h2>Faz a tua jogada.</h2><button id="resume-btn" class="primary-btn">▶ CONTINUAR</button><button id="pause-world-btn" class="secondary-btn">◎ MUDAR DE REGIÃO</button><button id="pause-menu-btn" class="secondary-btn">⌂ MENU PRINCIPAL</button></section></div>
-  <div id="death-overlay" class="center-overlay" hidden><section class="pause-card death-card panel-glass"><div class="death-mark">✕</div><small>TRILHO INTERROMPIDO</small><h2>Foste eliminado.</h2><p id="death-reason">Os rivais cortaram o teu percurso.</p><div class="death-stats"><span>PONTUAÇÃO <b id="death-score">0</b></span><span>RECORD <b id="death-record">0</b></span></div><button id="again-btn" class="primary-btn">↻ VOLTAR AO MAPA</button><button id="death-world-btn" class="secondary-btn">🌍 ESCOLHER OUTRA CIDADE</button><button id="death-menu-btn" class="secondary-btn">⌂ MENU PRINCIPAL</button></section></div>
-
-  <div id="help-overlay" class="center-overlay" hidden><section class="help-card panel-glass"><button id="help-close" class="help-close" aria-label="Fechar ajuda">✕</button><small>COMO JOGAR</small><h2>Domina o mapa.</h2><div class="help-rule"><span>01</span><p>Sai da tua zona colorida e desenha um percurso sobre o mapa real.</p></div><div class="help-rule"><span>02</span><p>Volta ao território para fechar o laço. A conquista segue exatamente a linha que desenhaste, sem quadrados.</p></div><div class="help-rule"><span>03</span><p>Se um rival cortar o teu trilho, perdes. Recolhe energia para crescer; jogadores maiores movem-se um pouco mais devagar.</p></div><button id="help-play" class="primary-btn">PERCEBI · VAMOS JOGAR</button></section></div>
-  <button id="help-btn" class="help-button" aria-label="Regras do jogo">?</button>
-  <div id="tile-warning" class="tile-warning" hidden>O mapa requer ligação à internet. O jogo pode continuar com o fundo básico.</div>
-</div>
-</body>
-</html>
+<canvas id="world" aria-label="Bairro isométrico de Vale Sereno. Controla a personagem com WASD, setas ou joystick."></canvas>
+<div id="loading" class="loading"><span class="insignia">A</span><h1>ÚLTIMO ABRIGO</h1><p id="load-text">A preparar Vale Sereno…</p><progress id="load-progress" max="7" value="0"></progress></div>
+<header class="topbar" hidden id="topbar"><div class="brand"><span class="insignia small">A</span><div>ÚLTIMO ABRIGO<small>VALE SERENO · PORTUGAL</small></div></div><div class="status"><div class="meter"><span>SAÚDE <b id="health-text">100</b></span><i><em id="health-bar"></em></i></div><div class="meter stamina"><span>FÔLEGO <b id="stamina-text">100</b></span><i><em id="stamina-bar"></em></i></div></div><button id="pause-btn" class="icon-button" aria-label="Pausar jogo">Ⅱ</button></header>
+<section id="welcome" class="welcome" hidden aria-labelledby="game-title"><div class="eyebrow"><span class="live-dot"></span> SOBREVIVÊNCIA ISOMÉTRICA</div><p class="chapter">PRIMEIRO DIA / VALE SERENO</p><h1 id="game-title">ÚLTIMO<br><span>ABRIGO.</span></h1><p class="intro">A vila ficou em silêncio.<br>Ainda há uma luz que podes acender.</p><div class="brief">Explora as casas. Encontra mantimentos.<br>Repara o gerador e regressa em segurança.</div><fieldset class="character-choice"><legend>ESCOLHE QUEM SOBREVIVE</legend><button class="character selected" data-character="male" aria-pressed="true"><span class="portrait male"></span><span>Tomás<small>EXPLORADOR</small></span><i>✓</i></button><button class="character" data-character="female" aria-pressed="false"><span class="portrait female"></span><span>Inês<small>EXPLORADORA</small></span><i>✓</i></button></fieldset><button id="start" class="primary" disabled>Entrar em Vale Sereno <span>↗</span></button><button id="continue" class="secondary" hidden>Continuar expedição guardada →</button><p class="local-note">Um jogador · Progresso guardado neste dispositivo</p><a href="#credits" id="credits-link">Sobre o jogo e os assets</a></section>
+<aside class="map-widget" id="map-widget" hidden><button id="map-toggle" aria-label="Ampliar mapa"><span class="map-title">VALE SERENO <span>↗</span></span><canvas id="minimap" width="168" height="168" aria-label="Mapa: branco é a tua posição; dourado é o próximo destino"></canvas><span class="map-footer"><span id="clock">18:10</span><span>16° · OUTONO</span></span></button></aside>
+<aside id="mission" class="mission" hidden><div class="eyebrow">O PRIMEIRO ABRIGO <span id="mission-progress">0 / 4</span></div><h2>Acende uma luz.</h2><ol id="objectives"></ol></aside>
+<div id="location" class="location" hidden><span class="live-dot"></span><span id="location-text">Rua dos Plátanos</span></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="interact-prompt" class="interact-prompt" hidden><kbd>E</kbd><span id="interact-label">Recolher recursos</span></div>
+<nav id="quickbar" class="quickbar" hidden aria-label="Inventário rápido"><button data-item="food" title="Comer conservas (1)"><kbd>1</kbd><span class="item-icon">▤</span><span>Conservas</span><b id="count-food">0</b></button><button data-item="water" title="Beber água (2)"><kbd>2</kbd><span class="item-icon">♧</span><span>Água</span><b id="count-water">0</b></button><button data-item="medkit" title="Usar kit médico (3)"><kbd>3</kbd><span class="item-icon">✚</span><span>Kit médico</span><b id="count-medkit">1</b></button><button id="lantern" title="Lanterna (F)" aria-pressed="true"><kbd>F</kbd><span class="item-icon">◉</span><span>Lanterna</span><b>●</b></button><div class="materials"><span>⛽ <b id="count-fuel">0</b></span><span>⚙ <b id="count-parts">0</b></span></div></nav>
+<div id="desktop-help" class="desktop-help" hidden><span><kbd>W A S D</kbd> mover</span><span><kbd>SHIFT</kbd> correr</span><span><kbd>E</kbd> interagir</span><span><kbd>M</kbd> mapa</span></div>
+<div id="zoom" class="zoom" hidden><button id="zoom-in" aria-label="Aproximar">+</button><button id="zoom-out" aria-label="Afastar">−</button></div>
+<div id="touch" hidden><div id="joystick" role="group" aria-label="Joystick de movimento"><span id="stick"></span></div><div class="touch-actions"><button id="run-touch" aria-label="Manter premido para correr">CORRER</button><button id="action-touch" aria-label="Interagir">AGIR</button></div></div>
+<aside id="pause-panel" class="panel" hidden aria-labelledby="pause-title"><div class="eyebrow">EXPEDIÇÃO EM PAUSA</div><h2 id="pause-title">Respira.</h2><p>O mundo espera por ti.</p><button id="resume" class="primary">Continuar <span>→</span></button><button id="save" class="secondary">Guardar progresso</button><button id="rain" class="secondary" aria-pressed="false">Chuva ambiente: desligada</button><button id="sound" class="secondary" aria-pressed="false">Som ambiente: desligado</button><button id="restart" class="secondary">Recomeçar expedição</button><button id="quit" class="secondary">Guardar e voltar ao início</button><p class="hint">Evita os errantes. Correr atrai-os de mais longe. O abrigo é uma zona segura.</p><p class="hint">WASD / setas: mover · Shift: correr<br>E: interagir · 1–3: usar recursos<br>F: lanterna · M: mapa · Esc: pausa</p></aside>
+<section id="end-panel" class="panel end-panel" hidden><div class="eyebrow" id="end-label">PRIMEIRO DIA CONCLUÍDO</div><h2 id="end-title">Uma luz<br>na escuridão.</h2><p id="end-message"></p><div id="end-stats"></div><button id="play-again" class="primary">Nova expedição <span>↗</span></button><button id="end-home" class="secondary">Voltar ao início</button></section>
+<section id="credits" class="panel credits" hidden><div class="eyebrow">UM MUNDO ORIGINAL</div><h2>Último Abrigo</h2><p>Um jogo de exploração e sobrevivência em Vale Sereno, uma vila fictícia portuguesa.</p><p>Arte isométrica original gerada para este projeto: 16 terrenos, 16 objetos, dois sobreviventes e 64 frames de movimento. Os errantes reutilizam sprites com um tratamento visual diferente.</p><p>As animações têm quatro frames por direção e podem apresentar pequenas variações. Os edifícios e a vegetação são composições do motor.</p><p>As seis imagens de referência estão no repositório como arte conceptual. Não são capturas deste jogo.</p><a href="https://github.com/PulseBreakPT/NeonInfiniteCity" target="_blank" rel="noopener">Ver código e biblioteca de assets ↗</a><button id="close-credits" class="primary">Voltar</button></section>
+<script type="module" src="src/game.js"></script></body></html>

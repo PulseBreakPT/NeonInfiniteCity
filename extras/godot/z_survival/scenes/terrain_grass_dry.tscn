@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://z_survival/sprites/terrain_grass_dry.tres" id="1"]
+
+[node name="terrain_grass_dry" type="Sprite2D"]
+texture = ExtResource("1")
+offset = Vector2(0, 0.0)
+scale = Vector2(0.4129032258064516, 0.32653061224489793)

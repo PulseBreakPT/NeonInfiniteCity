@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://z_survival/sprites/props_rust_barrel.tres" id="1"]
+
+[node name="props_rust_barrel" type="Sprite2D"]
+texture = ExtResource("1")
+offset = Vector2(0, -146.5)
+scale = Vector2(0.22598870056497175, 0.22598870056497175)

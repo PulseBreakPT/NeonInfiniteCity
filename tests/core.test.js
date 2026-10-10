@@ -1,100 +1,20 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import {project,unproject,wrapDx,EARTH,CITIES,pointInPoly,Territory,updateTrail,trailHit,polygonArea,randomHash,circlePolygon} from '../src/core.js';
-test('worldwide projection roundtrips and wraps longitude',()=>{
- for(const c of CITIES){const p=project(c.lat,c.lng),r=unproject(p.x,p.y);assert.ok(Math.abs(r.lat-c.lat)<1e-7);assert.ok(Math.abs(r.lng-c.lng)<1e-7)}
- assert.ok(Math.abs(wrapDx(EARTH-25)+25)<1e-5);
+import test from'node:test';
+import assert from'node:assert/strict';
+import{createWorld,createState,project,unproject,blocked,move,update,interact,useItem,restore,serialize,objectives,inside}from'../src/core.js';
+test('projection is reversible across the world',()=>{for(const [x,y]of[[0,0],[11.5,15],[41,41],[4.3,33.1]]){const p=project(x,y),r=unproject(p.x,p.y);assert.ok(Math.abs(r.x-x)<1e-10&&Math.abs(r.y-y)<1e-10);}});
+test('world is deterministic and includes all sixteen props',()=>{const a=createWorld(),b=createWorld();assert.deepEqual(a,b);assert.equal(new Set(a.props.map(p=>p.type)).size,16);assert.equal(a.buildings.length,4);assert.ok(!blocked(a,11.5,15));});
+test('walls are solid, front doors are open and fast movement cannot tunnel',()=>{const w=createWorld();for(const b of w.buildings){assert.equal(blocked(w,b.x+.1,b.y+3),true);assert.equal(blocked(w,b.door,b.y+b.h),false);}const p={x:10,y:6};move(w,p,0,7);assert.ok(p.y<7);});
+test('movement follows screen controls and stays within bounds',()=>{const w=createWorld(),s=createState();const before=project(s.player.x,s.player.y);update(s,w,{x:1,y:0,run:false},.05);const after=project(s.player.x,s.player.y);assert.ok(after.x>before.x);assert.ok(Math.abs(after.y-before.y)<1e-6);const p={x:.7,y:.7};move(w,p,-5,-5);assert.ok(p.x>=.6&&p.y>=.6);});
+test('running consumes stamina and resting recovers it',()=>{const w=createWorld(),s=createState();update(s,w,{x:0,y:1,run:true},.05);assert.ok(s.player.stamina<100);const st=s.player.stamina;update(s,w,{x:0,y:0,run:false},.05);assert.ok(s.player.stamina>st);});
+test('loot can only be collected once',()=>{const w=createWorld(),s=createState(),o=w.props.find(p=>p.loot);s.player.x=o.x+.8;s.player.y=o.y;assert.ok(interact(s,w).ok);const inventory={...s.inventory};assert.equal(interact(s,w).ok,false);assert.deepEqual(s.inventory,inventory);});
+test('generator requires resources and consumes exactly its cost',()=>{const w=createWorld(),s=createState(),o=w.props.find(p=>p.generator);s.player.x=o.x-.8;s.player.y=o.y;assert.equal(interact(s,w).ok,false);s.inventory.fuel=2;s.inventory.parts=3;assert.ok(interact(s,w).ok);assert.equal(s.inventory.fuel,1);assert.equal(s.inventory.parts,1);assert.ok(s.generator);assert.equal(interact(s,w).ok,false);assert.equal(s.inventory.fuel,1);});
+test('consumables clamp health, cannot underflow and do not erase mission discoveries',()=>{const s=createState();s.player.health=90;assert.ok(useItem(s,'medkit'));assert.equal(s.player.health,100);assert.equal(s.inventory.medkit,0);assert.equal(useItem(s,'medkit'),false);s.inventory.food=1;s.found.food=1;assert.ok(useItem(s,'food'));assert.equal(s.found.food,1);assert.equal(useItem(s,'parts'),false);});
+test('hostile contact damages with cooldown; shelter protects player',()=>{const w=createWorld(),s=createState();w.enemies=[{...w.enemies[0],x:s.player.x,y:s.player.y,home:{x:s.player.x,y:s.player.y}}];update(s,w,{x:0,y:0},.05);assert.equal(s.player.health,88);update(s,w,{x:0,y:0},.05);assert.equal(s.player.health,88);s.player.x=11.5;s.player.y=11;w.enemies[0].x=11.5;w.enemies[0].y=11;s.player.invulnerable=0;update(s,w,{x:0,y:0},.05);assert.equal(s.player.health,88);});
+test('save round-trip validates numbers, known loot, resource bounds and collisions',()=>{const w=createWorld(),s=createState('female');assert.equal(restore(serialize(s),w).player.character,'female');for(const raw of ['{','{}','null'])assert.equal(restore(raw,w),null);s.player.x=500;assert.equal(restore(serialize(s),w),null);s.player.x=11.5;s.inventory.parts=-1;assert.equal(restore(serialize(s),w),null);s.inventory.parts=0;s.collected=['nonexistent'];assert.equal(restore(serialize(s),w),null);});
+test('all loot and generator are reachable from spawn with physical collision checks',()=>{
+ const w=createWorld(),start=[23,30],queue=[start],seen=new Set([start.join(',')]);let i=0;
+ while(i<queue.length){const [x,y]=queue[i++];for(const [dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const a=x+dx,b=y+dy,k=a+','+b;if(!seen.has(k)&&a>=2&&b>=2&&a<=82&&b<=82&&!blocked(w,a/2,b/2)){seen.add(k);queue.push([a,b]);}}}
+ for(const p of w.props.filter(o=>o.loot||o.generator)){assert.ok(queue.some(([x,y])=>Math.hypot(x/2-p.x,y/2-p.y)<1.5),'unreachable '+p.id);}
+ for(const b of w.buildings)assert.ok(queue.some(([x,y])=>inside({x:x/2,y:y/2},b)),'building '+b.id);
 });
-test('free form concave polygon accuracy',()=>{
- const poly=[{x:0,y:0},{x:40,y:0},{x:40,y:20},{x:20,y:20},{x:20,y:40},{x:0,y:40}];
- assert.equal(pointInPoly({x:10,y:10},poly),true);assert.equal(pointInPoly({x:30,y:30},poly),false);assert.equal(polygonArea(poly),1200);
-});
-test('starter zone has 48 curved boundary points, no square cells',()=>{
- const t=new Territory('player',0,0,31);
- assert.equal(t.ops[0].points.length,48);assert.equal(t.contains(30,0),true);assert.equal(t.contains(30,30),false);
- assert.equal(circlePolygon(0,0,10).length,48);
-});
-test('captured triangle preserves its exact diagonal geometry',()=>{
- const t=new Territory('player',0,0,20);
- const r=t.capture([{x:0,y:0},{x:120,y:10},{x:60,y:100}]);
- assert.ok(r.area>3000);assert.equal(t.contains(57,40),true);assert.equal(t.contains(112,90),false);
- assert.equal(t.ops.at(-1).points.length,3);
-});
-test('overlap is not rewarded twice',()=>{
- const t=new Territory('player',0,0,20),ring=[{x:0,y:0},{x:70,y:0},{x:70,y:70},{x:0,y:70}];
- assert.ok(t.capture(ring));assert.equal(t.capture(ring),null);
-});
-test('territory capture can be stolen and reclaimed',()=>{
- const t=new Territory('player',0,0,30),poly=[{x:-20,y:-20},{x:20,y:-20},{x:20,y:20},{x:-20,y:20}];
- const taken=t.erase(poly);assert.ok(taken>0);assert.equal(t.contains(0,0),false);
- assert.ok(t.capture(poly));assert.equal(t.contains(0,0),true);
-});
-test('trail closes after returning to owned polygon',()=>{
- const actor={x:4,y:4,lastOwned:{x:4,y:4},territory:new Territory('me',4,4,20),trail:[]};
- actor.x=37;actor.y=3;updateTrail(actor);actor.x=70;actor.y=40;updateTrail(actor);actor.x=4;actor.y=4;
- const won=updateTrail(actor);assert.ok(won?.captured?.area>0);assert.equal(actor.trail.length,0);
-});
-test('segment collisions detect vulnerable player trail',()=>{
- const path=[{x:0,y:0},{x:10,y:0},{x:10,y:20}];
- assert.equal(trailHit({x:9,y:13},path,3),true);assert.equal(trailHit({x:30,y:13},path,3),false);
-});
-test('huge claims rejected',()=>{
- const t=new Territory('me',0,0,20),before=t.area;
- assert.equal(t.capture([{x:0,y:0},{x:100000,y:0},{x:100000,y:10000},{x:0,y:10000}]),null);
- assert.equal(t.area,before);
-});
-test('spawn cities span many countries',()=>{
- assert.ok(CITIES.length>=20);assert.ok(new Set(CITIES.map(c=>c.country)).size>=14);
- assert.notEqual(randomHash(1,2),randomHash(3,4));
-});
-
-test('fast moving players collide with a crossed trail between frames',async()=>{
-  const {trailHitSweep,segmentDistance}=await import('../src/core.js');
-  const trail=[{x:0,y:-25},{x:0,y:25}];
-  assert.equal(trailHitSweep({x:-45,y:0},{x:45,y:0},trail,3),true);
-  assert.equal(trailHitSweep({x:-45,y:40},{x:45,y:40},trail,3),false);
-  assert.equal(segmentDistance({x:0,y:0},{x:10,y:10},{x:0,y:10},{x:10,y:0}),0);
-});
-test('capturing a large polygon remains bounded and stable',()=>{
-  const t=new Territory('me',0,0,32);
-  const start=performance.now();
-  for(let i=0;i<12;i++) {
-    const x=50+i*30;
-    assert.ok(t.capture([{x,y:-30},{x:x+26,y:-30},{x:x+26,y:30},{x,y:30}]));
-  }
-  assert.ok(performance.now()-start<1200,'normal capture computations must be bounded');
-  assert.ok(t.area>10000);
-});
-test('overlapping claims keep continuous shapes rather than rectangular cells',()=>{
-  const t=new Territory('you',0,0,25);
-  const a=t.capture([{x:10,y:10},{x:60,y:22},{x:25,y:75}]);
-  assert.ok(a&&a.points.length===3);
-  assert.ok(t.contains(32,34));
-  assert.ok(!t.contains(55,60));
-});
-test('polygon area is stable near world Mercator coordinate limits',()=>{
- const {x,y}=project(-23.5,-46.6);
- assert.equal(polygonArea([{x,y},{x:x+60,y},{x:x+60,y:y+40},{x,y:y+40}]),2400);
-});
-test('indexed vector territories allow 200 independent conquests without rectangular ownership',()=>{
-  const t=new Territory('you',0,0,12);
-  for(let i=0;i<200;i++){
-    const x=i*70+25;
-    const capture=t.capture([{x,y:-3},{x:x+15,y:9},{x:x+26,y:-3}]);
-    assert.ok(capture?.area>2,`capture ${i} must succeed`);
-  }
-  assert.ok(t.ops.length>140);
-  assert.equal(t.contains(197*70+42,0),true);
-  assert.equal(t.contains(197*70+42,60),false);
-});
-test('spatial territory index honours latest cuts and reclaim at negative coordinates',()=>{
-  const t=new Territory('you',-5000000,3000000,30);
-  const x=-5000000,y=3000000;
-  const clip=[{x:x-12,y:y-12},{x:x+12,y:y-12},{x:x+12,y:y+12},{x:x-12,y:y+12}];
-  assert.equal(t.contains(x,y),true);
-  assert.ok(t.erase(clip)>0);
-  assert.equal(t.contains(x,y),false);
-  assert.ok(t.capture(clip));
-  assert.equal(t.contains(x,y),true);
-  t.clear();assert.equal(t.contains(x,y),false);
-});
+test('full objective sequence reaches the win state even if supplies are consumed',()=>{const w=createWorld(),s=createState();for(const o of w.props.filter(p=>p.loot)){s.player.x=o.x+.8;s.player.y=o.y;interact(s,w);}useItem(s,'food');useItem(s,'water');const g=w.props.find(p=>p.generator);s.player.x=g.x-.8;s.player.y=g.y;assert.ok(interact(s,w).ok);s.player.x=11.5;s.player.y=11.7;assert.ok(interact(s,w).ok);assert.equal(s.won,true);assert.ok(objectives(s).every(o=>o.done));});

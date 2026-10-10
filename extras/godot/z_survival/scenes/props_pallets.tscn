@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://z_survival/sprites/props_pallets.tres" id="1"]
+
+[node name="props_pallets" type="Sprite2D"]
+texture = ExtResource("1")
+offset = Vector2(0, -116.5)
+scale = Vector2(0.22742474916387959, 0.22742474916387959)
