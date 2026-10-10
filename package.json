@@ -1,12 +1,13 @@
 {
-  "name": "afterfall-survival",
-  "version": "3.0.0",
+  "name": "vida-nova-life-simulator",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Original isometric zombie-survival open world for GitHub Pages",
+  "description": "Original browser-based Portuguese life simulator with yearly choices and persistent progress",
   "scripts": {
-    "start": "python3 -m http.server 8080",
-    "check": "node --check src/survival/world.js && node --check src/survival/render.js && node --check src/survival/game.js && node --check src/survival/pixelDetail.js",
+    "dev": "python3 -m http.server 8080",
+    "check": "node --check src/engine.js && node --check src/app.js",
     "test": "node --test tests/*.test.js"
-  }
+  },
+  "engines": {"node": ">=20"}
 }

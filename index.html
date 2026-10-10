@@ -1,102 +1,66 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-PT">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
-  <meta name="theme-color" content="#0a1115" />
-  <meta name="description" content="AFTERFALL — sobrevivência isométrica num Portugal pós-apocalíptico. Explora aldeias, casas, campos, prisões e bunkers, recolhe recursos e resiste aos infectados." />
-  <link rel="icon" href="./public/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="./src/survival/style.css" />
-  <title>AFTERFALL | Sobrevive ao Fim</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#faf7f7">
+  <meta name="description" content="VIDA NOVA: um simulador de vida interativo onde cada ano e cada decisão mudam a tua história. Um jogo original para browser e Android.">
+  <title>VIDA NOVA · A tua história começa aqui</title>
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style-1.css">
+  <link rel="stylesheet" href="./style-2.css">
+  <link rel="stylesheet" href="./style-3.css">
 </head>
 <body>
-  <main id="app" aria-label="Jogo de sobrevivência AFTERFALL">
-    <canvas id="world" aria-label="Exploração isométrica da zona de quarentena"></canvas>
-    <div class="vignette" aria-hidden="true"></div>
-    <div class="grain" aria-hidden="true"></div>
-
+  <main class="app" id="app">
     <header class="topbar">
-      <div class="brand">
-        <div class="brand-icon">A<span>F</span></div>
-        <div class="brand-text"><small>PROJETO · NEON INFINITE // SOBREVIVÊNCIA</small><h1>AFTER<span>FALL</span><sup>01</sup></h1></div>
-      </div>
-      <div class="top-center"><span class="pulse"></span> ZONA DE QUARENTENA <span class="separator"></span> <span id="clock">DIA 1 · 08:10</span></div>
-      <div class="top-actions"><button id="hud-btn" class="icon-btn" aria-label="Mostrar informações de sobrevivência" title="Informações">☷</button><button id="map-btn" class="icon-btn" aria-label="Mapa">▦ <span>MAPA</span></button><button id="inventory-btn" class="icon-btn" aria-label="Inventário">◫ <span>MOCHILA</span></button><button id="flash-btn" class="icon-btn" aria-label="Lanterna" title="Lanterna">✦</button><button id="pause-btn" class="icon-btn square" aria-label="Pausa">Ⅱ</button></div>
+      <div class="topbrand"><span class="brand-mark" aria-hidden="true">✳</span><div><div class="brand-name">vida<span>nova.</span></div><div class="brand-tag">UM UNIVERSO DE ESCOLHAS</div></div></div>
+      <div class="top-right"><span class="version-pill">LIFE SIM 1.0</span><button class="top-icon" id="settings-btn" title="Opções" aria-label="Opções">⚙</button></div>
     </header>
 
-    <aside class="left-hud">
-      <div class="location-panel panel">
-        <div class="eyebrow"><span class="signal"></span> LOCALIZAÇÃO ATUAL</div>
-        <div id="area" class="area">ALDEIA ABANDONADA</div>
-        <div class="small-detail"><span>SETOR <b id="coords">18 / 23</b></span><span class="status-pill">EM EXPLORAÇÃO</span></div>
-        <div class="landscape-rule"></div>
-        <div class="survival-heading"><span>CONDIÇÃO DO SOBREVIVENTE</span><span>VIVO</span></div>
-        <div class="stat"><div><span>SAÚDE</span><b><span id="health-value">100</span>%</b></div><div class="track"><i id="health-fill" style="width:100%;background:#e06f62"></i></div></div>
-        <div class="stat"><div><span>FOME</span><b><span id="hunger-value">92</span>%</b></div><div class="track"><i id="hunger-fill" style="width:92%;background:#e5b66e"></i></div></div>
-        <div class="stat"><div><span>SEDE</span><b><span id="thirst-value">87</span>%</b></div><div class="track"><i id="thirst-fill" style="width:87%;background:#73bac5"></i></div></div>
-        <div class="stat"><div><span>ENERGIA</span><b><span id="stamina-value">100</span>%</b></div><div class="track"><i id="stamina-fill" style="width:100%;background:#99bb83"></i></div></div>
+    <div id="game-screen" class="screen" hidden>
+      <div class="page-shell">
+        <div class="page-main">
+          <section id="profile-card" class="profile-card rose">
+            <div class="profile-sparks" aria-hidden="true"><span>✦</span><span>◦</span><span>✧</span></div>
+            <div class="profile-primary"><div id="profile-avatar" class="avatar">👶</div><div class="profile-details"><div class="overline">A MINHA HISTÓRIA <span id="character-country">· PORTUGAL</span></div><h1 id="character-name">Leonor Silva</h1><div class="profile-meta"><span id="character-age">0 ANOS</span><span class="mid-dot">·</span><span id="character-status">RECÉM-NASCIDO</span></div></div></div>
+            <div class="profile-footer"><span class="life-date">✦ &nbsp; <span id="profile-year">2026</span></span><span id="mood-tag" class="mood-tag">☀ A vida começa agora</span></div>
+          </section>
+          <div class="stats" id="stats"></div>
+          <div class="wealth-strip"><div><span class="wealth-icon">€</span><div><small>SALDO DISPONÍVEL</small><strong id="cash">0 €</strong></div></div><div class="wealth-right"><small>PATRIMÓNIO TOTAL</small><strong id="wealth">0 €</strong></div></div>
+          <section class="content-panel" id="content-panel" aria-live="polite"></section>
+        </div>
+        <aside class="desktop-aside"><div class="aside-title">A TUA JORNADA <span>✦</span></div><div class="aside-art"><span>☀</span><div><strong>O FUTURO</strong><em>está nas tuas mãos.</em></div></div><div id="aside-facts"></div><p class="aside-bottom">Cada decisão conta. Cada ano traz uma nova oportunidade.</p></aside>
       </div>
-      <div class="task-panel panel">
-        <div class="eyebrow"><span class="red-dot"></span> MISSÃO PRINCIPAL</div>
-        <h2>SOBREVIVE AO FIM.</h2>
-        <p>Explora casas e aldeias, saqueia edifícios, foge dos infetados e encontra instalações militares.</p>
-        <div class="quest"><span class="quest-icon">⌖</span> ENCONTRA UM BUNKER <span>↗</span></div>
+      <div class="mobile-actionbar" id="actionbar">
+        <button class="age-btn" id="age-btn"><span class="age-icon">＋</span><span><strong>AVANÇAR 1 ANO</strong><small>Vê o que a vida te reserva</small></span><span class="age-arrow">↗</span></button>
       </div>
-      <div class="tip-box">DICA: entra nos edifícios pelas portas e prime <strong>E</strong> para procurar mantimentos.</div>
-    </aside>
-
-    <aside class="right-hud">
-      <div class="world-state panel">
-        <div class="eyebrow">RELATÓRIO DE SOBREVIVÊNCIA</div>
-        <div class="day-display"><small>DIA</small><span id="survival-days">01</span></div>
-        <div class="report-line"><span>INFETADOS ELIMINADOS</span><b id="kills">0</b></div>
-        <div class="report-line"><span>DISTÂNCIA PERCORRIDA</span><b id="distance">0 m</b></div>
-        <div class="report-line danger"><span>AMEAÇAS PRÓXIMAS</span><b id="zombie-count">0</b></div>
-      </div>
-      <div class="live-indicator"><span></span> MUNDO PROCEDURAL INFINITO</div>
-    </aside>
-
-    <div id="messages" class="messages" role="status" aria-live="polite"></div>
-    <div class="crosshair" aria-hidden="true">⌖</div>
-    <div class="mini-status" aria-live="off"><span id="mini-area">ALDEIA ABANDONADA</span><span class="mini-vitals">♥ <b id="mini-health">100</b>%</span></div>
-    <div class="bottom-left"><span class="legend-tile">⬡</span> TERRITÓRIO CONTAMINADO <span class="sep">/</span> 2026</div>
-    <div class="bottom-right">WASD MOVER · SHIFT CORRER · ESPAÇO ATACAR · E INTERAGIR · I INVENTÁRIO · M MAPA</div>
-
-    <div class="quick-bar">
-      <button id="use-comida" class="quick-slot"><span class="slot-icon">🥫</span><b>COMER</b><small>1 · <span id="num-comida">3</span></small></button>
-      <button id="use-agua" class="quick-slot"><span class="slot-icon">💧</span><b>BEBER</b><small>2 · <span id="num-agua">3</span></small></button>
-      <button id="use-medicamentos" class="quick-slot"><span class="slot-icon">✚</span><b>CURAR</b><small>3 · <span id="num-medicamentos">1</span></small></button>
-      <div class="bar-divider"></div>
-      <button id="interact" class="quick-slot action-slot"><span class="slot-icon">↳</span><b>REVISTAR</b><small>E</small></button>
-      <button id="attack" class="quick-slot action-slot"><span class="slot-icon">⚒</span><b>ATACAR</b><small>ESPAÇO</small></button>
-      <button id="craft-btn" class="quick-slot action-slot craft"><span class="slot-icon">⚙</span><b>CRIAR</b><small>C</small></button><button id="supplies-btn" type="button" class="quick-slot action-slot" aria-label="Mostrar comida, água e medicamentos" aria-expanded="false"><span class="slot-icon">▦</span><b>ITENS</b></button>
+      <nav class="bottom-nav" aria-label="Secções do jogo" id="nav">
+        <button data-tab="life" class="nav-item active"><span class="nav-emoji">🏡</span><span>Vida</span></button>
+        <button data-tab="actions" class="nav-item"><span class="nav-emoji">✨</span><span>Atividades</span></button>
+        <button data-tab="people" class="nav-item"><span class="nav-emoji">💞</span><span>Pessoas</span></button>
+        <button data-tab="career" class="nav-item"><span class="nav-emoji">🎓</span><span>Carreira</span></button>
+        <button data-tab="finance" class="nav-item"><span class="nav-emoji">💸</span><span>Finanças</span></button>
+      </nav>
     </div>
 
-    <div class="touch-ui">
-      <div id="joystick" class="joystick" aria-label="Joystick virtual para deslocação"><span id="joystick-knob"></span></div>
-      <button id="run" class="touch-run">CORRER <strong>↗</strong></button>
-    </div>
-
-    <section id="inventory-panel" class="overlay-panel" aria-label="Inventário" hidden>
-      <div class="overlay-header"><div><div class="eyebrow">SISTEMA DE SUPRIMENTOS</div><h2>MOCHILA <em>// INVENTÁRIO</em></h2></div><button id="close-inventory" aria-label="Fechar inventário">✕</button></div>
-      <p>Os recursos recolhidos ficam guardados automaticamente. Come, bebe e trata os ferimentos para sobreviver.</p>
-      <div class="inventory-grid">
-        <div>🥫 <span>CONSERVAS</span><strong id="inv-comida"></strong></div>
-        <div>💧 <span>ÁGUA</span><strong id="inv-agua"></strong></div>
-        <div>✚ <span>MEDICAMENTOS</span><strong id="inv-medicamentos"></strong></div>
-        <div>▣ <span>MADEIRA</span><strong id="inv-madeira"></strong></div>
-        <div>⬡ <span>SUCATA</span><strong id="inv-metal"></strong></div>
-        <div>◉ <span>MUNIÇÕES</span><strong id="inv-municoes"></strong></div>
-        <div>✚ <span>PENSOS</span><strong id="inv-penso"></strong></div>
-        <div>◆ <span>COMBUSTÍVEL</span><strong id="inv-combustivel"></strong></div>
-      </div>
-      <div class="recipe"><span>FABRICAÇÃO</span><b>2 MADEIRAS + 1 SUCATA → 2 PENSOS</b><button id="craft-inventory">FABRICAR</button></div>
+    <section class="create-screen" id="create-screen">
+      <div class="create-layout"><div class="create-hero"><div class="create-corner">★ UMA NOVA HISTÓRIA</div><div class="create-symbol">✳</div><h1>E se pudesses<br><em>viver mil vidas?</em></h1><p>Da primeira palavra ao último capítulo. Amor, escolhas, carreiras, surpresas e recomeços. A história é tua.</p><div class="create-pills"><span>♡ Relações</span><span>✳ Carreira</span><span>✦ Destino</span></div></div>
+        <form id="create-form" class="create-form"><div class="form-eyebrow">CAPÍTULO ZERO</div><h2>Quem vais ser?</h2><p>Escolhe o início. Depois, deixa a vida acontecer.</p>
+          <div class="field-grid"><label>Primeiro nome<input id="first" maxlength="24" required autocomplete="off" value="Leonor" placeholder="Primeiro nome"></label><label>Apelido<input id="last" maxlength="24" required autocomplete="off" value="Silva" placeholder="Apelido"></label></div>
+          <label>Identidade<select id="gender"><option>Mulher</option><option>Homem</option><option>Não-binário</option></select></label>
+          <label>País de nascimento<select id="country"><option>Portugal</option><option>Brasil</option><option>Espanha</option><option>França</option><option>Estados Unidos</option><option>Reino Unido</option></select></label>
+          <div class="label-row"><span>Cor da tua história</span><span>✦</span></div><div class="color-options" id="colors"><button type="button" class="color-chip rose selected" data-color="rose" aria-label="Rosa"></button><button type="button" class="color-chip blue" data-color="blue" aria-label="Azul"></button><button type="button" class="color-chip mint" data-color="mint" aria-label="Menta"></button><button type="button" class="color-chip gold" data-color="gold" aria-label="Dourado"></button><button type="button" class="color-chip lilac" data-color="lilac" aria-label="Lilás"></button><button type="button" class="color-chip coral" data-color="coral" aria-label="Coral"></button></div>
+          <div class="form-actions"><button type="submit" class="start-button">COMEÇAR A MINHA VIDA <span>↗</span></button><button type="button" class="random-btn" id="random-btn">🎲 &nbsp; Surpreende-me</button></div>
+          <span class="create-disclaimer">Gravado automaticamente neste dispositivo · Sem conta necessária</span>
+        </form></div>
     </section>
 
-    <section id="pause-overlay" class="center-overlay" hidden><div class="center-card"><div class="eyebrow">OPERAÇÃO SUSPENSA</div><h2>JOGO EM PAUSA</h2><p>O mundo espera pelo teu regresso.</p><button id="continue-btn" class="primary">RETOMAR EXPLORAÇÃO →</button><button id="newgame-btn" class="muted-btn">COMEÇAR NOVA VIDA</button></div></section>
-    <section id="death-overlay" class="center-overlay" hidden><div class="center-card dead"><div class="eyebrow">O FIM DE UM SOBREVIVENTE</div><h2>MORRESTE.</h2><p>A cidade continua. A tua história terminou.</p><button id="restart-btn" class="primary">TENTAR SOBREVIVER NOVAMENTE ↗</button></div></section>
-    <button id="rain-btn" class="weather-btn" aria-label="Alternar chuva">≋ CHUVA</button>
+    <section id="gameover-screen" class="gameover-screen" hidden><div class="end-card"><span class="end-mark">✧</span><small>O ÚLTIMO CAPÍTULO</small><h2>Uma vida<br><em>para recordar.</em></h2><div id="end-story"></div><button id="again-btn" class="start-button">COMEÇAR OUTRA VIDA ↗</button></div></section>
+
+    <div class="modal-backdrop" id="modal-backdrop" hidden><div class="modal"><div class="modal-top"><span>AS TUAS OPÇÕES</span><button id="modal-close" aria-label="Fechar">✕</button></div><h2>Uma vida de cada vez.</h2><p>O teu progresso fica guardado automaticamente neste navegador. Começar outra vida substitui o progresso atual, mas não apaga o histórico do GitHub.</p><button class="danger-button" id="restart-btn">↻ COMEÇAR VIDA NOVA</button><button class="quiet-button" id="modal-cancel">Continuar a jogar</button></div></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
   </main>
-  <script type="module" src="./src/survival/game.js"></script>
+  <script type="module" src="./src/app.js"></script>
 </body>
 </html>

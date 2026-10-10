@@ -1,54 +1,35 @@
-# AFTERFALL // NEON INFINITE SURVIVAL
+# ✳ VIDA NOVA
 
-A new original isometric zombie survival game set in an infinite procedural quarantined world, inspired by the *survival genre* of Project Zomboid (no proprietary assets or code reused). Replaces the flight simulator in NEON INFINITE with a human-scale survival experience.
+Um simulador de vida original, inspirado na mecânica de escolhas anuais popularizada por jogos como BitLife. Interface em português europeu, desenhada para Android e browser desktop.
 
-**[JOGAR — GitHub Pages](https://pulsebreakpt.github.io/NeonInfiniteCity/)**
+## Jogabilidade
 
-## Playable features
+Cria uma pessoa, personaliza nome, país, identidade e cor de perfil. Avança um ano de cada vez, lida com acontecimentos aleatórios, gere saúde, felicidade, inteligência, carisma, relações, família, educação, trabalho, salários, despesas, poupanças, investimentos, automóveis e imóveis. No fim da vida, vê o legado e começa outra história.
 
-- Infinite **seeded** regions: **aldeias**, farm fields and crop rows, thick forests, suburbs, prisons with fences and watchtowers, military bunkers and factories.
-- Isometric camera on HTML5 Canvas, multi-storey buildings, windows, pitched roofs, doors, interior reveal, houses, markets, barns, warehouses and cell blocks.
-- Enter buildings through doors to loot supplies, enter a bunker hatch with **E**, explore underground and exit via the marked exit.
-- Zombies with pursuit, attack damage, hit feedback and melee combat. Zombie density depends on region danger.
-- Hunger, thirst, energy, health, food/water/medical supplies, gathering, simple crafting, day/night time, rain, kills, map and backpack.
-- Deterministic procedurally generated world, 6-second autosave via localStorage, no login or backend.
-- Desktop and Android controls. No JS framework or CDN is required for core functionality (Google Fonts enhancement only).
+As decisões têm efeitos persistentes, e o jogo grava automaticamente em `localStorage`. A vida anterior não é importada do antigo projeto AFTERFALL; o novo jogo começa do zero.
 
-## Controls
+## Como executar
 
-| Action | Desktop | Android |
-| --- | --- | --- |
-| Move | WASD or arrows | Virtual joystick |
-| Sprint | Shift | Hold CORRER |
-| Attack | Space | ATACAR |
-| Loot / enter / leave bunker | E | REVISTAR |
-| Eat / drink / heal | 1 / 2 / 3 | Bottom hotbar |
-| Backpack | I | MOCHILA |
-| Map | M | MAPA |
-| Craft bandages | C | CREATE in backpack |
-| Flashlight | F | Key F (desktop) |
-| Pause | P | Pause button |
-| Zoom | Mouse wheel | Fixed mobile zoom |
-
-The bunker hatch can be found in regions marked **B** on the strategic map. The prison appears as **P**.
-
-## Local test
+Sem dependências nem instalação, exceto um navegador moderno e acesso à internet para a fonte opcional da Google.
 
 ```sh
+python3 -m http.server 8080
+# abrir http://localhost:8080
 npm run check
 npm test
-python3 -m http.server 8080
 ```
 
-Open http://localhost:8080. Publishing is automated by `.github/workflows/pages.yml`: JavaScript syntax and deterministic world tests run before GitHub Pages deployment.
+## Publicação
 
-## Scope / known limitations
+GitHub Pages é publicado a partir de `.github/workflows/pages.yml` quando há push para `main`. O endereço é https://pulsebreakpt.github.io/NeonInfiniteCity/.
 
-This is a *playable browser survival prototype*, not the original Project Zomboid game. Buildings have exterior walls, doors and interior reveal, but limited furniture; items spawn as procedural loot. Zombies use simple local pursuit rather than global pathfinding. Vehicle driving, construction of free-form bases, multiplayer, complex infection and detailed health simulations are future extensions.
+## Arquitetura
 
-Copyright © 2026 PulseBreakPT. MIT licensed for this original project; no copyrighted Project Zomboid game files included.
+- `src/engine.js`: motor de jogo puro e testável, progressão anual, eventos, profissões, atividades, economia e gravação validada.
+- `src/app.js`: renderização, navegação, feedback e ligação entre UI e motor.
+- `style-1.css`, `style-2.css`, `style-3.css`: design responsivo mobile-first, sem bibliotecas de interface.
+- `tests/engine.test.js`: testes de lógica, proteção de estados e progressão.
 
+## Nota
 
-## Atualização Pixel Detail v3
-
-Estilo visual isométrico com pixeis pequenos, desgaste procedural nas fachadas e estradas, telhas, caleiras, chaminés, pequenas peças de telhado, carros abandonados, postes, contentores, arbustos e copas de árvores multicamada. As estruturas são desenhadas por código, sem sprites de terceiros, e cada detalhe é determinístico por coordenada e semente.
+O nome, os textos, a interface e as regras foram escritos para este projeto. Não inclui recursos, código ou marcas de BitLife. O jogo está num repositório que anteriormente continha AFTERFALL; os ficheiros antigos são substituídos, mas o histórico Git continua acessível.
