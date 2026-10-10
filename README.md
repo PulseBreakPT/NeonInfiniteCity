@@ -1,42 +1,30 @@
-# VIDA NOVA 2.0 — Simulador de Vida
+# ATLAS.IO — conquista o mundo real
 
-> **Vida Nova 3.1**: regressa à interface clara original, agora com identidade visual rosa e azul, sem alterar o motor de vida ou gravações.
+Jogo original de conquista territorial inspirado no género arcade de captura de áreas (Paper.io) e crescimento competitivo (Agar.io). Joga diretamente no navegador, em Android e PC, sobre o **mapa real de qualquer lugar do mundo** com Leaflet + OpenStreetMap.
 
-Jogo original em português para browsers e Android, inspirado na ideia de escolhas anuais de jogos de simulação de vida.
+## Jogar
 
-## Joga
+Site: https://pulsebreakpt.github.io/NeonInfiniteCity/
 
-https://pulsebreakpt.github.io/NeonInfiniteCity/
+Escolhe uma cidade ou abre **MUNDO** para escrever coordenadas ou selecionar um local com o dedo. Move a personagem com o joystick no telemóvel ou WASD/setas no PC. Quando sais do território azul, deixas um trilho. Volta à zona azul para fechar o percurso e conquistar tudo dentro. Não deixes rivais atravessar o teu trilho. O botão **BOOST** ou espaço acelera-te durante um período limitado. Apanha os pontos de energia dourados.
 
-## Conteúdos
+O jogo inclui 12 cidades de arranque, seleção de qualquer latitude/longitude, localização opcional mediante permissão, mapas OSM, oito bots com territórios próprios, linhas vulneráveis, conquista por polígonos, colisões, classificação local, pontos, boost, recorde e áudio opcional. A viagem inicia uma partida nova; o recorde é guardado em `localStorage`.
 
-- Criação de personagem, infância, educação, trabalho, salário, património, família, relações, acontecimentos e escolhas.
-- **100 ações de simulação adicionais** distribuídas por 10 áreas: tempo e rotinas, aprendizagem, relações sociais, trabalho, comércio, habitação, medicina, justiça, tecnologia e mundo.
-- Cada ação tem requisitos, custo, risco de resultado desfavorável, uma utilização anual e impacto em atributos ou nos indicadores da simulação.
-- **4 pontos anuais de tempo** para as ações adicionais. Não é possível obter mais pontos repetindo a mesma ação no mesmo ano.
-- Simulação anual de inflação, procura, abastecimentos, tecnologia, serviços, riscos, custos de habitação e automóvel e benefícios com duração limitada.
-- Histórico dos acontecimentos, estado guardado em `localStorage` e migração das vidas iniciadas na v1.
-- Página `Sistemas` com pesquisa, categorias e 10 indicadores.
+**Limitação importante:** nesta versão os outros jogadores são bots simulados localmente, não jogadores online. Multiplayer global síncrono, contas, território persistente partilhado e anticheat requerem servidor e base de dados, não incluídos neste projeto estático do GitHub Pages. Não são anunciados como disponíveis.
 
-## Notas sobre profundidade
+## Código
 
-A versão 2.0 implementa as **100 mecânicas como ações jogáveis com efeitos persistentes e risco, integradas no motor anual**. Sistemas como consultas, litígios, cadeias logísticas e redes sociais estão representados por abstrações de gestão, e não por simulações completas de cada indústria, profissão ou entidade real. É uma base extensível, não uma simulação exaustiva do mundo.
+- `src/core.js` — projeção Web Mercator, células de território, geometria, fecho de percursos e colisões com testes sem browser.
+- `src/game.js` — gestão da partida, Leaflet, renderizador Canvas, bots, HUD, controlos e menus.
+- `style.css` — visual do jogo responsivo e full-screen.
+- `index.html` — entrada acessível do jogo.
+- `tests/` — testes automáticos (`npm test`).
 
-## Estrutura
+Execução local: `npm run dev`, depois abrir `http://localhost:8080`.
+Verificação: `npm run check && npm test`.
 
-- `src/engine.js`: progressão de vida, carreiras e eventos existentes.
-- `src/systems.js`: 100 mecânicas, validação, risco, efeitos e evolução anual dos 10 domínios.
-- `src/app.js`: interface e ações.
-- `style-*.css`: interface responsiva.
-- `tests/`: validações de consistência e sistemas.
+## Mapa e licença
 
-## Testes locais
+Os mosaicos são pedidos **apenas para a zona visualizada**, diretamente a `https://tile.openstreetmap.org/{z}/{x}/{y}.png`, sem downloads antecipados ou offline. É necessária ligação à Internet. Mantemos a atribuição visível `© OpenStreetMap contributors`. A política de tiles da OSM Foundation aplica-se: https://operations.osmfoundation.org/policies/tiles/. Para tráfego elevado ou distribuição comercial, migrar para um fornecedor de mosaicos com capacidade e licença adequadas.
 
-Com Node.js 20+:
-
-```sh
-npm run check
-npm test
-```
-
-A publicação automática está configurada em `.github/workflows/pages.yml`.
+Leaflet 1.9.4 é obtido por CDN. O código do jogo é original, sem recursos ou código proprietários de Paper.io ou Agar.io.

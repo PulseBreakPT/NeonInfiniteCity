@@ -1,4 +1,4 @@
-name: Vida Nova Pages
+name: ATLAS.IO — Mundo em disputa
 on:
   push:
     branches: [main]
