@@ -47,6 +47,8 @@ jobs:
         run: npm install --no-save --package-lock=false playwright-core@1.56.1
       - name: Validate game UI in Chromium
         run: node tests/browser-smoke.mjs
+      - name: Measure clipped text in all game screens
+        run: node tests/clipping-audit.mjs
       - name: Archive game screenshots
         if: always()
         uses: actions/upload-artifact@v4
