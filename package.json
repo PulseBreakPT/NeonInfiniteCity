@@ -1,0 +1,11 @@
+{
+  "name": "club-dynasty",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Football management simulator",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "node --check model.js && node --check sim.js && node --check actions.js && node --check ui-core.js && node --check ui-main.js && node --check ui-extra.js && node --check main.js"
+  }
+}

@@ -1,12 +1,12 @@
 {
   "name": "CLUB DYNASTY — Football Manager",
   "short_name": "Club Dynasty",
-  "description": "Jogo original de gestão de futebol.",
+  "description": "Futebol, táticas e gestão de clube.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#08121c",
-  "theme_color": "#08121c",
+  "background_color": "#08141e",
+  "theme_color": "#08141e",
   "icons": [
     {
       "src": "./assets/mark.svg",
