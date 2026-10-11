@@ -70,23 +70,24 @@ try{
 
  // Regression: the initial shell must accommodate the longest accepted club name
  // without truncating it, even in the narrowest mobile viewport.
- await page.setViewportSize({width:320,height:650});
- await page.evaluate(()=>localStorage.clear());
- await page.reload({waitUntil:'domcontentloaded'});
- await page.waitForSelector('#create-form');
+ const isolated=await browser.newContext({viewport:{width:320,height:650},deviceScaleFactor:1});
+ const longPage=await isolated.newPage();
+ await longPage.goto(url,{waitUntil:'domcontentloaded'});
+ await longPage.waitForSelector('#create-form',{timeout:10000});
  const longName='Associação Desportiva Atlântico';
- await page.locator('#create-form input[name="name"]').fill(longName);
- await page.locator('#create-form button[type="submit"]').click();
- await page.waitForSelector('.game-hud .hud-club-copy strong');
- const clubFit=await page.locator('.game-hud .hud-club-copy strong').evaluate(el=>{
+ await longPage.locator('#create-form input[name="name"]').fill(longName);
+ await longPage.locator('#create-form button[type="submit"]').click();
+ await longPage.waitForSelector('.game-hud .hud-club-copy strong');
+ const clubFit=await longPage.locator('.game-hud .hud-club-copy strong').evaluate(el=>{
   const style=getComputedStyle(el),rect=el.getBoundingClientRect();
   return {value:el.textContent,overflow:style.overflowX,whiteSpace:style.whiteSpace,scrollWidth:el.scrollWidth,width:el.clientWidth,rectWidth:rect.width,rectHeight:rect.height};
  });
  assert.equal(clubFit.value,longName);
  assert.notEqual(clubFit.overflow,'hidden');
  assert.notEqual(clubFit.whiteSpace,'nowrap');
- await page.screenshot({path:'.browser-qa/mobile-long-club-name.png'});
+ await longPage.screenshot({path:'.browser-qa/mobile-long-club-name.png'});
  console.log('✓ Nome extenso do clube sem truncagem a 320px');
+ await isolated.close();
 
  assert.deepEqual(fatal,[],'Erros JavaScript detetados no navegador');
  console.log('✓ Sem erros fatais JavaScript');
