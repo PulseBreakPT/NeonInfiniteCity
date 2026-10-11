@@ -50,7 +50,7 @@ test('shell retains single page frame and accessible mobile game controls',()=>{
  for(const to of ['dashboard','matches','tactics','squad','more']){
   assert.ok(html.includes('data-nav="'+to+'"'));
  }
- assert.ok(html.includes('PROGRESSO')||html.includes('SAVE LOCAL AUTOMÁTICO'));
+ assert.ok(html.includes('GUARDADO AUTOMATICAMENTE'));
 });
 test('all new design resources are packaged for offline use',()=>{
  const index=load('index.html'),sw=load('sw.js'),css=load('styles-v4.css'),asset=load('assets/stadium-isometric.svg'),pkg=JSON.parse(load('package.json'));
