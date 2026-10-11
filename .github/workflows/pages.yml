@@ -33,6 +33,7 @@ jobs:
           name: club-dynasty-ui-screenshots
           path: .browser-qa/
           if-no-files-found: ignore
+          include-hidden-files: true
   deploy:
     needs: test
     environment:
