@@ -3,7 +3,7 @@ import {rng,hash,clamp,teamPower,getPlayer,fixtureName,standings,makeCup,makeLea
 import {runMatch,tacticalModifiers} from './match-engine.js';
 const pick=(random,arr)=>arr[Math.floor(random()*arr.length)];
 const poisson=(random,lambda)=>{let k=0,p=1,L=Math.exp(-lambda);while(p>L&&k<10){p*=random();k++;}return k-1;};
-export const tacticsMultiplier=tacticalModifiers;
+export function tacticsMultiplier(state){return tacticalModifiers(state?.tactics||{},state?.mentors?.find(m=>m.id===state.mentorActive)||null);}
 export function simulateMatch(state,fixture,options={}){return runMatch(state,fixture,options);}
 export function addLedger(state,label,amount){
  if(!state.finance)state.finance={income:0,expenses:0,ledger:[]};
