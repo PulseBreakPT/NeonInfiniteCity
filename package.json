@@ -1,6 +1,6 @@
 {
   "name": "club-dynasty",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
   "type": "module",
   "description": "Event-driven offline football management simulator",

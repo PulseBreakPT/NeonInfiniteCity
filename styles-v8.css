@@ -538,3 +538,18 @@ body{background:var(--arena-bg)}
 @media(prefers-reduced-motion:reduce){
  .career-world .stadium-scene-image,.career-hq .command-tile.home-module{transition:none!important}
 }
+
+/* Long Portuguese mode names remain readable at 320px. */
+.elite-shell[data-ui="career8"] .more-tile{min-width:0;overflow:hidden}
+.elite-shell[data-ui="career8"] .more-tile strong{
+ font-size:clamp(17px,2.2vw,24px);max-width:100%;
+ overflow-wrap:anywhere;white-space:normal;line-height:1.02
+}
+.elite-shell[data-ui="career8"] .more-tile small{overflow-wrap:break-word}
+@media(max-width:420px){
+ .elite-shell[data-ui="career8"] .more-tile{padding:12px 10px;min-height:126px}
+ .elite-shell[data-ui="career8"] .more-tile strong{
+  font-size:clamp(17px,5.15vw,21px);padding-right:4px
+ }
+ .elite-shell[data-ui="career8"] .more-tile:after{right:7px;bottom:7px}
+}
