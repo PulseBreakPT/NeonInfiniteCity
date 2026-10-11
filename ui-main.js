@@ -104,7 +104,7 @@ export function playerDetail(s,id){
 }
 
 
-export function dashboard(s){
+export function previousDashboard(s){
  const f=nextFixture(s),rank=standings(s).findIndex(t=>t.id===0)+1,opp=f?fixtureName(s,f.home===0?f.away:f.home):'Fim de época';
  const avg=Math.round(s.players.reduce((a,p)=>a+p.fitness,0)/Math.max(1,s.players.length));
  const morale=Math.round(s.players.reduce((a,p)=>a+p.morale,0)/Math.max(1,s.players.length));
@@ -135,4 +135,35 @@ export function dashboard(s){
  '<div class="console-heading"><div><span></span><strong>Acessos rápidos</strong></div><small></small></div>'+
  '<div class="home-module-grid command-grid">'+fast.map(([id,ic,label,meta],i)=>'<button class="home-module command-tile" data-nav="'+id+'"><span class="home-module-head"><span class="module-symbol">'+icon(ic,23)+'</span><span class="module-count">0'+(i+1)+'</span></span><span class="module-meta">'+esc(meta).toUpperCase()+'</span><strong>'+esc(label)+'</strong><span class="tile-arr">'+icon('arrow',17)+'</span></button>').join('')+'</div>'+
  '<div class="command-bottom"><div class="hud-matches-history">'+matchHistory(s)+'</div><button data-nav="events" class="mini-event-link"><span>'+icon('star',17)+' MISSÕES & RECOMPENSAS</span>'+icon('arrow',17)+'</button></div>';
+}
+
+
+/* Career-mode headquarters: one world, one matchday and a dock of actual commands. */
+export function dashboard(s){
+ const f=nextFixture(s),opponent=f?fixtureName(s,f.home===0?f.away:f.home):'Fim da época';
+ const table=standings(s),rank=table.findIndex(t=>t.id===0)+1;
+ const fit=Math.round(s.players.reduce((t,p)=>t+p.fitness,0)/Math.max(1,s.players.length));
+ const morale=Math.round(s.players.reduce((t,p)=>t+p.morale,0)/Math.max(1,s.players.length));
+ const quality=lineScore(s),round=Math.min(30,s.league.round);
+ const play=s.league.completed?btn('new-season','NOVA ÉPOCA '+icon('arrow',19),'accent'):btn('match','JOGAR JORNADA '+icon('play',20),'accent');
+ const zones=[['matches','pitch','Estádio','22%','31%'],['market','swap','Mercado','74%','30%'],['tactics','shield','Táticas','22%','63%'],['academy','book','Academia','75%','62%'],['training','bolt','Treinos','49%','83%']];
+ const commands=[['matches','pitch','Partida','J'+round],['tactics','shield','Táticas',s.formation],['squad','users','Plantel',s.players.length+' atletas'],['market','swap','Mercado','Contratar'],['training','bolt','Treinos',s.trainingCount+'/3'],['more','grid','Gestão','12 áreas']];
+ const actualHome=f?f.home===0:true;
+ return title('ÉPOCA '+s.season,'Gabinete')+
+ '<div class="career-hq"><div class="career-hq-top"><span class="hq-identity"><span class="hq-kickoff-led"></span> CENTRO DO CLUBE</span><div class="hq-season"><span>ÉPOCA '+s.season+'</span><b>JORNADA '+round+' / 30</b><span>DIVISÃO '+s.division+'</span></div></div>'+
+ '<div class="universe-layout"><section class="home-stadium universe-stage" aria-label="Complexo desportivo interativo">'+
+ '<div class="career-world"><div class="stadium-scene-image" role="img" aria-label="Estádio do clube em vista isométrica"></div><div class="stadium-scene-dimmer"></div>'+
+ '<div class="scene-topbar"><span class="scene-sector">COMPLEXO DESPORTIVO</span><span class="career-map-hint">SELECIONA UMA ÁREA</span></div>'+
+ '<div class="stadium-hotspots">'+zones.map(([id,ic,label,x,y],i)=>'<button type="button" class="scene-hotspot hotspot-'+i+'" data-nav="'+id+'" style="left:'+x+';top:'+y+'" aria-label="Abrir '+esc(label)+'"><span class="hotspot-pin">'+icon(ic,18)+'</span><span class="hotspot-label"><b>'+esc(label)+'</b></span></button>').join('')+'</div><div class="world-bottom-tag">CD <b>◆</b> TRAINING GROUND</div></div>'+
+ '<div class="scene-event-panel"><div class="career-fixture-header"><span class="career-match-tag"><i></i> '+(s.league.completed?'ÉPOCA CONCLUÍDA':'PRÓXIMO JOGO')+'</span><span>LIGA NACIONAL · J'+round+'</span></div>'+
+ '<div class="career-fixture-body"><div class="scene-event-text"><div class="home-team-vs"><strong>'+esc(s.club.name)+'</strong><span>VS</span><strong>'+esc(opponent)+'</strong></div><small>'+(f?(actualHome?'EM CASA':'FORA'):'SEM JOGOS PENDENTES')+' · '+esc(actualHome?s.club.stadium:'Estádio adversário')+'</small></div>'+
+ '<div class="scene-event-cta">'+play+'</div></div></div></section>'+
+ '<aside class="manager-console"><div class="manager-console-header"><span>RELATÓRIO DO TREINADOR</span><b>ÉPOCA '+s.season+'</b></div>'+
+ '<div class="career-ranking"><span><b>'+rank+'º</b><small>CLASSIFICAÇÃO</small></span><span><b>'+quality+'</b><small>OVR DO ONZE</small></span></div>'+
+ '<div class="manager-readiness"><div><span>CONDIÇÃO FÍSICA</span><b>'+fit+'%</b></div>'+bar(fit)+'<div><span>MORAL</span><b>'+morale+'%</b></div>'+bar(morale)+'</div>'+
+ '<div class="career-manager-note"><span>OBJETIVO DA DIREÇÃO</span><strong>'+(rank<=4?'MANTER OS PRIMEIROS LUGARES':'SUBIR NA CLASSIFICAÇÃO')+'</strong><small>CONFIANÇA '+(s.finance.boardConfidence??75)+'%</small></div>'+
+ '<div class="manager-commands"><button type="button" data-nav="league" class="manager-command">'+icon('trophy',17)+' CLASSIFICAÇÃO '+icon('arrow',16)+'</button><button type="button" data-nav="finance" class="manager-command">'+icon('coins',17)+' FINANÇAS '+icon('arrow',16)+'</button></div></aside></div>'+
+ '<div class="career-dock-label"><span>ÁREAS DO CLUBE</span><span>ESCOLHE UMA ÁREA</span></div>'+
+ '<div class="home-module-grid command-grid">'+commands.map(([id,ic,label,meta],i)=>'<button type="button" class="home-module command-tile" data-nav="'+id+'" aria-label="Abrir '+esc(label)+'"><span class="module-symbol">'+icon(ic,22)+'</span><strong>'+esc(label)+'</strong><small>'+esc(meta)+'</small></button>').join('')+'</div>'+
+ '<div class="career-footer"><button type="button" data-nav="league">'+icon('trophy',16)+' LIGA '+rank+'º '+icon('arrow',16)+'</button><button type="button" data-nav="events">'+icon('calendar',16)+' OBJETIVOS '+icon('arrow',16)+'</button></div></div>';
 }

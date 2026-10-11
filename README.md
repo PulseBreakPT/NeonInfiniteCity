@@ -145,3 +145,7 @@ Auditoria em Chromium de todos os 17 ecrãs a 320, 360, 390, 768, 1024 e 1440 px
 ## v0.6.3 — Android / painel da jornada
 
 Corrigida a sobreposição capturada em Android: botão de partida duplicado removido do título; o painel do próximo jogo passa para uma zona própria abaixo do mapa do estádio, com botão a toda a largura. Todos os cinco pontos de navegação do estádio ficam separados e disponíveis. Regressão Chromium mede os limites reais do botão, centro clicável dos pontos de navegação e a ausência de sobreposição a 320, 360, 377, 390 e 414 px. Estilos adicionais em `styles-v7.css` e versão nova da cache PWA para atualização sem apagar o progresso.
+
+## v0.7 — Modo Carreira
+
+O ecrã central passou a ser um complexo desportivo navegável, com cinco pontos de acesso ao mundo do clube, painel de jornada completamente separado do estádio e barra inferior de seis comandos de modo. O relatório do treinador ocupa a lateral do estádio apenas em ecrãs largos; os ecrãs móveis dão prioridade ao jogo e às decisões. O HUD, o relvado tático, o campo do replay, os cartões de jogadores e as 12 divisões de gestão usam um sistema visual coerente com a modalidade, sem transformar o jogo numa landing page. `styles-v8.css` substitui a apresentação anterior; a estrutura de dados, os saves e o motor são compatíveis.

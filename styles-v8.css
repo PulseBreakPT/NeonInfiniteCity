@@ -1,0 +1,540 @@
+@import url('./styles-v7.css');
+
+/* CLUB DYNASTY / CAREER INTERFACE v0.7
+ * A self-contained football videogame interface: matchday stage, stadium
+ * commands, club dock and broadcast screens. No generic dashboard layout.
+ * Preserve game data, 44px touch targets and full labels at 320px. */
+:root{
+ --arena-bg:#07131c;
+ --arena-plate:#132930;
+ --arena-surface:#1a3338;
+ --arena-border:#49696a;
+ --arena-green:#d6ff88;
+ --arena-text:#f1f9f0;
+ --arena-muted:#afc8bd;
+ --arena-gold:#ffdd9a;
+}
+body{background:var(--arena-bg)}
+.elite-shell[data-ui="career8"]{background:#08141d;color:var(--arena-text)}
+.elite-shell[data-ui="career8"] .game-canvas{
+ background:radial-gradient(ellipse at 48% 0%,#285a5744,transparent 60%),#08141c
+}
+.elite-shell[data-ui="career8"] .game-rail{
+ background:linear-gradient(180deg,#152e32,#0b191f 55%,#091720);
+ border-right:1px solid #42645e;box-shadow:6px 0 30px #030d1780
+}
+.elite-shell[data-ui="career8"] .game-rail .brand{padding-top:13px}
+.elite-shell[data-ui="career8"] .game-rail .logo{background:linear-gradient(145deg,#caff83,#7ccdaf);clip-path:polygon(50% 0,94% 15%,90% 73%,50% 100%,10% 73%,6% 15%);height:61px;width:55px;color:#0a2324;font-weight:900}
+.elite-shell[data-ui="career8"] .rail-caption{color:#718e92;font-size:8px;letter-spacing:.1em}
+.elite-shell[data-ui="career8"] .game-rail .nav-item{min-height:76px;width:73px;color:#abc9bd;border-radius:4px;gap:7px}
+.elite-shell[data-ui="career8"] .game-rail .nav-item.active{
+ border:0;border-left:3px solid var(--arena-green);border-radius:0;
+ background:linear-gradient(90deg,#cfff8428,#6ef0ce08);color:#eaffbe
+}
+.elite-shell[data-ui="career8"] .game-rail .nav-item.active svg{filter:drop-shadow(0 0 8px #b6ff7480)}
+.elite-shell[data-ui="career8"] .game-rail .nav-item:hover{background:#2a4842;color:#effbd7}
+.elite-shell[data-ui="career8"] .cockpit-hud.game-hud{
+ background:linear-gradient(110deg,#102329,#19343a 42%,#0e2029 100%);
+ border-bottom:1px solid #53766b;height:78px;flex-basis:78px;
+ padding-inline:clamp(12px,2vw,27px);gap:9px
+}
+.elite-shell[data-ui="career8"] .hud-club .crest-sm{filter:drop-shadow(0 4px 8px #0008)}
+.elite-shell[data-ui="career8"] .hud-club-copy strong{
+ color:#f3fae9;letter-spacing:.025em;font-size:clamp(19px,2.3vw,29px);
+ text-shadow:0 2px 9px #0005
+}
+.elite-shell[data-ui="career8"] .hud-label{color:#9fb8b1;letter-spacing:.08em}
+.elite-shell[data-ui="career8"] .hud-season strong{font-size:19px;color:#dff2de}
+.elite-shell[data-ui="career8"] .resources>span{
+ border-color:#43645f;background:linear-gradient(135deg,#22403d,#122a31);
+ border-radius:5px;min-height:42px
+}
+.elite-shell[data-ui="career8"] .game-hud .tokens{color:#ffe4a6}
+.elite-shell[data-ui="career8"] .game-hud .tokens b{color:#ffdf83}
+.elite-shell[data-ui="career8"] .game-ribbon{display:none}
+.elite-shell[data-ui="career8"] .game-statusline{height:24px;flex-basis:24px;background:#0b1b22;border-color:#2b4b4b;font-size:9px}
+.elite-shell[data-ui="career8"] .game-stage.page{
+ background:
+ radial-gradient(ellipse at 70% -20%,#2659534a,transparent 65%),
+ repeating-linear-gradient(90deg,#b2ff7604 0 1px,transparent 1px 110px),
+ #091a22;
+ padding:clamp(13px,1.4vw,22px) clamp(12px,1.6vw,27px) 22px;
+}
+.elite-shell[data-ui="career8"] .scene-content{max-width:1740px}
+.elite-shell[data-ui="career8"] .page-title{margin:0 0 14px;padding:0 0 11px;border-bottom:1px solid #41605d;gap:12px}
+.elite-shell[data-ui="career8"] .page-title h1{
+ font:900 clamp(32px,3.7vw,53px)/1 var(--font);
+ text-transform:uppercase;letter-spacing:.035em;color:#f1ffe6;
+}
+.elite-shell[data-ui="career8"] .page-title p{color:#b9d4c6;font-size:12px;line-height:1.45}
+.elite-shell[data-ui="career8"] .page-title .title-actions .btn{box-shadow:0 6px 17px #0003}
+.elite-shell[data-ui="career8"] .btn{
+ border-radius:5px;min-height:42px;font-size:11px;font-weight:900;
+ letter-spacing:.025em;transition:filter .16s,transform .16s
+}
+.elite-shell[data-ui="career8"] .btn.accent{
+ background:linear-gradient(108deg,#ecffa9,#c6f073);
+ border:1px solid #e7ffb4;color:#10231e;box-shadow:0 4px 20px #d3ff5b22;
+}
+.elite-shell[data-ui="career8"] .btn.accent:hover{filter:brightness(1.07)}
+.elite-shell[data-ui="career8"] .btn.subtle,.elite-shell[data-ui="career8"] .btn.quiet{
+ background:#23443e;border:1px solid #547a69;color:#e3f7de
+}
+.elite-shell[data-ui="career8"] .btn:focus-visible,.elite-shell[data-ui="career8"] button:focus-visible{
+ outline:2px solid #ecffc0;outline-offset:3px
+}
+.elite-shell[data-ui="career8"] .panel{
+ background:linear-gradient(145deg,#1b393b,#10242e);
+ border:1px solid #3f6564;border-radius:7px;box-shadow:0 7px 23px #0004
+}
+.elite-shell[data-ui="career8"] .panel-heading h3{
+ font:850 25px/1 var(--font);color:#e9f8de;text-transform:uppercase
+}
+.elite-shell[data-ui="career8"] .panel-heading{border-bottom-color:#446661}
+.elite-shell[data-ui="career8"] .pill{
+ border-radius:3px;background:#254b3c;border:1px solid #5a8469;
+ color:#d9f2db;letter-spacing:.03em
+}
+.elite-shell[data-ui="career8"] .pill.gold{background:#403e2d;border-color:#786e42;color:#fbe3ae}
+.elite-shell[data-ui="career8"] .pill.danger{background:#513638;border-color:#926a6c;color:#ffb9bd}
+
+/* Main stadium, club manager and matchday. */
+.elite-shell[data-ui="career8"] .game-stage[data-screen="dashboard"]{
+ overflow:auto;scrollbar-width:thin;overscroll-behavior:contain
+}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="dashboard"] .scene-content{
+ display:block!important;height:auto!important;min-height:100%;animation:none
+}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="dashboard"] .page-title{display:none}
+.career-hq{display:flex;flex-direction:column;gap:12px;min-width:0}
+.career-hq-top{
+ display:flex;justify-content:space-between;align-items:center;gap:14px;
+ padding:4px 2px 9px;border-bottom:1px solid #50746472;min-height:34px
+}
+.hq-identity{display:flex;gap:10px;align-items:center;color:#e8f9dc;white-space:nowrap;
+ font:900 14px var(--font);letter-spacing:.13em}
+.hq-kickoff-led{display:inline-block;width:8px;height:8px;border-radius:50%;background:#d2ff8a;box-shadow:0 0 14px #b5ff5f78}
+.hq-season{display:flex;gap:15px;align-items:center;font:800 10px 'DM Sans',sans-serif;letter-spacing:.04em;color:#a4c8b8}
+.hq-season b{font-size:11px;color:#e1ffae}
+.career-hq .universe-layout{
+ display:grid;grid-template-columns:minmax(0,1.78fr) minmax(275px,.6fr);
+ gap:12px;min-height:0;margin:0
+}
+.career-hq .home-stadium.universe-stage{
+ display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;
+ height:auto;padding:0;background:#0e242a;border:1px solid #55766a;border-radius:8px;
+ box-shadow:0 14px 37px #0005
+}
+.career-hq .home-stadium.universe-stage:before{display:none}
+.career-world{
+ width:100%;height:clamp(275px,32vw,460px);position:relative;
+ isolation:isolate;overflow:hidden;flex:none;background:#142c33
+}
+.career-world:after{
+ content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+ background:linear-gradient(180deg,#04141a78,transparent 28%,transparent 75%,#05192180)
+}
+.career-world .stadium-scene-image{
+ position:absolute;inset:0;transform:none!important;
+ background:url('./assets/stadium-isometric.svg') 50% 52%/cover no-repeat;
+ filter:saturate(1.15) contrast(1.08);transition:transform 1.2s ease;
+}
+.career-world:hover .stadium-scene-image{transform:scale(1.02)!important}
+.career-world .stadium-scene-dimmer{position:absolute;inset:0;pointer-events:none}
+.career-world .scene-topbar{top:13px;left:19px;right:19px;z-index:5}
+.career-world .scene-sector{
+ font:900 11px 'DM Sans',sans-serif;letter-spacing:.1em;
+ padding:8px 10px;background:#0c302bb9;border:1px solid #8bbf9a70;color:#e8ffe1
+}
+.career-map-hint{font:800 9px 'DM Sans',sans-serif;color:#d1e5d0;letter-spacing:.06em;background:#08251dd8;padding:7px 9px}
+.career-world .stadium-hotspots{position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none}
+.career-world .scene-hotspot{
+ position:absolute;transform:translate(-50%,-50%)!important;
+ height:48px;min-height:48px;max-width:30%;pointer-events:auto;display:flex;align-items:center;
+ gap:6px;filter:drop-shadow(0 4px 8px #000e);color:#f4fff1;
+}
+.career-world .hotspot-pin{
+ background:#d8fa95;color:#16352b;border:2px solid #ecffbd;
+ width:42px;height:42px;flex:none;border-radius:50%;
+ box-shadow:0 0 0 4px #0d3029b0,0 6px 14px #0006
+}
+.career-world .hotspot-pin svg{stroke-width:1.9}
+.career-world .hotspot-label{
+ display:flex;background:#0b2927ed;border:1px solid #9ecb95ab;padding:8px 10px;border-radius:5px;
+ max-width:none;min-width:0;clip-path:none;white-space:normal;align-items:center
+}
+.career-world .hotspot-label b{
+ font:800 11px/1.12 'DM Sans',sans-serif;letter-spacing:0;overflow-wrap:anywhere
+}
+.career-world .scene-hotspot:hover .hotspot-pin,.career-world .scene-hotspot:focus-visible .hotspot-pin{
+ transform:scale(1.07);background:#f0ffd4
+}
+.career-world .scene-hotspot:hover .hotspot-label{background:#285146;border-color:#dbffba}
+.world-bottom-tag{
+ position:absolute;left:20px;bottom:13px;z-index:4;color:#d4edd8;
+ font:900 10px 'DM Sans',sans-serif;letter-spacing:.14em;text-shadow:0 2px 6px #000b
+}
+.world-bottom-tag b{color:#d3ff8c;margin:0 6px}
+.career-hq .scene-event-panel{
+ position:relative!important;inset:auto!important;left:auto!important;right:auto!important;
+ display:block;width:100%;max-width:none;min-width:0;margin:0;padding:17px 20px 18px;
+ border:0;border-top:1px solid #426b60;border-radius:0;
+ background:linear-gradient(120deg,#112b2e 0%,#183934 100%);
+ box-shadow:none;backdrop-filter:none;flex:none
+}
+.career-fixture-header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 11px;
+ color:#a9c7b8;font:800 10px 'DM Sans',sans-serif;letter-spacing:.09em}
+.career-match-tag{display:flex;align-items:center;gap:7px;color:#e4f5ca}
+.career-match-tag i{display:block;width:7px;height:7px;background:#d4ff85;border-radius:50%}
+.career-fixture-body{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;min-width:0}
+.career-fixture-body .scene-event-text{min-width:0;display:flex;flex-direction:column;gap:8px}
+.career-fixture-body .home-team-vs{
+ display:grid;grid-template-columns:minmax(0,1fr) 27px minmax(0,1fr);
+ align-items:center;gap:9px;min-width:0;margin:0;width:100%
+}
+.career-fixture-body .home-team-vs strong{
+ font:900 clamp(21px,2.8vw,34px)/1.04 var(--font);
+ min-width:0;max-width:none!important;white-space:normal!important;
+ overflow:visible;text-overflow:clip;overflow-wrap:break-word;text-shadow:0 2px 4px #0004
+}
+.career-fixture-body .home-team-vs span{font:900 18px var(--font);color:#d7ff9b;text-align:center}
+.career-fixture-body .home-team-vs strong:last-child{text-align:right}
+.career-fixture-body .scene-event-text small{
+ font:700 10px 'DM Sans',sans-serif;color:#b5d2bd;letter-spacing:.04em;white-space:normal
+}
+.career-fixture-body .scene-event-cta{display:block;min-width:0;flex:none}
+.career-fixture-body .scene-event-cta .btn{
+ width:auto!important;min-width:150px;max-width:none!important;
+ min-height:52px;padding:12px 17px;font:900 13px 'DM Sans',sans-serif;
+ white-space:normal;line-height:1.15;display:flex!important;gap:9px;
+ align-items:center;justify-content:center;box-shadow:0 5px 21px #b3fb4721
+}
+.career-fixture-body .scene-event-cta svg{flex:none}
+
+/* Bench-side intel is a small scoreboard, not a web analytics widget. */
+.career-hq .manager-console{
+ display:flex;flex-direction:column;min-height:0;gap:17px;
+ padding:22px 20px;background:linear-gradient(155deg,#213a3b,#10252d);
+ border:1px solid #4c7267;border-radius:7px
+}
+.career-hq .manager-console:after{display:none}
+.career-hq .manager-console-header span{color:#d9f5e0;font:900 11px 'DM Sans',sans-serif;letter-spacing:.1em}
+.career-hq .manager-console-header b{color:#86b5a2;display:inline;font-size:9px}
+.career-ranking{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#43645b;border:1px solid #43645b}
+.career-ranking>span{display:flex;flex-direction:column;align-items:center;gap:5px;padding:16px 6px;
+ background:#143132;min-width:0}
+.career-ranking b{font:900 51px/.9 var(--font);color:#d9ff9b}
+.career-ranking small{font:800 9px/1.2 'DM Sans',sans-serif;color:#b2cfc1;text-align:center}
+.career-hq .manager-readiness{display:flex;flex-direction:column;gap:11px}
+.career-hq .manager-readiness>div{color:#c2ddcc;font:800 11px 'DM Sans',sans-serif;letter-spacing:0}
+.career-hq .manager-readiness b{color:#e4f9c5}
+.career-hq .manager-readiness .meter{height:8px;border-radius:1px;background:#244744}
+.career-manager-note{border-top:1px solid #41665a;padding-top:15px;display:flex;flex-direction:column;gap:8px}
+.career-manager-note>span{font:800 10px 'DM Sans',sans-serif;color:#b8d7c0}
+.career-manager-note strong{font:900 25px/1 var(--font);color:#f0f9e7}
+.career-manager-note small{font:800 10px 'DM Sans',sans-serif;color:#b8d3ba}
+.career-hq .manager-commands{gap:3px}
+.career-hq .manager-command{min-height:45px;padding:10px;background:#1c3c38;border:1px solid #4c7564;
+ font-size:11px;color:#e6f3dd}
+.career-hq .manager-command:hover{background:#295044}
+.career-dock-label{display:flex;align-items:center;justify-content:space-between;gap:8px;
+ font:900 11px 'DM Sans',sans-serif;letter-spacing:.08em;color:#e0f5d8}
+.career-dock-label span:last-child{font-size:9px;color:#85ada4}
+.career-hq .home-module-grid.command-grid{
+ display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:#46665c;
+ border:1px solid #46665c;border-radius:7px;overflow:hidden
+}
+.career-hq .command-tile.home-module{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+ padding:13px 8px;min-height:115px;height:auto;border:0;border-radius:0;
+ background:linear-gradient(180deg,#23443e,#17343a);
+ color:#edf8e7;text-align:center;box-shadow:none;transform:none
+}
+.career-hq .command-tile.home-module:hover{background:#325948;transform:none}
+.career-hq .command-tile .module-symbol{
+ height:31px;width:32px;border:0;border-radius:0;background:transparent;
+ color:#cffa94;display:grid;place-items:center
+}
+.career-hq .command-tile .module-symbol svg{width:26px;height:26px}
+.career-hq .command-tile strong{font:900 23px/.9 var(--font);white-space:normal;overflow:visible;padding:0;margin:0}
+.career-hq .command-tile small{font:700 10px/1.15 'DM Sans',sans-serif;color:#aecaaf;white-space:normal}
+.career-footer{display:none}
+
+/* The rest of the game: curated game-mode scenes rather than repeated web pages. */
+.elite-shell[data-ui="career8"] .room-scene{
+ height:auto;max-height:none;min-height:113px;border:1px solid #4c7870;
+ border-radius:6px;overflow:visible;background:#193c39;
+ box-shadow:inset 0 0 40px #081d2496
+}
+.elite-shell[data-ui="career8"] .room-scene:before{
+ background:linear-gradient(90deg,#122c30e8,#123536c5 48%,#09222688),
+ url('./assets/stadium-isometric.svg') center 48%/cover no-repeat;
+ opacity:1;border-radius:6px
+}
+.elite-shell[data-ui="career8"] .room-foreground{min-height:113px;height:auto;padding:16px 22px;gap:19px}
+.elite-shell[data-ui="career8"] .room-copy h2{display:none}
+.elite-shell[data-ui="career8"] .room-shortcuts{margin:0;display:flex;flex-wrap:wrap;gap:9px}
+.elite-shell[data-ui="career8"] .room-shortcuts button{
+ display:inline-flex;align-items:center;justify-content:center;gap:7px;
+ min-height:45px;padding:10px 14px;border:1px solid #83a99a;
+ border-radius:4px;background:#1a473e;color:#e6f8d9;
+ font:850 11px 'DM Sans',sans-serif
+}
+.elite-shell[data-ui="career8"] .room-shortcuts button:hover{background:#305f4e;border-color:#d4fcb1}
+.elite-shell[data-ui="career8"] .room-score strong{font:900 clamp(36px,3.5vw,54px)/1 var(--font);color:#e9ffc4}
+.elite-shell[data-ui="career8"] .room-score small{font:800 10px 'DM Sans',sans-serif;color:#c4dcca}
+
+/* Competition and roster have their own graphic language. */
+.elite-shell[data-ui="career8"] .game-stage[data-screen="matches"]{
+ background:radial-gradient(ellipse at 50% -12%,#23654b76,transparent 62%),#071d21
+}
+.elite-shell[data-ui="career8"] .broadcast-banner{
+ background:linear-gradient(90deg,#2c5542,#16352f);
+ border:1px solid #5b8970;min-height:43px;border-radius:5px
+}
+.elite-shell[data-ui="career8"] .broadcast-left strong{font:900 22px var(--font);color:#eeffea}
+.elite-shell[data-ui="career8"] .pitch-camera-frame{
+ border:1px solid #588a67;border-radius:5px;padding:7px;
+ background:#142f27;box-shadow:0 12px 24px #0006
+}
+.elite-shell[data-ui="career8"] .live-pitch{
+ border:3px solid #5c956f;border-radius:2px;background:
+ repeating-linear-gradient(0deg,#2c8963 0 10%,#237959 10% 20%);
+ box-shadow:inset 0 0 55px #062b23
+}
+.elite-shell[data-ui="career8"] .match-heading{padding-bottom:15px}
+.elite-shell[data-ui="career8"] .match-versus strong{
+ color:#d7ff97;font:900 clamp(28px,3vw,42px) var(--font)
+}
+.elite-shell[data-ui="career8"] .match-versus span{
+ color:#f7fff0;font:900 clamp(17px,2vw,28px)/1.1 var(--font)
+}
+.elite-shell[data-ui="career8"] .match-timeline{background:#1a4038;border-color:#426c5b}
+.elite-shell[data-ui="career8"] .commentary{border:1px solid #4b7b60;background:#1c4032;color:#e5f9d9}
+.elite-shell[data-ui="career8"] .match-stat .meter{background:#24423b}
+
+/* Strategy war room. */
+.elite-shell[data-ui="career8"] .game-stage[data-screen="tactics"]{
+ background:radial-gradient(ellipse at 50% 8%,#225e4878,transparent 59%),#081c22
+}
+.elite-shell[data-ui="career8"] .tactic-pitch{
+ border:5px solid #578365;border-radius:5px;
+ background:repeating-linear-gradient(0deg,#277d55 0 10%,#20744e 10% 20%);
+ box-shadow:0 14px 27px #0007,inset 0 0 50px #00201a99
+}
+.elite-shell[data-ui="career8"] .formation-player{
+ width:min(16%,74px);max-width:74px;overflow:visible;
+ padding:3px 1px;border:1px solid transparent;
+ border-radius:5px;color:#effde9
+}
+.elite-shell[data-ui="career8"] .formation-player:hover,
+.elite-shell[data-ui="career8"] .formation-player:focus-visible{
+ border-color:#deffb3;background:#092823a8
+}
+.elite-shell[data-ui="career8"] .formation-player .shirt{
+ background:var(--shirt);width:43px;height:46px;filter:drop-shadow(0 5px 5px #000a)
+}
+.elite-shell[data-ui="career8"] .formation-player b{
+ font:900 12px/1.05 var(--font);white-space:normal;
+ background:#07241edb;border:1px solid #578d5e;padding:4px 5px
+}
+.elite-shell[data-ui="career8"] .formation-player small{font:800 9px/1.1 'DM Sans',sans-serif;color:#e4f4e1}
+.elite-shell[data-ui="career8"] .tactics-grid{gap:10px}
+.elite-shell[data-ui="career8"] .control-field select{min-height:47px;border:1px solid #648475;background:#0d2a29}
+
+/* Dressing room: premium player collection with a restrained card finish. */
+.elite-shell[data-ui="career8"] .game-stage[data-screen="squad"]{
+ background:radial-gradient(ellipse at 56% -10%,#375b4554,transparent 51%),#0b1b23
+}
+.elite-shell[data-ui="career8"] .football-card{
+ background:linear-gradient(147deg,#516c4a 0%,#314e45 29%,#193039 72%,#11252f 100%);
+ border:1px solid #85a97c;border-radius:6px;box-shadow:0 11px 22px #0006;
+ padding:14px 11px 11px;min-height:330px;transition:transform .18s,box-shadow .18s
+}
+.elite-shell[data-ui="career8"] .football-card:before{
+ background:repeating-linear-gradient(135deg,#e6ffc109 0 1px,transparent 1px 20px)
+}
+.elite-shell[data-ui="career8"] .football-card:hover{
+ transform:translateY(-4px);box-shadow:0 17px 34px #0009;border-color:#cbff9a
+}
+.elite-shell[data-ui="career8"] .football-rating strong{color:#edffb6;font-size:39px}
+.elite-shell[data-ui="career8"] .football-portrait{height:116px}
+.elite-shell[data-ui="career8"] .football-player-name{font:900 21px/1.04 var(--font);color:#f5ffed}
+.elite-shell[data-ui="career8"] .football-attributes{background:#091e268c;border-color:#9eb68c87}
+.elite-shell[data-ui="career8"] .football-attributes b{color:#e4ffbb}
+.elite-shell[data-ui="career8"] .football-card-footer{color:#cdeac3}
+
+/* Operations have unique regional hues but consistent button/data hierarchy. */
+.elite-shell[data-ui="career8"] .game-stage[data-screen="market"]{
+ background:radial-gradient(ellipse at 65% 0%,#205a6261,transparent 53%),#091b26
+}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="training"]{
+ background:radial-gradient(ellipse at 65% 0%,#355c3e67,transparent 52%),#101f26
+}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="academy"]{
+ background:radial-gradient(ellipse at 65% 0%,#6f633650,transparent 52%),#111e23
+}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="finance"]{
+ background:radial-gradient(ellipse at 65% 0%,#5153384c,transparent 52%),#0b1f27
+}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="more"]{
+ background:radial-gradient(ellipse at 65% 0%,#28605d5a,transparent 50%),#091b23
+}
+.elite-shell[data-ui="career8"] .market-card,
+.elite-shell[data-ui="career8"] .academy-card,
+.elite-shell[data-ui="career8"] .training-card,
+.elite-shell[data-ui="career8"] .facility-card,
+.elite-shell[data-ui="career8"] .mentor-card,
+.elite-shell[data-ui="career8"] .quest-card{
+ background:linear-gradient(150deg,#25413c,#162d34);
+ border:1px solid #4e756c;border-radius:5px;
+ box-shadow:inset 0 1px #d3ffad13,0 7px 15px #0004;
+}
+.elite-shell[data-ui="career8"] .market-card:hover,
+.elite-shell[data-ui="career8"] .academy-card:hover{border-color:#d6ff96}
+.elite-shell[data-ui="career8"] .more-grid{border-radius:7px;border-color:#4b6d68;gap:2px;background:#4b6d68}
+.elite-shell[data-ui="career8"] .more-tile{background:#18343a;min-height:133px;padding:16px;gap:12px}
+.elite-shell[data-ui="career8"] .more-tile:hover{background:#245046}
+.elite-shell[data-ui="career8"] .more-tile>span{width:35px;height:35px;color:#d2ffa2}
+.elite-shell[data-ui="career8"] .more-tile strong{font:900 25px/1 var(--font);color:#f4ffeb}
+.elite-shell[data-ui="career8"] .more-tile small{color:#c0dbd1;font-size:11px}
+.elite-shell[data-ui="career8"] .table-wrap{background:#152e34}
+.elite-shell[data-ui="career8"] .data-table th{background:#25453e;color:#cee6d4}
+.elite-shell[data-ui="career8"] .data-table td{border-color:#42675c}
+
+/* Tablet / small desktops: the map remains above its match controls. */
+@media(max-width:1230px){
+ .career-hq .universe-layout{grid-template-columns:minmax(0,1.55fr) minmax(245px,.72fr)}
+ .career-hq .manager-console{padding:16px;gap:13px}
+ .career-ranking b{font-size:43px}
+ .career-world{height:330px}
+ .career-hq .command-tile.home-module{min-height:108px}
+}
+@media(max-width:1050px){
+ .career-hq .universe-layout{grid-template-columns:1fr}
+ .career-hq .manager-console{display:none}
+ .career-world{height:clamp(275px,36vw,350px)}
+ .career-hq .home-module-grid.command-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+ .career-hq .command-tile strong{font-size:21px}
+}
+@media(max-width:850px){
+ .elite-shell[data-ui="career8"] .cockpit-hud.game-hud{height:70px;flex-basis:70px;padding:0 12px}
+ .elite-shell[data-ui="career8"] .hud-club-copy strong{font-size:19px}
+ .elite-shell[data-ui="career8"] .game-stage.page{
+  padding:13px 12px calc(85px + env(safe-area-inset-bottom))
+ }
+ .elite-shell[data-ui="career8"] .game-stage[data-screen="dashboard"]{
+  overflow-y:auto
+ }
+ .elite-shell[data-ui="career8"] .mobile-nav{
+  height:calc(72px + env(safe-area-inset-bottom));background:#112a2d;
+  border-top:1px solid #557e70;box-shadow:0 -8px 24px #021016a1
+ }
+ .elite-shell[data-ui="career8"] .mobile-nav .nav-item{
+  min-height:0;height:57px;color:#abc6b9
+ }
+ .elite-shell[data-ui="career8"] .mobile-nav .nav-item.active{
+  color:#defda4;background:linear-gradient(160deg,#294d3e,#193b36)
+ }
+ .elite-shell[data-ui="career8"] .page-title h1{font-size:40px}
+ .career-hq .universe-layout{display:block}
+ .career-hq .manager-console{display:none}
+ .career-world{height:clamp(240px,46vw,360px)}
+ .career-hq .home-module-grid.command-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:650px){
+ .elite-shell[data-ui="career8"] .game-stage.page{padding:10px 10px calc(87px + env(safe-area-inset-bottom))}
+ .elite-shell[data-ui="career8"] .game-stage[data-screen="dashboard"] .page-title{display:none}
+ .career-hq{gap:11px}
+ .career-hq-top{padding:4px 1px 9px;align-items:center;gap:7px}
+ .hq-identity{font-size:12px;letter-spacing:.04em;gap:6px}
+ .hq-season{gap:7px;font-size:9px}
+ .hq-season b{font-size:9px}
+ .hq-season span:first-child{display:none}
+ .career-hq .home-stadium.universe-stage{
+  display:flex;flex-direction:column;height:auto;min-height:0!important;padding:0!important;
+  border:1px solid #547a6a;border-radius:6px
+ }
+ .career-world{
+  height:clamp(230px,62vw,282px)!important;min-height:0!important;
+  position:relative;flex:none;padding:0!important;
+ }
+ .career-world .stadium-scene-image{
+  background-position:50% 47%;background-size:cover;transform:none!important
+ }
+ .career-world .stadium-scene-dimmer{background:linear-gradient(180deg,#06182273,transparent 30%,transparent 75%,#0719218c)}
+ .career-world .scene-topbar{left:10px;right:10px;top:9px}
+ .career-world .scene-sector{font-size:9px;padding:6px 8px}
+ .career-map-hint{display:none}
+ .career-world .stadium-hotspots{inset:0!important;width:100%!important;height:100%!important}
+ .career-world .scene-hotspot{
+  max-width:42%;height:47px;min-height:47px;gap:5px
+ }
+ .career-world .scene-hotspot.hotspot-0{left:22%!important;top:32%!important}
+ .career-world .scene-hotspot.hotspot-1{left:75%!important;top:29%!important}
+ .career-world .scene-hotspot.hotspot-2{left:22%!important;top:61%!important}
+ .career-world .scene-hotspot.hotspot-3{left:75%!important;top:60%!important}
+ .career-world .scene-hotspot.hotspot-4{left:49%!important;top:84%!important}
+ .career-world .hotspot-pin{width:37px;height:37px;border-width:1px;box-shadow:0 0 0 3px #083027c4}
+ .career-world .hotspot-pin svg{width:17px;height:17px}
+ .career-world .hotspot-label{padding:6px 7px}
+ .career-world .hotspot-label b{font-size:10px;line-height:1.1}
+ .world-bottom-tag{display:none}
+ .career-hq .scene-event-panel{
+  position:relative!important;inset:auto!important;left:auto!important;right:auto!important;
+  padding:13px 12px 13px;margin:0!important;display:block!important;
+  width:100%!important;background:#12342f
+ }
+ .career-fixture-header{margin-bottom:9px;font-size:9px}
+ .career-fixture-body{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+ .career-fixture-body .home-team-vs{
+  grid-template-columns:minmax(0,1fr) 23px minmax(0,1fr);gap:7px
+ }
+ .career-fixture-body .home-team-vs strong{
+  font-size:clamp(19px,5.6vw,26px);max-width:none!important;white-space:normal!important;
+  overflow:visible;overflow-wrap:break-word;line-height:1.06
+ }
+ .career-fixture-body .home-team-vs span{font-size:16px}
+ .career-fixture-body .scene-event-text small{font-size:10px}
+ .career-fixture-body .scene-event-cta{width:100%;min-width:0}
+ .career-fixture-body .scene-event-cta .btn{
+  display:flex!important;width:100%!important;max-width:none!important;min-width:0;
+  min-height:50px;font-size:12px;padding:11px 16px;
+ }
+ .career-dock-label{font-size:11px}
+ .career-dock-label span:last-child{display:none}
+ .career-hq .home-module-grid.command-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;
+  overflow:hidden
+ }
+ .career-hq .command-tile.home-module{
+  padding:11px 6px;min-height:104px;height:auto;gap:7px;justify-content:center;align-items:center
+ }
+ .career-hq .command-tile .module-symbol{width:28px;height:26px}
+ .career-hq .command-tile .module-symbol svg{width:23px;height:23px}
+ .career-hq .command-tile strong{font-size:21px;line-height:1}
+ .career-hq .command-tile small{font-size:9px;line-height:1.14}
+ .elite-shell[data-ui="career8"] .room-foreground{min-height:103px;padding:11px 12px;gap:10px}
+ .elite-shell[data-ui="career8"] .room-score strong{font-size:35px}
+ .elite-shell[data-ui="career8"] .room-shortcuts button{font-size:10px;min-height:42px;padding:9px}
+ .elite-shell[data-ui="career8"] .football-card{min-height:318px;padding:11px 8px}
+ .elite-shell[data-ui="career8"] .football-portrait{height:95px}
+ .elite-shell[data-ui="career8"] .football-player-name{font-size:18px}
+ .elite-shell[data-ui="career8"] .more-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:370px){
+ .hq-identity{font-size:10px}
+ .hq-season{font-size:8px;gap:4px}
+ .career-world{height:235px!important}
+ .career-world .scene-hotspot{max-width:44%;gap:4px}
+ .career-world .hotspot-pin{width:35px;height:35px}
+ .career-world .hotspot-label{padding:5px}
+ .career-world .hotspot-label b{font-size:9px}
+ .career-hq .command-tile strong{font-size:19px}
+ .career-fixture-body .home-team-vs strong{font-size:19px}
+ .career-fixture-header{font-size:9px}
+ .elite-shell[data-ui="career8"] .page-title h1{font-size:32px}
+}
+@media(prefers-reduced-motion:reduce){
+ .career-world .stadium-scene-image,.career-hq .command-tile.home-module{transition:none!important}
+}

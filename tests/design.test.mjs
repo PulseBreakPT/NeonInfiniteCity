@@ -55,7 +55,7 @@ test('premium design assets are wired and included in the offline cache',()=>{
  const css=readFileSync(new URL('../styles-v3.css',import.meta.url),'utf8');
  const sw=readFileSync(new URL('../sw.js',import.meta.url),'utf8');
  const svg=readFileSync(new URL('../assets/stadium.svg',import.meta.url),'utf8');
- assert.ok(html.includes('./styles-v7.css'));
+ assert.ok(html.includes('./styles-v8.css'));
  assert.ok(css.includes('styles-v2.css'));
  assert.ok(css.includes('.game-hud.top-bar'));
  assert.ok(css.includes('.football-card'));

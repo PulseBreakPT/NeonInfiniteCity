@@ -30,6 +30,8 @@ try{
  await page.locator('#create-form button[type="submit"]').click();
  await page.waitForSelector('.universe-stage',{timeout:12000});
  assert.equal(await page.locator('.scene-hotspot').count(),5);
+ assert.ok(await page.locator('.career-hq').count()===1);
+ assert.ok(await page.locator('.career-world').count()===1);
  assert.equal(await page.locator('.command-tile').count(),6);
  assert.ok((await page.locator('.stadium-scene-image').evaluate(x=>getComputedStyle(x).backgroundImage)).includes('stadium-isometric.svg'));
  await mkdir('.browser-qa',{recursive:true});
@@ -59,6 +61,14 @@ try{
   assert.ok(layout.documentWidth<=layout.viewportWidth+1,'Overflow horizontal em '+width+'×'+height+': '+JSON.stringify(layout));
   assert.equal(layout.hotspots,5);
   if(width<=650){
+   const scene=await page.evaluate(()=>{
+     const map=document.querySelector('.career-world')?.getBoundingClientRect();
+     const next=document.querySelector('.scene-event-panel')?.getBoundingClientRect();
+     const dock=document.querySelector('.command-grid')?.getBoundingClientRect();
+     return {mapBottom:map?.bottom,fixtureTop:next?.top,fixtureBottom:next?.bottom,dockTop:dock?.top};
+   });
+   assert.ok(scene.fixtureTop>=scene.mapBottom-1,'Painel da jornada sobre o estádio '+width+': '+JSON.stringify(scene));
+   assert.ok(scene.dockTop>=scene.fixtureBottom-1,'Comandos sobre a jornada '+width+': '+JSON.stringify(scene));
    const geometry=await page.evaluate(()=>{
     const bounds=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
     const fixture=document.querySelector('.scene-event-panel');
@@ -82,6 +92,7 @@ try{
       targets,primaryActions:document.querySelectorAll('.game-stage button[data-action="match"],.game-stage button[data-action="new-season"]').length};
    });
    assert.equal(geometry.primaryActions,1,'Botão JOGAR duplicado '+width+': '+JSON.stringify(geometry));
+   assert.ok(geometry.text.includes('JOGAR JORNADA'),'Ação de partida não identificada '+width);
    assert.ok(geometry.visibleCTA&&geometry.inkInside,'Texto do botão cortado '+width+': '+JSON.stringify(geometry));
    assert.equal(geometry.targets.length,5);
    for(const target of geometry.targets)assert.ok(target.inStage&&!target.obscuredByFixture&&target.centerClickable,'Ponto do estádio oculto '+width+': '+JSON.stringify(target));

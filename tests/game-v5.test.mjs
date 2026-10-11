@@ -54,8 +54,8 @@ test('shell retains single page frame and accessible mobile game controls',()=>{
 });
 test('all new design resources are packaged for offline use',()=>{
  const index=load('index.html'),sw=load('sw.js'),css=load('styles-v4.css'),asset=load('assets/stadium-isometric.svg'),pkg=JSON.parse(load('package.json'));
- assert.ok(index.includes('styles-v7.css'));
- assert.ok(sw.includes('styles-v7.css'));
+ assert.ok(index.includes('styles-v8.css'));
+ assert.ok(sw.includes('styles-v8.css'));
  assert.ok(sw.includes('stadium-isometric.svg'));
  assert.ok(sw.includes('scene-ui.js'));
  assert.ok(css.includes('.scene-hotspot'));
@@ -80,4 +80,15 @@ test('o gabinete tem só uma ação de jogar e nenhum marcador repetido',()=>{
  assert.equal((html.match(/COMPLEXO DESPORTIVO/g)||[]).length,1);
  assert.ok(html.includes('class="scene-event-panel"'));
  assert.ok(html.includes('JOGAR JORNADA'));
+});
+
+test('o ecrã de carreira usa um complexo jogável em vez de um dashboard de cartões',()=>{
+ const s=state(),html=dashboard(s);
+ assert.ok(html.includes('class="career-hq"'));
+ assert.ok(html.includes('class="career-world"'));
+ assert.ok(html.includes('class="career-ranking"'));
+ assert.equal((html.match(/class="scene-hotspot hotspot-/g)||[]).length,5);
+ assert.equal((html.match(/class="home-module command-tile"/g)||[]).length,6);
+ assert.equal((html.match(/data-action="match"/g)||[]).length,1);
+ assert.ok(!html.includes('Acessos rápidos'));
 });

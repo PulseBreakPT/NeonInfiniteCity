@@ -37,7 +37,7 @@ export function shell(state,page,body,notice=''){
  };
  const sceneLabel=({dashboard:'Gabinete',matches:'Partida',tactics:'Táticas',squad:'Plantel',more:'Gestão'})[page]||current[2].toUpperCase();
  const toast=notice?'<div class="toast" role="status"><span class="toast-mark">◆</span>'+esc(notice)+'</div>':'';
- return '<div class="app-shell game-shell elite-shell" data-scene="'+esc(page)+'" style="--club-color:'+esc(state.club.color)+'">'+
+ return '<div class="app-shell game-shell elite-shell" data-ui="career8" data-scene="'+esc(page)+'" style="--club-color:'+esc(state.club.color)+'">'+
  '<aside class="side game-rail game-dock" aria-label="Comandos do treinador"><div class="brand"><span class="logo">CD<span class="logo-spark">✦</span></span><span class="rail-brand"><strong>CLUB DYNASTY</strong></span></div>'+
  '<div class="rail-caption">CLUB DYNASTY</div><nav class="nav-scroll" aria-label="Modos do jogo">'+primary.map(id=>navLink(id)).join('')+'</nav>'+
  '<div class="rail-bottom"><button type="button" data-nav="league" class="rail-division rail-target" title="Ver classificação"><span class="mini-trophy">'+icon('trophy',18)+'</span><strong>'+rank+'º</strong><small>NA LIGA</small></button><button type="button" data-nav="club" class="rail-settings" title="Gestão do clube">'+icon('settings',21)+'</button></div></aside>'+
