@@ -31,7 +31,7 @@ body{background:var(--arena-bg)}
  border:0;border-left:3px solid var(--arena-green);border-radius:0;
  background:linear-gradient(90deg,#cfff8428,#6ef0ce08);color:#eaffbe
 }
-.elite-shell[data-ui="career8"] .game-rail .nav-item.active svg{filter:drop-shadow(0 0 8px #b6ff7480)}
+.elite-shell[data-ui="career8"] .game-rail .nav-item.active svg{filter:none}
 .elite-shell[data-ui="career8"] .game-rail .nav-item:hover{background:#2a4842;color:#effbd7}
 .elite-shell[data-ui="career8"] .cockpit-hud.game-hud{
  background:linear-gradient(110deg,#102329,#19343a 42%,#0e2029 100%);
@@ -56,7 +56,7 @@ body{background:var(--arena-bg)}
 .elite-shell[data-ui="career8"] .game-stage.page{
  background:
  radial-gradient(ellipse at 70% -20%,#2659534a,transparent 65%),
- repeating-linear-gradient(90deg,#b2ff7604 0 1px,transparent 1px 110px),
+ 
  #091a22;
  padding:clamp(13px,1.4vw,22px) clamp(12px,1.6vw,27px) 22px;
 }
@@ -113,7 +113,7 @@ body{background:var(--arena-bg)}
 }
 .hq-identity{display:flex;gap:10px;align-items:center;color:#e8f9dc;white-space:nowrap;
  font:900 14px var(--font);letter-spacing:.13em}
-.hq-kickoff-led{display:inline-block;width:8px;height:8px;border-radius:50%;background:#d2ff8a;box-shadow:0 0 14px #b5ff5f78}
+.hq-kickoff-led{display:inline-block;width:8px;height:8px;border-radius:50%;background:#d2ff8a;box-shadow:0 2px 5px #0006}
 .hq-season{display:flex;gap:15px;align-items:center;font:800 10px 'DM Sans',sans-serif;letter-spacing:.04em;color:#a4c8b8}
 .hq-season b{font-size:11px;color:#e1ffae}
 .career-hq .universe-layout{
@@ -352,7 +352,7 @@ body{background:var(--arena-bg)}
  padding:14px 11px 11px;min-height:330px;transition:transform .18s,box-shadow .18s
 }
 .elite-shell[data-ui="career8"] .football-card:before{
- background:repeating-linear-gradient(135deg,#e6ffc109 0 1px,transparent 1px 20px)
+ background:none
 }
 .elite-shell[data-ui="career8"] .football-card:hover{
  transform:translateY(-4px);box-shadow:0 17px 34px #0009;border-color:#cbff9a
