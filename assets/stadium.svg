@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" fill="none">
+<defs>
+ <linearGradient id="sky" x1="660" y1="0" x2="700" y2="720" gradientUnits="userSpaceOnUse"><stop stop-color="#152736"/><stop offset=".52" stop-color="#09161E"/><stop offset="1" stop-color="#040B10"/></linearGradient>
+ <linearGradient id="stand" x1="620" y1="120" x2="675" y2="455"><stop stop-color="#2C4551"/><stop offset=".55" stop-color="#12232C"/><stop offset="1" stop-color="#09151D"/></linearGradient>
+ <linearGradient id="pitch" x1="500" y1="450" x2="730" y2="720"><stop stop-color="#39966E"/><stop offset=".48" stop-color="#176648"/><stop offset="1" stop-color="#0B3A30"/></linearGradient>
+ <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#F7FFF2" stop-opacity=".53"/><stop offset="1" stop-color="#A6F9BD" stop-opacity="0"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#D7FBE6" stop-opacity=".26"/><stop offset="1" stop-color="#D7FBE6" stop-opacity="0"/></radialGradient>
+ <pattern id="seats" patternUnits="userSpaceOnUse" width="23" height="11"><rect width="23" height="11" fill="none"/><path d="M2 7h6m4 0h8" stroke="#4A6670" stroke-opacity=".49" stroke-width="3"/></pattern>
+ <pattern id="grass" patternUnits="userSpaceOnUse" width="64" height="32"><path d="M0 0h64v16H0z" fill="#C0FFB8" opacity=".055"/></pattern>
+ <filter id="blur"><feGaussianBlur stdDeviation="15"/></filter><filter id="big"><feGaussianBlur stdDeviation="43"/></filter>
+</defs>
+<rect width="1280" height="720" fill="url(#sky)"/>
+<path d="M0 129Q644 -86 1280 133L1280 310Q640 91 0 312Z" fill="#071016" stroke="#35525D" stroke-width="5"/>
+<path d="M-60 176Q632 -51 1340 178" stroke="#8ACFA8" stroke-opacity=".25" stroke-width="16"/>
+<path d="M-50 214Q642 -20 1330 215" stroke="#4D6776" stroke-opacity=".35" stroke-width="18"/>
+<path d="M0 253Q633 35 1280 250V479Q644 273 0 490Z" fill="url(#stand)"/>
+<path d="M0 253Q633 35 1280 250V479Q644 273 0 490Z" fill="url(#seats)" opacity=".95"/>
+<path d="M0 289Q637 91 1280 289M0 327Q634 144 1280 331M0 366Q638 207 1280 361M0 412Q635 260 1280 412" stroke="#5F8191" stroke-width="4" opacity=".57"/>
+<path d="M0 365Q648 175 1280 363" stroke="#C8F5DA" stroke-opacity=".22" stroke-width="7"/>
+<path d="M0 422Q644 251 1280 427" stroke="#9AF4A8" stroke-opacity=".20" stroke-width="12"/>
+<ellipse cx="144" cy="127" rx="190" ry="153" fill="url(#glow)" filter="url(#big)"/>
+<ellipse cx="1118" cy="124" rx="190" ry="153" fill="url(#glow)" filter="url(#big)"/>
+<path d="M82 99 254 670 702 670 183 99Z" fill="url(#beam)" opacity=".32"/>
+<path d="M1099 99 602 676 1045 676 1200 99Z" fill="url(#beam)" opacity=".3"/>
+<g stroke="#E7FFF2" stroke-width="4" opacity=".85">
+<path d="M62 89H196M62 102H196M62 115H196M62 128H196M62 141H196"/>
+<path d="M1079 89H1213M1079 102H1213M1079 115H1213M1079 128H1213M1079 141H1213"/>
+</g>
+<path d="M-50 500Q632 310 1330 495V720H-50Z" fill="#061B18"/>
+<path d="M-23 545 1298 540 1174 720 106 720Z" fill="url(#pitch)" stroke="#B9F8D0" stroke-opacity=".55" stroke-width="5"/>
+<path d="M-23 545 1298 540 1174 720 106 720Z" fill="url(#grass)"/>
+<path d="M640 542 641 720M272 542l-85 178M1012 541l86 179" stroke="#E1FFE7" stroke-opacity=".28" stroke-width="3"/>
+<path d="M456 633h375M410 674h465" stroke="#E1FFE7" stroke-opacity=".11" stroke-width="2"/>
+<ellipse cx="642" cy="624" rx="78" ry="25" stroke="#E5FFEE" stroke-opacity=".50" stroke-width="3"/>
+<path d="M0 704Q640 664 1280 706" stroke="#F4FFF5" stroke-opacity=".3" stroke-width="5"/>
+<path d="M-20 477Q640 298 1300 475" stroke="#D5FFE4" stroke-opacity=".11" stroke-width="20" filter="url(#blur)"/>
+<g fill="#D7F9EA" opacity=".64">
+<circle cx="319" cy="384" r="2"/><circle cx="440" cy="368" r="2"/><circle cx="542" cy="352" r="2"/><circle cx="707" cy="348" r="2"/><circle cx="831" cy="364" r="2"/><circle cx="937" cy="379" r="2"/>
+<circle cx="262" cy="412" r="2"/><circle cx="382" cy="392" r="2"/><circle cx="489" cy="381" r="2"/><circle cx="667" cy="376" r="2"/><circle cx="793" cy="383" r="2"/><circle cx="1002" cy="422" r="2"/>
+</g>
+<rect width="1280" height="720" fill="#08151D" opacity=".20"/>
+</svg>

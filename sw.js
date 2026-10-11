@@ -1,5 +1,5 @@
-const CACHE='club-dynasty-shell-v4';
-const SHELL=['./','./index.html','./styles-v2.css','./main.js','./model.js','./sim.js','./match-engine.js','./actions.js','./ui-core.js','./ui-main.js','./ui-extra.js','./manifest.webmanifest','./assets/mark.svg'];
+const CACHE='club-dynasty-shell-v5';
+const SHELL=['./','./index.html','./styles-v2.css','./styles-v3.css','./main.js','./model.js','./sim.js','./match-engine.js','./actions.js','./ui-core.js','./ui-main.js','./ui-extra.js','./manifest.webmanifest','./assets/mark.svg','./assets/stadium.svg'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('club-dynasty-shell-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',event=>{

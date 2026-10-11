@@ -1,12 +1,12 @@
 {
-  "name": "CLUB DYNASTY — Football Manager",
+  "name": "CLUB DYNASTY — Football Universe",
   "short_name": "Club Dynasty",
   "description": "Futebol, táticas e gestão de clube.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#08141e",
-  "theme_color": "#08141e",
+  "background_color": "#081016",
+  "theme_color": "#0c161c",
   "icons": [
     {
       "src": "./assets/mark.svg",

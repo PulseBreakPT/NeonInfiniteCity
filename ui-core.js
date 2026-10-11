@@ -24,7 +24,7 @@ export function navItems(){return [
  ['campus','building','Campus','Instalações'],['finance','coins','Finanças','Receitas e custos'],['mentors','star','Mentores','Equipa técnica'],['events','calendar','Eventos','Desafios'],
  ['collection','gift','Coleções','Cosméticos'],['profile','user','Treinador','Carreira'],['social','heart','Social','Jogos amigáveis'],['club','settings','Clube','Identidade e preferências']
  ];}
-export function shell(state,page,body,notice=''){
+export function legacyShell(state,page,body,notice=''){
  const nav=navItems(),primary=['dashboard','matches','tactics','squad','more'];
  const navLink=([id,ic,label])=>'<button class="nav-item '+(page===id?'active':'')+'" data-nav="'+id+'">'+icon(ic)+'<span>'+label+'</span></button>';
  const toast=notice?'<div class="toast" role="status">'+esc(notice)+'</div>':'';
@@ -34,4 +34,29 @@ export function shell(state,page,body,notice=''){
 }
 export function welcome(color=COLORS[0]){
  return '<div class="welcome"><div class="welcome-showcase"><span class="mark">CD <span>✦</span></span><div><span class="eyebrow">FOOTBALL MANAGER · 2026</span><h1>CRIA O<br><em>TEU LEGADO.</em></h1><p>Constrói uma equipa. Domina o campeonato. Deixa o teu nome gravado na história.</p></div><div class="stadium-art">◉</div><small>CLUB DYNASTY · JOGO ORIGINAL DE GESTÃO</small></div><div class="welcome-card"><span class="eyebrow">PRIMEIRO PASSO</span><h2>FUNDA O TEU CLUBE</h2><p>Escolhe a tua identidade e recebe um plantel com 26 jogadores. Os teus dados ficam guardados neste dispositivo.</p><form id="create-form"><label>Nome do clube<input name="name" maxlength="32" placeholder="Atlético Aurora" value="Atlético Aurora" required></label><label>Cidade<input name="city" maxlength="26" value="Lisboa" required></label><label>Cor principal</label><div class="swatches">'+COLORS.map(c=>'<button type="button" class="swatch '+(c===color?'chosen':'')+'" style="background:'+c+'" data-color="'+c+'" aria-label="Selecionar cor '+c+'"></button>').join('')+'</div><button class="btn accent large" type="submit">Fundar clube '+icon('arrow')+'</button></form><small class="muted">Single-player, sem registo. Dados guardados localmente.</small></div></div>';
+}
+
+export function shell(state,page,body,notice=''){
+ const nav=navItems(),primary=['dashboard','matches','tactics','squad','more'];
+ const shortcuts=['league','market','training','academy','campus','finance','mentors','events','collection','profile','social','club'];
+ const navMap=Object.fromEntries(nav.map(x=>[x[0],x]));
+ const activeMore=!primary.includes(page);
+ const navLink=([id,ic,label],mobile=false)=>'<button type="button" title="'+esc(label)+'" aria-label="'+esc(label)+'" aria-current="'+(page===id?'page':'false')+'" class="nav-item '+(page===id||id==='more'&&activeMore?'active':'')+'" data-nav="'+id+'"><span class="nav-glyph">'+icon(ic,mobile?21:23)+'</span><span class="nav-word">'+esc(label)+'</span></button>';
+ const toast=notice?'<div class="toast" role="status"><span class="toast-mark">✦</span>'+esc(notice)+'</div>':'';
+ const current=navMap[page]||['more','grid','Operações'];
+ const rank=standings(state).findIndex(t=>t.id===0)+1,round=Math.min(30,state.league.round);
+ return '<div class="app-shell game-shell" data-scene="'+esc(page)+'" style="--club-color:'+esc(state.club.color)+'">'+
+ '<aside class="side game-rail" aria-label="Menu principal"><div class="brand"><span class="logo">CD<span class="logo-spark">✦</span></span><span class="rail-brand"><strong>CLUB<br>DYNASTY</strong><small>FOOTBALL UNIVERSE</small></span></div>'+
+ '<div class="rail-caption">CENTRO DE COMANDO</div><nav class="nav-scroll" aria-label="Ecrãs de jogo">'+primary.map(id=>navLink(navMap[id]||['more','grid','Mais'])).join('')+'</nav>'+
+ '<div class="rail-bottom"><div class="rail-division"><span class="mini-trophy">'+icon('trophy',18)+'</span><strong>'+rank+'º</strong><small>DIV '+state.division+'</small></div><button type="button" data-nav="club" class="rail-settings" title="Definições do clube" aria-label="Definições do clube">'+icon('settings',21)+'</button></div></aside>'+
+ '<div class="main-frame game-canvas"><header class="top-bar game-hud"><div class="hud-club">'+crest(state,true)+'<div class="hud-club-copy"><span class="hud-label">CLUBE ATIVO <b class="online-indicator"></b> LOCAL</span><strong>'+esc(state.club.name)+'</strong><small>'+esc(state.club.city)+' <i>◆</i> ÉPOCA '+state.season+' <i>◆</i> JORNADA '+round+'</small></div></div>'+
+ '<div class="hud-command"><div class="hud-season"><span class="hud-label">COMPETIÇÃO</span><strong>LIGA NACIONAL</strong><small>DIVISÃO '+state.division+' / 16 EQUIPAS</small></div>'+
+ '<div class="resources"><span class="hud-wallet">'+icon('coins',16)+'<span class="hud-number">'+money(state.budget)+'</span></span><span class="tokens"><b>✦</b>'+state.tokens+'</span></div>'+
+ '<button type="button" data-nav="club" class="top-settings" title="O meu clube" aria-label="O meu clube">'+icon('settings',19)+'</button></div></header>'+
+ '<div class="game-ribbon"><div class="ribbon-location"><span class="ribbon-led"></span><span>DYNASTY OS</span><span class="ribbon-slash">/</span><strong>'+esc(current[2])+'</strong></div>'+
+ '<nav class="ribbon-links" aria-label="Acesso rápido aos sistemas">'+shortcuts.map(id=>{const x=navMap[id];return '<button type="button" data-nav="'+id+'" class="'+(page===id?'active':'')+'">'+icon(x[1],14)+' '+esc(x[2])+'</button>';}).join('')+'</nav>'+
+ '<div class="ribbon-mark">MANAGER MODE <span>●</span></div></div>'+
+ '<main class="page game-stage" id="page" data-screen="'+esc(page)+'"><div class="screen-backdrop" aria-hidden="true"></div><div class="scene-content">'+body+'</div></main>'+
+ '<div class="game-statusline"><span>✦ &nbsp; CLUB DYNASTY <em>/</em> FOOTBALL UNIVERSE</span><span>'+esc(state.coach?.name||'Treinador')+' <em>•</em> '+(state.league.completed?'ÉPOCA CONCLUÍDA':'ÉPOCA '+state.season+' EM CURSO')+'</span><span class="status-saved">● PROGRESSO LOCAL</span></div></div>'+
+ '<nav class="mobile-nav" aria-label="Navegação principal">'+primary.map(id=>navLink(navMap[id]||['more','grid','Mais'],true)).join('')+'</nav>'+toast+'</div>';
 }

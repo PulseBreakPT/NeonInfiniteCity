@@ -87,3 +87,19 @@ O passo seguinte para verdadeira equivalência com um jogo de serviço online se
 ### Táticas reativas e disciplina
 
 O treinador pode definir um plano para o intervalo (automático, agressivo, proteger ou manter). A IA rival também ajusta a mentalidade em função do marcador e da capacidade do técnico. Cinco cartões amarelos ou uma expulsão podem provocar suspensão para a jornada seguinte; o onze é recalculado para impedir que atletas suspensos joguem.
+
+## Design 0.4 — Football Universe
+
+O CLUB DYNASTY utiliza agora uma interface de jogo em ecrã completo (Game UI), deixando para trás a apresentação de dashboard web:
+
+- **HUD permanente** com identidade do clube, época, competição, saldo, tokens e progresso local.
+- **Barra lateral compacta** com cinco modos principais; os restantes ecrãs são abertos pela faixa de atalhos ou Centro de Operações.
+- **Ecrã MATCHDAY** de apresentação do confronto, com um estádio SVG original, identidade dos clubes e botão de jogar.
+- **Player Deck** — plantel apresentado em cartões individuais com classificação, posição, silhueta, atributos, condição e interação para abrir detalhes.
+- **Relvado tático, replay e estatísticas** com tratamento visual de transmissão desportiva.
+- **Cartões dos sistemas de gestão** reformulados como interfaces de videojogo em toda a aplicação.
+- **Navegação Android** por cinco atalhos inferiores, menus disponíveis no ecrã “Mais” e área de conteúdo independente sem scroll da página.
+- **Animações reduzidas automaticamente** quando o utilizador ativa a preferência de movimento reduzido.
+- **Design original**, sem copiar o grafismo ou assets de um jogo comercial.
+
+A folha `styles-v3.css` estende a camada anterior de estilos sem alterar qualquer save nem as regras do motor. O novo cenário é `assets/stadium.svg`, original e gerado exclusivamente em SVG.
