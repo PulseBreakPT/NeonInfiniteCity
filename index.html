@@ -16,5 +16,6 @@
 <div id="app" role="application" aria-label="Club Dynasty"></div>
 <noscript>Ativa o JavaScript para jogar CLUB DYNASTY.</noscript>
 <script defer src="./app.js"></script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){/* optional offline mode */});});}</script>
 </body>
 </html>
