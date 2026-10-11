@@ -77,6 +77,7 @@ function exportSave(){
 }
 document.addEventListener('click',event=>{
  const button=event.target.closest('button,[data-action="show-player"],[data-action="close-player"]');if(!button)return;
+ if(button.classList?.contains('modal-overlay')&&event.target!==button)return;
  const color=button.dataset.color;
  if(color){
   if(!COLORS.includes(color))return;
