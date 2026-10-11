@@ -5,11 +5,14 @@ function requireFunds(s,cost){if(!Number.isFinite(cost)||cost<0)throw Error('Cus
 function spend(s,cost,label){requireFunds(s,cost);s.budget-=cost;s.finance.expenses+=cost;s.finance.ledger.unshift({day:s.day,label,amount:-cost});}
 function income(s,amount,label){s.budget+=amount;s.finance.income+=amount;s.finance.ledger.unshift({day:s.day,label,amount});}
 function requireToken(s,n){if(s.tokens<n)throw Error('Tokens insuficientes.');s.tokens-=n;}
-function enhance(p,keys,n=1){let gains=0;for(const key of keys){if(p[key]<p.potential&&p[key]<98){p[key]=Math.min(98,p[key]+n);gains++;}}return gains;}
+function enhance(p,keys,n=1){let gains=0;for(const key of keys){if(p[key]<p.potential&&p[key]<98){p[key]=Math.min(98,p.potential,p[key]+n);gains++;}}return gains;}
 function eventProgress(s,type){[...s.events.daily,...s.events.weekly].forEach(q=>{if(q.id===type&&!q.claimed)q.progress=Math.min(q.target,q.progress+1);});}
 export function execute(state,action,data={}){
- const s=state;const p=getPlayer(s,data.id);const random=rng(hash(s.club.name+':'+s.day+':'+s.trainingTotal+':'+action));
+ const s=state;const snapshot=JSON.parse(JSON.stringify(state));const p=getPlayer(s,data.id);
+ const offerForSeed=s.market?.find(x=>x.id===Number(data.id));
+ const random=rng(hash(s.club.name+':'+s.day+':'+s.week+':'+s.trainingTotal+':'+action+':'+(s.gameNonce||0)+':'+(offerForSeed?.bids||0)));
  let message='';
+ try{
  switch(action){
  case 'formation':{
   if(!FORMATIONS[data.value])throw Error('Formação inválida.');
@@ -36,6 +39,7 @@ export function execute(state,action,data={}){
   let gains=0;for(const player of s.players){
    if(data.kind==='recovery'){player.morale=clamp(player.morale+3,0,100);}else{gains+=enhance(player,t.keys,s.facilities.training>=4?2:1);}
    player.fitness=clamp(player.fitness-t.fatigue,5,100);
+   if(data.kind!=='recovery'&&player.fitness<25&&random()<.012)player.injury=Math.max(player.injury||0,1+Math.ceil(random()*2));
   }
   s.trainingCount++;s.trainingTotal++;eventProgress(s,'train');message='Treino concluído: '+gains+' atributos melhorados.';
   log(s,'Sessão de treino',message);break;
@@ -62,7 +66,7 @@ export function execute(state,action,data={}){
   requireToken(s,2);p.pos=data.pos;s.lineups[s.formation]=autoLineup(s);message=p.name+' aprendeu a nova posição '+p.pos+'.';break;
  }
  case 'player-class':{
-  if(!p)throw Error('Jogador desconhecido.');const cost=3+p.classLevel;
+  if(!p)throw Error('Jogador desconhecido.');if(p.classLevel>=10)throw Error('Classe máxima atingida.');const cost=3+p.classLevel;
   requireToken(s,cost);p.classLevel++;p.potential=clamp(p.potential+2,0,99);enhance(p,p.pos==='GK'?['gk','phy']:['pac','sho','pas','def','phy'],1);
   message=p.name+' melhorou para classe '+p.classLevel+'.';break;
  }
@@ -73,16 +77,17 @@ export function execute(state,action,data={}){
   const offer=s.market.find(x=>x.id===Number(data.id));if(!offer)throw Error('Oferta já não disponível.');
   if(s.players.length>=35)throw Error('Plantel completo: limite de 35 atletas.');
   const bid=Math.round(offer.ask*(1+(offer.bids||0)*.08));
-  requireFunds(s,bid);const won=random()>(.10+Math.min(.3,(offer.bids||0)*.06));
+  requireFunds(s,bid);const won=random()>(.12+Math.min(.24,(offer.bids||0)*.04));
   if(!won){offer.bids++;message='Licitação superada por outro clube. Sem custos.';break;}
   spend(s,bid,'Transferência: '+offer.name);
-  const signed={...offer,contract:3,injury:0,goals:0,assists:0,apps:0};delete signed.ask;delete signed.expires;delete signed.bids;
+  const signed={...offer,contract:3,injury:0,goals:0,assists:0,apps:0,saleLockUntilWeek:s.week+2};delete signed.ask;delete signed.expires;delete signed.bids;
   s.players.push(signed);s.market=s.market.filter(x=>x.id!==offer.id);
   s.nextId=Math.max(s.nextId,signed.id+1);message=signed.name+' contratado por '+money(bid)+'.';
   log(s,'Reforço confirmado',message);break;
  }
  case 'sell':{
   if(!p||s.players.length<=16)throw Error('Precisas de pelo menos 16 jogadores.');
+  if((p.saleLockUntilWeek||0)>s.week)throw Error('O jogador deve permanecer no clube durante a integração.');
   const price=Math.round((rating(p)**3*2+60000)/1000)*1000;
   income(s,price,'Venda: '+p.name);s.players=s.players.filter(x=>x.id!==p.id);
   for(const f of Object.keys(s.lineups))s.lineups[f]=autoLineup(s,f);
@@ -91,7 +96,7 @@ export function execute(state,action,data={}){
  case 'scout':{
   const cost=18000;spend(s,cost,'Relatório de olheiros');
   const market=makeMarket(s,hash(s.club.name)+s.day*991+s.nextId*73);
-  const candidate=market[0];candidate.id=s.nextId+100;s.market.unshift(candidate);message='Novo talento observado: '+candidate.name+'.';break;
+  const candidate=market[0];s.market.unshift(candidate);s.gameNonce=(s.gameNonce||0)+1;message='Novo talento observado: '+candidate.name+'.';break;
  }
  case 'upgrade':{
   if(!FACILITY_DATA[data.key])throw Error('Instalação desconhecida.');
@@ -109,6 +114,7 @@ export function execute(state,action,data={}){
  case 'sponsor':{
   const sponsors={regular:{name:'Atlântico Energia',reward:0},premium:{name:'Norte Digital',reward:12000},elite:{name:'Horizonte Global',reward:22000}};
   const choice=sponsors[data.value];if(!choice)throw Error('Patrocínio desconhecido.');
+  if(choice.name===s.club.sponsor)throw Error('Patrocinador já contratado.');
   if(choice.reward)spend(s,choice.reward,'Negociação de patrocínio');
   s.club.sponsor=choice.name;s.finance.sponsorTerm++;message='Novo patrocinador: '+choice.name+'.';break;
  }
@@ -119,9 +125,10 @@ export function execute(state,action,data={}){
   message=kid.name+' evoluiu na academia.';break;
  }
  case 'academy-promote':{
-  const kid=s.academy.find(x=>x.id===Number(data.id));if(!kid||kid.age<16)throw Error('O jovem ainda não pode ser promovido.');
+  const kid=s.academy.find(x=>x.id===Number(data.id));if(!kid||kid.age<17)throw Error('O jovem precisa de ter 17 anos para ser promovido.');
   if(s.players.length>=35)throw Error('Plantel profissional completo.');
-  const clone={...kid,id:s.nextId++,age:Math.max(17,kid.age),contract:4,salary:2000,apps:0,goals:0,assists:0,injury:0};
+  spend(s,10000,'Assinatura profissional de '+kid.name);
+  const clone={...kid,id:s.nextId++,age:Math.max(17,kid.age),contract:4,salary:2000,apps:0,goals:0,assists:0,injury:0,saleLockUntilWeek:s.week+4};
   s.players.push(clone);s.academy=s.academy.filter(x=>x.id!==kid.id);
   message=clone.name+' promovido à equipa principal!';break;
  }
@@ -145,10 +152,11 @@ export function execute(state,action,data={}){
   s.mentorActive=data.id;message='Mentor ativo alterado.';break;
  }
  case 'reward':{
-  if(s.rewards.lastDay===s.day)throw Error('Já recebeste a recompensa de hoje.');
-  s.rewards.streak=s.rewards.lastDay===s.day-1?s.rewards.streak+1:1;s.rewards.lastDay=s.day;
-  const prize=4500+s.rewards.streak*1800;income(s,prize,'Bónus de atividade diária');
-  if(s.rewards.streak%3===0)s.tokens+=2;message='Recompensa diária: '+money(prize)+(s.rewards.streak%3===0?' e 2 tokens':'')+'.';break;
+  if(s.rewards.lastClaimWeek===s.season+':'+s.week)throw Error('Já recebeste o bónus desta jornada.');
+  s.rewards.streak=s.rewards.lastClaimWeek===s.season+':'+(s.week-1)?s.rewards.streak+1:1;
+  s.rewards.lastDay=s.day;s.rewards.lastClaimWeek=s.season+':'+s.week;
+  const prize=4500+s.rewards.streak*1800;income(s,prize,'Bónus de preparação da jornada');
+  if(s.rewards.streak%3===0)s.tokens+=2;message='Bónus da jornada: '+money(prize)+(s.rewards.streak%3===0?' e 2 tokens':'')+'.';break;
  }
  case 'quest':{
   const q=[...s.events.daily,...s.events.weekly].find(x=>x.id===data.id);
@@ -162,7 +170,7 @@ export function execute(state,action,data={}){
   requireToken(s,t.price);s[data.kind]++;message=t.label+' adquirido.';break;
  }
  case 'cosmetic':{
-  const kits={oceano:{price:4,color:'#59cddc'},solar:{price:4,color:'#ffab63'},noturno:{price:5,color:'#826dff'},royal:{price:6,color:'#f0cd68'}};
+  const kits={principal:{price:0,color:s.club.baseColor||'#caf35b'},oceano:{price:4,color:'#59cddc'},solar:{price:4,color:'#ffab63'},noturno:{price:5,color:'#826dff'},royal:{price:6,color:'#f0cd68'}};
   const kit=kits[data.id];if(!kit)throw Error('Equipamento desconhecido.');
   if(!s.inventory.kits.includes(data.id)){requireToken(s,kit.price);s.inventory.kits.push(data.id);}
   s.inventory.activeKit=data.id;s.club.color=kit.color;message='Equipamento '+data.id+' equipado.';break;
@@ -186,7 +194,7 @@ export function execute(state,action,data={}){
   const name=String(data.name||'').trim(),city=String(data.city||'').trim(),stadium=String(data.stadium||'').trim();
   if(!name||!city||!stadium||name.length>32||city.length>26||stadium.length>40)throw Error('Preenche os campos corretamente.');
   s.club.name=name;s.club.city=city;s.club.stadium=stadium;
-  if(data.color&&/^#[0-9a-fA-F]{6}$/.test(data.color))s.club.color=data.color;
+  if(data.color&&/^#[0-9a-fA-F]{6}$/.test(data.color)){s.club.color=data.color;s.club.baseColor=data.color;}
   s.league.teams[0].name=name;message='Identidade do clube atualizada.';break;
  }
  case 'match':{
@@ -199,18 +207,23 @@ export function execute(state,action,data={}){
   advanceSeason(s);message='Começou a época '+s.season+'.';break;
  }
  case 'friendly':{
+  if((s.friendliesThisWeek||0)>=1)throw Error('Só podes disputar um amigável por jornada.');
   const opponent=s.league.teams.find(x=>x.id===Number(data.id)&&x.id!==0)||s.league.teams[1];
+  s.gameNonce=(s.gameNonce||0)+1;
   const fixture={id:9000+s.day,home:0,away:opponent.id};
   const result=simulateMatch(s,fixture,{friendly:true});
-  s.lastMatch=result;
+  s.lastMatch=result;s.friendliesThisWeek=(s.friendliesThisWeek||0)+1;
   message='Amigável contra '+opponent.name+' finalizado.';
   return {message,result};
  }
  case 'rest-day':{
-  s.day++;s.trainingCount=0;s.players.forEach(x=>{x.fitness=clamp(x.fitness+12+s.facilities.medical,0,100);x.injury=Math.max(0,x.injury-1);});
+  if((s.restDaysThisWeek||0)>=2)throw Error('Limite de dois dias de descanso por jornada.');
+  s.day++;s.restDaysThisWeek=(s.restDaysThisWeek||0)+1;
+  s.players.forEach(x=>{x.fitness=clamp(x.fitness+7+s.facilities.medical,0,100);});
   message='Dia de descanso concluído.';break;
  }
  default:throw Error('Ação desconhecida: '+action);
  }
  return {message};
+ }catch(err){for(const key of Object.keys(s))delete s[key];Object.assign(s,snapshot);throw err;}
 }

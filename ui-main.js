@@ -45,12 +45,15 @@ export function matches(s){
  ['Posse de bola',r.stats.possession+'%',(100-r.stats.possession)+'%',r.stats.possession],
  ['Remates',r.stats.shotsHome,r.stats.shotsAway,Math.round(r.stats.shotsHome/(r.stats.shotsHome+r.stats.shotsAway)*100)],
  ['À baliza',r.stats.onTargetHome,r.stats.onTargetAway,Math.round(r.stats.onTargetHome/Math.max(1,r.stats.onTargetHome+r.stats.onTargetAway)*100)],
- ['Golos esperados',r.stats.xgHome,r.stats.xgAway,Math.round(Number(r.stats.xgHome)/(Number(r.stats.xgHome)+Number(r.stats.xgAway))*100)]
+ ['Golos esperados',r.stats.xgHome,r.stats.xgAway,Math.round(Number(r.stats.xgHome)/(Number(r.stats.xgHome)+Number(r.stats.xgAway))*100)],
+ ['Passes certos',r.stats.accurateHome??0,r.stats.accurateAway??0,Math.round((r.stats.accurateHome??0)/Math.max(1,(r.stats.accurateHome??0)+(r.stats.accurateAway??0))*100)],
+ ['Cantos',r.stats.cornersHome??0,r.stats.cornersAway??0,Math.round((r.stats.cornersHome??0)/Math.max(1,(r.stats.cornersHome??0)+(r.stats.cornersAway??0))*100)],
+ ['Faltas',r.stats.foulsHome??0,r.stats.foulsAway??0,Math.round((r.stats.foulsHome??0)/Math.max(1,(r.stats.foulsHome??0)+(r.stats.foulsAway??0))*100)]
  ].map(([name,a,b,p])=>'<div class="match-stat"><small>'+name+'</small><div class="row between"><strong>'+a+'</strong>'+bar(p)+'<strong>'+b+'</strong></div></div>').join('')+
- '<h4>Momentos do jogo</h4><div class="match-events">'+r.events.filter(e=>e.kind==='goal'||e.kind==='injury'||e.kind==='card'||e.kind==='half').map(e=>'<div><b>'+e.minute+'’</b> '+esc(e.text)+'</div>').join('')+'</div>':
- info('Força do onze',lineScore(s)+' OVR')+info('Esquema tático',s.formation)+info('Mentalidade',spell(s.tactics.mentality))+info('Pressão',spell(s.tactics.pressure))+info('Mentor ativo',esc(s.mentors.find(m=>m.id===s.mentorActive)?.name||'Sem mentor'))+'<p class="muted note">O simulador considera qualidade do plantel, condição, moral, vantagem de casa e escolhas táticas.</p>')+'</section></div>'+
+ '<h4>Momentos do jogo</h4><div class="match-events">'+r.events.filter(e=>['goal','injury','card','red','half','tactical','save','substitution','penalties','end'].includes(e.kind)).map(e=>'<div><b>'+e.minute+'’</b> '+esc(e.text)+'</div>').join('')+'</div>':
+ info('Força do onze',lineScore(s)+' OVR')+info('Últimas condições climatéricas',esc(s.lastMatch?.weather||'A definir'))+info('Esquema tático',s.formation)+info('Mentalidade',spell(s.tactics.mentality))+info('Pressão',spell(s.tactics.pressure))+info('Mentor ativo',esc(s.mentors.find(m=>m.id===s.mentorActive)?.name||'Sem mentor'))+info('Treinador rival',esc(s.rivals?.[f?.home===0?f.away:f?.home]?.manager?.name||'A definir'))+info('Estilo rival',esc(s.rivals?.[f?.home===0?f.away:f?.home]?.tactics?.mentality||'equilibrada'))+'<p class="muted note">O simulador considera qualidade do plantel, condição, moral, vantagem de casa e escolhas táticas.</p>')+'</section></div>'+
  panel('Histórico de resultados',matchHistory(s))+
- '<p class="muted note">A animação é um replay visual dos acontecimentos calculados pelo motor. As decisões táticas devem ser feitas antes da simulação.</p>';
+ '<p class="muted note">Motor de acontecimentos: passes, interceções, faltas, remates e golos geram os resultados e as estatísticas. O replay 2D é esquemático; prepara alterações táticas antes de iniciar a jornada.</p>';
 }
 function positionalLayout(s){
  const positions={

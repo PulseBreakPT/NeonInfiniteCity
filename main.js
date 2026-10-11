@@ -133,11 +133,14 @@ document.addEventListener('submit',event=>{
   }
   if(event.target.id==='coach-form'){act('name-coach',{value:form.get('coach')});return;}
   if(event.target.id==='finance-form'){
-   execute(state,'tickets',{value:form.get('tickets')});
-   const name={'Atlântico Energia':'regular','Norte Digital':'premium','Horizonte Global':'elite'};
-   const selected=String(form.get('sponsor'));const current=name[state.club.sponsor]||'regular';
-   if(selected!==current)execute(state,'sponsor',{value:selected});
-   persist();notification('Finanças atualizadas.');return;
+   const snapshot=structuredClone(state);
+   try{
+    execute(state,'tickets',{value:form.get('tickets')});
+    const name={'Atlântico Energia':'regular','Norte Digital':'premium','Horizonte Global':'elite'};
+    const selected=String(form.get('sponsor')),current=name[state.club.sponsor]||'regular';
+    if(selected!==current)execute(state,'sponsor',{value:selected});
+    persist();notification('Finanças atualizadas.');return;
+   }catch(err){state=snapshot;throw err;}
   }
  }catch(e){notification('⚠ '+e.message);}
 });
