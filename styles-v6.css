@@ -1,0 +1,189 @@
+@import url('./styles-v5.css');
+
+/* Text-fit pass. Never hide labels to make a game mode fit its tile.
+ * Treat names, money, and actions as game state, not decorative captions. */
+:root{--ui-density:1}
+.elite-shell .main-frame,.elite-shell .scene-content,.elite-shell .game-stage,.elite-shell .panel,
+.elite-shell .panel-heading,.elite-shell .page-title-main,.elite-shell .manager-console,
+.elite-shell .scene-event-text,.elite-shell .home-team-vs,.elite-shell .match-heading,
+.elite-shell .broadcast-layout,.elite-shell .content-two,.elite-shell .cards-grid{min-width:0}
+.elite-shell .hud-club-copy{min-width:0;flex:0 1 auto}
+.elite-shell .hud-club-copy strong{
+  max-width:none;white-space:normal;overflow:visible;text-overflow:clip;
+  line-height:1.04;overflow-wrap:anywhere;hyphens:auto;word-break:normal;
+}
+.elite-shell .hud-club-copy small{max-width:none;overflow:visible;white-space:normal;line-height:1.1}
+.elite-shell .hud-command{flex-shrink:0}
+.elite-shell .hud-wallet{min-width:0}
+.elite-shell .hud-number{white-space:nowrap;font-variant-numeric:tabular-nums}
+.elite-shell .page-title h1{overflow-wrap:anywhere;line-height:1.1}
+.elite-shell .page-title .title-actions{max-width:100%}
+.elite-shell .page-title .btn{max-width:none;white-space:normal;line-height:1.15}
+.elite-shell .room-scene{height:auto;min-height:130px;max-height:none;overflow:visible}
+.elite-shell .room-foreground{height:auto;min-height:130px;overflow:visible}
+.elite-shell .room-copy{min-width:0;flex:1 1 auto}
+.elite-shell .room-copy h2{overflow-wrap:anywhere;line-height:1.05}
+.elite-shell .room-shortcuts{flex-wrap:wrap}
+.elite-shell .room-shortcuts button{white-space:normal;min-width:0;text-align:left}
+.elite-shell .room-score{min-width:0;width:auto;max-width:46%;flex:0 1 auto}
+.elite-shell .room-score strong{
+  max-width:100%;overflow:visible;text-overflow:clip;white-space:normal;
+  overflow-wrap:anywhere;word-break:normal;line-height:1.1;text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+.elite-shell .room-score small{max-width:100%;white-space:normal;line-height:1.25;overflow-wrap:break-word}
+.elite-shell .command-grid.home-module-grid{overflow:visible}
+.elite-shell .command-tile.home-module{
+  height:auto;min-height:118px;overflow:visible;justify-content:flex-start;
+  gap:4px;min-width:0;padding:12px 14px;
+}
+.elite-shell .command-tile .home-module-head{margin:0}
+.elite-shell .command-tile .module-meta{
+  white-space:normal;text-overflow:clip;overflow:visible;max-width:none;
+  line-height:1.25;overflow-wrap:anywhere;margin:3px 22px 0 0;
+}
+.elite-shell .command-tile strong{
+  white-space:normal;overflow:visible;text-overflow:clip;line-height:1.05;
+  overflow-wrap:break-word;padding-right:13px;margin:0;
+}
+.elite-shell .command-tile .tile-arr{bottom:10px;right:10px}
+.elite-shell .match-versus{display:flex;align-items:center;justify-content:center;min-width:0;gap:9px;flex-wrap:nowrap}
+.elite-shell .match-versus span{
+  flex:1 1 0;min-width:0;max-width:none;white-space:normal;overflow:visible;
+  text-overflow:clip;overflow-wrap:break-word;line-height:1.08;text-align:center;
+}
+.elite-shell .match-versus strong{flex:0 0 auto;white-space:nowrap;line-height:1.05}
+.elite-shell .match-heading{min-width:0;flex-wrap:wrap}
+.elite-shell .match-heading .pill{white-space:normal;max-width:100%}
+.elite-shell .home-team-vs{min-width:0}
+.elite-shell .home-team-vs strong{
+  max-width:none;flex:1 1 0;min-width:0;overflow:visible;text-overflow:clip;
+  white-space:normal;overflow-wrap:break-word;line-height:1.07;
+}
+.elite-shell .scene-event-text>span,.elite-shell .scene-event-text>small{white-space:normal}
+.elite-shell .scene-event-panel{min-width:0}
+.elite-shell .scene-event-cta{flex:0 0 auto}
+.elite-shell .football-card{min-height:335px}
+.elite-shell .football-card-top{gap:4px}
+.elite-shell .football-card-label{white-space:normal;text-align:right}
+.elite-shell .football-player-name{
+  display:flex;align-items:center;justify-content:center;
+  min-height:2.5em;margin-top:2px;
+  overflow:visible;text-overflow:clip;white-space:normal;
+  overflow-wrap:anywhere;line-height:1.14;
+}
+.elite-shell .football-card-meta{align-items:flex-start;gap:6px;line-height:1.25}
+.elite-shell .football-card-meta span:last-child{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:break-word;text-align:right}
+.elite-shell .kpi{min-height:136px;overflow:visible}
+.elite-shell .kpi strong{
+  white-space:normal;overflow-wrap:anywhere;text-overflow:clip;
+  line-height:1.12;max-width:100%;
+}
+.elite-shell .kpi .currency{font-size:clamp(21px,2.45vw,31px);line-height:1.12}
+.elite-shell .fixture-line{grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr)}
+.elite-shell .fixture-line span{min-width:0;overflow-wrap:break-word;line-height:1.25}
+.elite-shell .fixture-line b{white-space:nowrap}
+.elite-shell .rival-card{min-width:0}
+.elite-shell .rival-card strong{white-space:normal;overflow:visible;overflow-wrap:anywhere;line-height:1.2;min-height:0}
+.elite-shell .market-card,.elite-shell .academy-card,.elite-shell .facility-card,.elite-shell .training-card,.elite-shell .mentor-card,
+.elite-shell .quest-card{overflow:visible;min-width:0}
+.elite-shell .market-card b,.elite-shell .academy-card b,.elite-shell .facility-card h3,
+.elite-shell .training-card h3,.elite-shell .mentor-card h3{overflow-wrap:anywhere}
+.elite-shell .info strong,.elite-shell .info span{min-width:0;overflow-wrap:break-word}
+.elite-shell .data-table{min-width:680px}
+.elite-shell .table-wrap{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+.elite-shell .table-wrap.panel{overflow:visible}
+.elite-shell .table-wrap.panel>.data-table{display:table}
+.elite-shell .panel .table-wrap{overflow-x:auto;max-width:100%}
+.elite-shell .data-table td{white-space:normal;overflow-wrap:break-word}
+.elite-shell .data-table th{white-space:nowrap}
+.elite-shell .more-tile strong,.elite-shell .more-tile small{white-space:normal;overflow:visible;overflow-wrap:break-word;line-height:1.15}
+.elite-shell .more-tile{min-height:125px}
+.elite-shell .broadcast-banner{height:auto;min-height:42px;padding-top:7px;padding-bottom:7px}
+.elite-shell .broadcast-left{min-width:0;flex-wrap:wrap}
+.elite-shell .broadcast-left strong{overflow-wrap:break-word}
+.elite-shell .ribbon-links{scrollbar-width:thin;scrollbar-color:#5d7f69 transparent}
+.elite-shell .ribbon-links button{overflow:visible}
+@media(min-width:851px) and (max-width:1280px){
+  /* The full row of 12 shortcuts was clipped at desktop/tablet in-between widths.
+   * These screens retain the five-mode rail and the complete "Mais" operations hub. */
+  .elite-shell .ribbon-links{display:none}
+  .elite-shell .game-ribbon{justify-content:flex-start}
+  .elite-shell .ribbon-location{max-width:100%}
+  .elite-shell .command-grid.home-module-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:850px){
+  .elite-shell .room-scene{height:auto;min-height:125px;max-height:none}
+  .elite-shell .room-foreground{height:auto;min-height:125px}
+  .elite-shell .football-card{min-height:320px}
+  .elite-shell .game-hud .hud-club-copy strong{max-width:none;white-space:normal;text-overflow:clip}
+}
+@media(max-width:620px){
+  .elite-shell .command-grid.home-module-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));gap:2px;
+  }
+  .elite-shell .command-tile.home-module{
+    min-height:116px;padding:12px;gap:5px;
+  }
+  .elite-shell .command-tile .module-meta{font-size:11px;line-height:1.2;padding-right:5px}
+  .elite-shell .command-tile strong{font-size:21px;line-height:1.08}
+  .elite-shell .command-tile .tile-arr{bottom:9px;right:8px}
+  .elite-shell .room-foreground{min-height:136px;padding:14px;gap:8px}
+  .elite-shell .room-scene{min-height:136px}
+  .elite-shell .room-copy h2{font-size:clamp(23px,5.8vw,32px)}
+  .elite-shell .room-score strong{font-size:clamp(22px,6vw,34px)}
+  .elite-shell .room-shortcuts button{font-size:10px}
+  .elite-shell .scene-event-panel{align-items:center}
+  .elite-shell .scene-event-text{min-width:0}
+  .elite-shell .home-team-vs strong{font-size:18px}
+  .elite-shell .match-versus span{font-size:clamp(12px,3.4vw,16px)}
+  .elite-shell .match-versus strong{font-size:clamp(25px,7vw,36px)}
+  .elite-shell .football-card{min-height:326px}
+  .elite-shell .football-player-name{font-size:17px}
+  .elite-shell .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .elite-shell .kpi .currency{font-size:clamp(19px,5vw,28px)}
+  .elite-shell .page-title{align-items:flex-start}
+}
+@media(max-width:420px){
+  .elite-shell .game-hud .hud-club-copy{min-width:0;flex:1 1 0}
+  .elite-shell .game-hud .hud-club-copy strong{
+    font-size:15px;line-height:1.02;margin:2px 0;max-width:none;
+    white-space:normal;overflow:visible;text-overflow:clip;
+  }
+  .elite-shell .game-hud .hud-club-copy .hud-label{display:none}
+  .elite-shell .game-hud .hud-club-copy small{display:none}
+  .elite-shell .game-hud .hud-club{flex:1 1 0;min-width:0}
+  .elite-shell .game-hud .hud-command{flex:0 0 auto}
+  .elite-shell .game-hud .hud-wallet{padding:6px 6px}
+  .elite-shell .game-hud .hud-wallet svg{display:none}
+  .elite-shell .game-hud .resources>span{padding:6px 5px}
+  .elite-shell .game-hud .resources .tokens{min-width:35px}
+  .elite-shell .scene-event-panel{padding:10px 9px}
+  .elite-shell .scene-event-cta .btn{font-size:10px}
+  .elite-shell .home-team-vs strong{font-size:16px}
+  .elite-shell .room-score{max-width:38%}
+  .elite-shell .room-score strong{font-size:25px}
+  .elite-shell .room-shortcuts{gap:3px}
+  .elite-shell .room-shortcuts button{font-size:10px;margin-right:3px}
+}
+@media(max-width:350px){
+  .elite-shell .game-hud .hud-club .crest-sm{width:34px;height:42px}
+  .elite-shell .game-hud .hud-club-copy strong{font-size:14px}
+  .elite-shell .hud-number{font-size:10px}
+  .elite-shell .command-tile strong{font-size:19px}
+  .elite-shell .home-team-vs strong{font-size:15px}
+  .elite-shell .scene-event-cta .btn{font-size:9px}
+  .elite-shell .page-title{flex-wrap:wrap}
+  .elite-shell .page-title .title-actions{width:100%}
+  .elite-shell .page-title .title-actions .btn{width:100%}
+}
+
+@media(min-width:851px) and (max-width:1280px){
+ .elite-shell .game-stage[data-screen="dashboard"]{overflow-y:auto;overscroll-behavior:contain}
+ .elite-shell .game-stage[data-screen="dashboard"] .scene-content{height:auto;min-height:100%}
+ .elite-shell .universe-layout{min-height:310px;flex:none}
+}
+@media(max-width:620px){
+ .elite-shell .game-stage[data-screen="dashboard"] .scene-content{height:auto;min-height:100%}
+ .elite-shell .command-grid.home-module-grid{margin-bottom:6px}
+}

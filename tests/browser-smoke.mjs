@@ -51,7 +51,7 @@ try{
  await page.locator('button[data-action="replay-pause"]').click();
  await page.screenshot({path:'.browser-qa/desktop-broadcast.png'});
  console.log('✓ Motor de jogo, cronologia, pausa e velocidade no replay');
- for(const [width,height] of [[390,844],[360,640],[768,1024]]){
+ for(const [width,height] of [[320,650],[360,640],[390,844],[768,1024]]){
   await page.setViewportSize({width,height});
   await page.locator('.mobile-nav [data-nav="dashboard"]').click();
   await page.waitForSelector('.scene-hotspot',{timeout:5000});
@@ -67,6 +67,27 @@ try{
  await page.waitForSelector('.room-scene.room-finance',{timeout:5000});
  await page.screenshot({path:'.browser-qa/mobile-finance.png'});
  console.log('✓ Menu de operações, salas temáticas e finanças');
+
+ // Regression: the initial shell must accommodate the longest accepted club name
+ // without truncating it, even in the narrowest mobile viewport.
+ await page.setViewportSize({width:320,height:650});
+ await page.evaluate(()=>localStorage.clear());
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.waitForSelector('#create-form');
+ const longName='Associação Desportiva do Atlântico';
+ await page.locator('#create-form input[name="name"]').fill(longName);
+ await page.locator('#create-form button[type="submit"]').click();
+ await page.waitForSelector('.game-hud .hud-club-copy strong');
+ const clubFit=await page.locator('.game-hud .hud-club-copy strong').evaluate(el=>{
+  const style=getComputedStyle(el),rect=el.getBoundingClientRect();
+  return {value:el.textContent,overflow:style.overflowX,whiteSpace:style.whiteSpace,scrollWidth:el.scrollWidth,width:el.clientWidth,rectWidth:rect.width,rectHeight:rect.height};
+ });
+ assert.equal(clubFit.value,longName);
+ assert.notEqual(clubFit.overflow,'hidden');
+ assert.notEqual(clubFit.whiteSpace,'nowrap');
+ await page.screenshot({path:'.browser-qa/mobile-long-club-name.png'});
+ console.log('✓ Nome extenso do clube sem truncagem a 320px');
+
  assert.deepEqual(fatal,[],'Erros JavaScript detetados no navegador');
  console.log('✓ Sem erros fatais JavaScript');
  await context.close();
