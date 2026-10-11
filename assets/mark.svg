@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+<rect width="256" height="256" rx="56" fill="#08121c"/>
+<path d="M128 20 231 71v114L128 239 25 185V71Z" fill="#caf35b"/>
+<path d="M128 34 218 79v99l-90 46-90-46V79Z" fill="#142f37"/>
+<path d="M128 50 202 88v81l-74 39-74-39V88Z" fill="none" stroke="#caf35b" stroke-width="4"/>
+<text x="128" y="149" font-family="Arial,sans-serif" font-size="73" text-anchor="middle" font-weight="900" fill="#caf35b">CD</text>
+</svg>

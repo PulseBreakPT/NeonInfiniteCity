@@ -1,4 +1,4 @@
-name: Publish Shadow Haven
+name: Publish Club Dynasty
 on:
   push:
     branches: [main]

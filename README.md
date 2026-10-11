@@ -1,26 +1,50 @@
-# Shadow Haven — Caçadores do Vale
+# CLUB DYNASTY ⚽
 
-Jogo original de aldeia medieval, gestão de caçadores e combate automático em pixel art procedural Canvas.
+Jogo original de gestão de futebol para Android e desktop. Este repositório foi reutilizado com autorização do proprietário, substituindo integralmente o projeto anterior.
 
-Jogar: https://pulsebreakpt.github.io/NeonInfiniteCity/
+**Jogar:** https://pulsebreakpt.github.io/NeonInfiniteCity/
 
-## Funcionalidades
+## Fase 1 — protótipo jogável
 
-- Aldeia isométrica gerada e desenhada em Canvas, edifícios, vegetação, personagens e animações.
-- Construção de 8 tipos de edifícios com custos reais.
-- Recrutamento e gestão de caçadores com 5 classes, vida e evolução.
-- Caça automática contra goblins, esqueletos e lobos, com loot, moedas e experiência.
-- Produção de equipamento, inventário, missões e economia local.
-- Câmara por arrasto, zoom, interface responsiva e gravação no dispositivo.
+- Fundação do clube: nome, cidade, emblema gerado, cor principal e estádio
+- Plantel persistente com 26 futebolistas fictícios, atributos, idade, moral, condição e potencial
+- Avaliação individual e classificação do onze inicial
+- Formações 4-3-3, 4-4-2, 4-2-3-1 e 3-5-2
+- Campo tático interativo: toca numa posição e escolhe um atleta do banco
+- Escalação automática do melhor onze por posição
+- Treinos técnicos, físicos e de recuperação com custos, fadiga e limite diário
+- Avanço diário, recuperação física e histórico de acontecimentos
+- Alteração de nome, cidade, estádio e cor do clube
+- Guardar automático em localStorage, sem conta nem servidor
+- Interface responsiva em português europeu e instalação PWA
 
-## Limites conhecidos
+**Ainda não inclui** simulação de partidas, campeonato, transferências reais ou multijogador. Estes módulos são das fases seguintes. Não são utilizados clubes ou jogadores licenciados.
 
-Esta é uma primeira versão jogável, não uma reprodução pixel a pixel das imagens conceptuais. A arte é desenhada programaticamente em Canvas; não existem ainda os spritesheets autorais com o nível de detalhe das imagens. As regiões posteriores estão indicadas como em desenvolvimento. É um jogo individual offline, sem servidor.
+## Tecnologia
 
-## Execução
+HTML, CSS e JavaScript puro, sem dependências e sem build. A opção por uma arquitetura estática facilita experimentar a fase inicial diretamente no GitHub Pages. Evolução prevista para TypeScript/Phaser na fase do simulador.
 
-Abrir index.html num browser moderno ou usar um servidor HTTP estático. O GitHub Pages publica a raiz da branch main.
+- index.html — entrada e metadados
+- styles.css — interface responsiva
+- app.js — estado, geração, táticas, evolução e interface
+- manifest.webmanifest — instalação PWA
+- assets/mark.svg — símbolo original
+- .github/workflows/pages.yml — publicação automática
 
-## Versão antiga
+## Etapas seguintes
 
-A versão Último Abrigo foi preservada na branch backup-ultimo-abrigo-20261011.
+- Fase 2: táticas avançadas e desenvolvimento dos jogadores
+- Fase 3: simulação 2D, partidas completas, estatísticas e IA adversária
+- Fase 4: calendário, ligas, competições e mercado de transferências
+- Fase 5: estádio, patrocinadores, scouting e economia
+- Fase 6: multijogador online, contas e backend
+
+## Experimentar
+
+Abre o link, introduz nome e cidade e pressiona Fundar clube. Vai a Táticas para escolher formações e atletas. Em Treinos, desenvolve o plantel e avança dias para recuperar. O progresso guarda-se apenas neste navegador e é apagado se limpares os dados do site.
+
+## Publicação
+
+O workflow GitHub Pages é executado a cada atualização da branch main. Nas definições do repositório, a origem do GitHub Pages deve ser GitHub Actions.
+
+© 2026 CLUB DYNASTY — projeto independente, sem associação ao Top Eleven.
