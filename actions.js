@@ -24,11 +24,12 @@ export function execute(state,action,data={}){
   const slot=Number(data.slot),chosen=Number(data.id),ids=s.lineups[s.formation];
   if(!Number.isInteger(slot)||slot<0||slot>10||!p)throw Error('Posição ou jogador inválido.');
   if(p.injury>0)throw Error('Este jogador está lesionado.');
+  if((p.suspendedUntilWeek||0)>=s.week)throw Error('Este jogador está suspenso.');
   const old=ids.indexOf(chosen);if(old!==-1&&old!==slot)ids[old]=ids[slot];ids[slot]=chosen;
   message=p.name+' colocado no onze inicial.';break;
  }
  case 'tactic':{
-  const choices={mentality:['defensiva','equilibrada','ofensiva'],pressure:['baixa','media','alta'],passing:['curto','misto','longo'],tempo:['lento','normal','rapido'],marking:['zona','individual']};
+  const choices={mentality:['defensiva','equilibrada','ofensiva'],pressure:['baixa','media','alta'],passing:['curto','misto','longo'],tempo:['lento','normal','rapido'],marking:['zona','individual'],halftimePlan:['auto','agressivo','proteger','manter']};
   if(!choices[data.key]?.includes(data.value))throw Error('Tática inválida.');
   s.tactics[data.key]=data.value;message='Instruções táticas atualizadas.';break;
  }

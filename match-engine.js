@@ -49,7 +49,7 @@ function selectWeighted(random,players,weight){
 function makeTeam(state,id){
  const isUser=id===0,profile=state.rivals?.[id],all=isUser?state.players:(profile?.players||[]);
  const ids=isUser?(state.lineups[state.formation]||[]):(profile?.lineup||all.slice(0,11).map(p=>p.id));
- const allowed=p=>p&&(p.injury||0)<=0&&(p.contract??1)>0;
+ const allowed=p=>p&&(p.injury||0)<=0&&(p.contract??1)>0&&(p.suspendedUntilWeek||0)<state.week;
  const starters=ids.map(x=>all.find(p=>p.id===x)).filter(allowed);
  const reserves=all.filter(p=>allowed(p)&&!ids.includes(p.id));
  if(!isUser){while(starters.length<11&&reserves.length)starters.push(reserves.shift());}
@@ -108,8 +108,8 @@ export function runMatch(state,fixture,{cup=false,friendly=false}={}){
    if(prev>=1||random()<.04){
     team.sentOff.add(p.id);statistics[side].red++;
     event('red',side,'Expulsão: '+p.name,{player:p.name});
-    if(!friendly&&team.isUser)p.cards=(p.cards||0)+1;
-   }else if(!friendly&&team.isUser)p.cards=(p.cards||0)+1;
+    if(!friendly&&team.isUser){p.cards=(p.cards||0)+1;p.suspendedUntilWeek=state.week+1;}
+   }else if(!friendly&&team.isUser){p.cards=(p.cards||0)+1;if(p.cards%5===0)p.suspendedUntilWeek=state.week+1;}
   } else if(random()<.11) event('foul',side,'Falta de '+team.name+' — livre para '+other.name+'.');
   return true;
  }
@@ -129,7 +129,16 @@ export function runMatch(state,fixture,{cup=false,friendly=false}={}){
    halfTimePassed=true;event('half',-1,'Intervalo — '+home.name+' '+score[0]+'–'+score[1]+' '+away.name+'.');
    for(let k=0;k<2;k++){
     const coach=teams[k],rival=!coach.isUser?coach.profile:null;
-    if(!rival)continue;
+    if(!rival){
+     const plan=state.tactics?.halftimePlan||'auto';
+     const behind=score[k]<score[1-k],ahead=score[k]>score[1-k];
+     const planMind=plan==='agressivo'?'ofensiva':plan==='proteger'?'defensiva':plan==='auto'?(behind?'ofensiva':ahead?'defensiva':state.tactics.mentality):state.tactics.mentality;
+     if(planMind!==state.tactics.mentality){
+      coach.tactical=tactics({...state.tactics,mentality:planMind},state.mentors?.find(m=>m.id===state.mentorActive)||null);
+      event('tactical',k,'O treinador altera a mentalidade ao intervalo: '+planMind+'.');
+     }
+     continue;
+    }
     const behind=score[k]<score[1-k],ahead=score[k]>score[1-k];
     const newMind=behind?'ofensiva':ahead?'defensiva':rival.tactics.mentality;
     if(newMind!==rival.tactics.mentality&&random()<(rival.manager.adaptability||.5)){

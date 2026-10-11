@@ -151,3 +151,19 @@ test('importação v1 conserva progresso antigo e acrescenta a IA nova',()=>{
  assert.equal(newer.players.length,26);
  assert.equal(Object.keys(newer.rivals).length,15);
 });
+
+test('planos táticos do treinador afetam a segunda parte',()=>{
+ const s=game('Plano Intervalo'),fixture=s.league.rounds[0].find(f=>f.home===0||f.away===0);
+ s.tactics.halftimePlan='agressivo';
+ const result=runMatch(s,fixture);
+ assert.ok(result.events.some(e=>e.kind==='half'));
+ assert.ok(result.events.some(e=>e.kind==='tactical'&&e.team===0));
+});
+test('suspensões disciplinares retiram futebolistas do onze na jornada seguinte',()=>{
+ const s=game('Suspenso'),id=s.lineups[s.formation][0];
+ const player=s.players.find(p=>p.id===id);
+ player.suspendedUntilWeek=s.week+1;
+ execute(s,'match');
+ assert.ok(!s.lineups[s.formation].includes(id));
+ assert.equal(player.apps,0);
+});

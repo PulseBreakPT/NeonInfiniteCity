@@ -60,7 +60,7 @@ export function applyRound(state){
  const playerFixture=round.find(f=>f.home===0||f.away===0);
  if(!playerFixture)throw Error('Clube não encontrado no calendário.');
  const lineup=state.lineups[state.formation]||[];
- if(lineup.length!==11||new Set(lineup).size!==11||lineup.some(id=>!getPlayer(state,id)||(getPlayer(state,id)?.injury||0)>0||(getPlayer(state,id)?.contract??0)<=0)){
+ if(lineup.length!==11||new Set(lineup).size!==11||lineup.some(id=>!getPlayer(state,id)||(getPlayer(state,id)?.injury||0)>0||(getPlayer(state,id)?.contract??0)<=0||(getPlayer(state,id)?.suspendedUntilWeek||0)>=state.week)){
   const automatic=autoLineup(state);
   if(automatic.some(id=>!id))throw Error('Não há 11 jogadores disponíveis. Contrata, renova ou recupera atletas.');
   state.lineups[state.formation]=automatic;

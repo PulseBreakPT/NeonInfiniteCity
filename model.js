@@ -98,7 +98,7 @@ export function rivalTick(state,round){
 
 export function getPlayer(state,id){return state.players.find(p=>p.id===Number(id));}
 export function autoLineup(state,form=state.formation){
- const pool=state.players.filter(p=>(p.injury||0)<=0&&(p.contract??1)>0).slice().sort((a,b)=>rating(b)-rating(a));
+ const pool=state.players.filter(p=>(p.injury||0)<=0&&(p.contract??1)>0&&(p.suspendedUntilWeek||0)<state.week).slice().sort((a,b)=>rating(b)-rating(a));
  return FORMATIONS[form].map(pos=>{
   let idx=pool.findIndex(p=>p.pos===pos);if(idx<0)idx=0;const p=pool.splice(idx,1)[0];return p?.id||null;
  });
@@ -169,7 +169,7 @@ export function makeState(name='Atlético Aurora',city='Lisboa',color=COLORS[0])
  const pool=['GK','GK','GK',...Array(8).fill('DEF'),...Array(9).fill('MID'),...Array(6).fill('ATT')];
  const players=pool.map((pos,i)=>generatePlayer(i+1,pos,random,54+random()*18));
  const state={version:2,engineVersion:3,club:{name,city,color,baseColor:color,stadium:'Arena '+city,capacity:12500,kitAway:'#f5f6fa',sponsor:'Atlântico Energia',stadiumName:'Arena '+city},
- players,formation:'4-3-3',lineups:{},tactics:{mentality:'equilibrada',pressure:'media',passing:'misto',tempo:'normal',marking:'zona'},
+ players,formation:'4-3-3',lineups:{},tactics:{mentality:'equilibrada',pressure:'media',passing:'misto',tempo:'normal',marking:'zona',halftimePlan:'auto'},
  budget:1850000,tokens:22,rest:3,moraleBoosts:2,medical:2,fans:8420,day:1,week:1,season:1,division:1,trainingCount:0,trainingTotal:0,
  league:null,cup:null,market:[],nextId:1000,history:[],results:[],lastMatch:null,fixtureCamera:'2d',
  facilities:{stadium:1,academy:1,medical:1,training:1,commercial:1,scouting:1},academy:[],academySlots:3,

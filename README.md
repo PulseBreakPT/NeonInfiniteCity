@@ -83,3 +83,7 @@ O passo seguinte para verdadeira equivalência com um jogo de serviço online se
 - A primeira época permite importar saves de versões anteriores.
 
 **Limitações atuais:** o replay 2D representa acontecimentos discretos, não uma física contínua de 22 agentes. As instruções do jogador devem ser definidas antes do início da partida; a IA adversária consegue reajustar a estratégia ao intervalo. Contas reais, multijogador síncrono, confederações e antifraude no servidor continuam dependentes de uma plataforma de backend. A interface não substitui testes manuais em todos os aparelhos Android.
+
+### Táticas reativas e disciplina
+
+O treinador pode definir um plano para o intervalo (automático, agressivo, proteger ou manter). A IA rival também ajusta a mentalidade em função do marcador e da capacidade do técnico. Cinco cartões amarelos ou uma expulsão podem provocar suspensão para a jornada seguinte; o onze é recalculado para impedir que atletas suspensos joguem.
