@@ -28,14 +28,14 @@ jobs:
         shell: bash
         run: |
           set +e
-          npm run design:audit > impeccable-audit.json
+          npm run --silent design:audit > impeccable-audit.json
           status=$?
           echo "Impeccable scan exit code: $status"
           if [ "$status" = "1" ]; then
             cat impeccable-audit.json
             exit 1
           fi
-          node -e "const f=require('fs');const p='impeccable-audit.json';const s=f.readFileSync(p,'utf8');console.log('Impeccable scan generated',s.length,'bytes')"
+          node -e "const f=require('fs');const a=JSON.parse(f.readFileSync('impeccable-audit.json','utf8'));console.log('Impeccable: '+a.length+' findings')"
       - name: Archive Impeccable design findings
         if: always()
         uses: actions/upload-artifact@v4
