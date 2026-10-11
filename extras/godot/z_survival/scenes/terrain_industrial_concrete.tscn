@@ -1,8 +1,0 @@
-[gd_scene load_steps=2 format=3]
-
-[ext_resource type="Texture2D" path="res://z_survival/sprites/terrain_industrial_concrete.tres" id="1"]
-
-[node name="terrain_industrial_concrete" type="Sprite2D"]
-texture = ExtResource("1")
-offset = Vector2(0, 0.0)
-scale = Vector2(0.41423948220064727, 0.32323232323232326)

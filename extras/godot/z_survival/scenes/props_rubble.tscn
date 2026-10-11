@@ -1,8 +1,0 @@
-[gd_scene load_steps=2 format=3]
-
-[ext_resource type="Texture2D" path="res://z_survival/sprites/props_rubble.tres" id="1"]
-
-[node name="props_rubble" type="Sprite2D"]
-texture = ExtResource("1")
-offset = Vector2(0, -111.0)
-scale = Vector2(0.21621621621621623, 0.21621621621621623)

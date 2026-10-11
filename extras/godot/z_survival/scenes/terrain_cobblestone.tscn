@@ -1,8 +1,0 @@
-[gd_scene load_steps=2 format=3]
-
-[ext_resource type="Texture2D" path="res://z_survival/sprites/terrain_cobblestone.tres" id="1"]
-
-[node name="terrain_cobblestone" type="Sprite2D"]
-texture = ExtResource("1")
-offset = Vector2(0, 0.0)
-scale = Vector2(0.4155844155844156, 0.3248730964467005)
