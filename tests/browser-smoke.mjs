@@ -74,7 +74,7 @@ try{
  await page.evaluate(()=>localStorage.clear());
  await page.reload({waitUntil:'domcontentloaded'});
  await page.waitForSelector('#create-form');
- const longName='Associação Desportiva do Atlântico';
+ const longName='Associação Desportiva Atlântico';
  await page.locator('#create-form input[name="name"]').fill(longName);
  await page.locator('#create-form button[type="submit"]').click();
  await page.waitForSelector('.game-hud .hud-club-copy strong');
