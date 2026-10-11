@@ -1,6 +1,6 @@
 
 import {FORMATIONS,POSITIONS,COLORS,FACILITY_DATA,MENTORS,rating,teamPower,standings,money,getPlayer,nextFixture,fixtureName,clamp} from './model.js';
-import {esc,icon,crest,pill,bar,avatar,btn,title,panel,playerItem,info,navItems} from './ui-core.js';
+import {esc,short,icon,crest,pill,bar,avatar,btn,title,panel,playerItem,info,navItems} from './ui-core.js';
 const val=(v,arr,label)=>'<select data-field="'+label+'">'+arr.map(x=>'<option value="'+esc(x)+'" '+(v===x?'selected':'')+'>'+esc(x)+'</option>').join('')+'</select>';
 const spell=s=>({defensiva:'Defensiva',equilibrada:'Equilibrada',ofensiva:'Ofensiva',baixa:'Baixa',media:'Média',alta:'Alta',curto:'Curto',misto:'Misto',longo:'Longo',lento:'Lento',normal:'Normal',rapido:'Rápido',zona:'À zona',individual:'Individual'}[s]||s);
 function tacticSelector(state,key,options,label){
