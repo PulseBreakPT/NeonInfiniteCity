@@ -1,0 +1,146 @@
+@import url('./styles-v6.css');
+
+/* Club Dynasty / Android matchday scene.
+   Treat the stadium as an interactive map and the next fixture as
+   a separate, readable control surface — never overlay one on the other. */
+.elite-shell .game-stage[data-screen="dashboard"] .page-title .title-actions{
+  display:none; /* Play now has exactly one primary destination: the fixture. */
+}
+.elite-shell .scene-event-cta{min-width:0}
+.elite-shell .scene-event-cta .btn{
+  width:100%;max-width:none;min-width:0;min-height:46px;
+  white-space:normal;overflow:visible;overflow-wrap:break-word;
+  display:flex;align-items:center;justify-content:center;
+  gap:7px;text-align:center;line-height:1.14;
+}
+.elite-shell .scene-event-cta .btn svg{flex:none}
+.elite-shell .scene-event-panel{box-sizing:border-box}
+.elite-shell .home-team-vs strong{min-width:0;line-height:1.14;overflow-wrap:break-word}
+.elite-shell .scene-topbar .scene-sector{max-width:100%;overflow-wrap:break-word}
+
+@media(max-width:650px){
+ .elite-shell .game-stage[data-screen="dashboard"] .page-title{
+   min-height:0;margin-bottom:11px;
+ }
+ .elite-shell .game-stage[data-screen="dashboard"] .page-title h1{
+   font-size:clamp(29px,8vw,37px);
+ }
+ .elite-shell .universe-layout{display:block;margin-top:0}
+ .elite-shell .universe-stage{
+   box-sizing:border-box;display:flex;flex-direction:column;
+   height:auto;min-height:0!important;
+   padding-top:clamp(250px,72vw,300px);
+   overflow:hidden;
+   background:#102921;
+ }
+ .elite-shell .stadium-scene-image{
+   background-size:auto 100%;
+   background-position:center 40%;
+   transform:none;
+ }
+ .elite-shell .universe-stage:hover .stadium-scene-image{transform:none}
+ .elite-shell .stadium-scene-dimmer{
+   background:linear-gradient(180deg,#07161c80 0%,#07161b0d 33%,#07161b40 64%,#07161b9c 100%);
+ }
+ .elite-shell .scene-topbar{left:14px;right:14px;top:11px}
+ .elite-shell .scene-sector{font-size:10px;letter-spacing:0}
+ .elite-shell .scene-chip{display:none}
+ .elite-shell .stadium-hotspots{
+   position:absolute;top:0;left:0;right:0;bottom:auto;
+   width:100%;height:clamp(250px,72vw,300px);
+   pointer-events:none;
+ }
+ .elite-shell .scene-hotspot{
+   pointer-events:auto;
+   position:absolute;transform:translate(-50%,-50%)!important;
+   display:flex;align-items:center;gap:5px;
+   height:45px;min-height:45px;
+   max-width:calc(50% - 5px);
+ }
+ .elite-shell .scene-hotspot .hotspot-pin{
+   flex:none;width:37px;height:37px;
+ }
+ .elite-shell .scene-hotspot .hotspot-label{
+   flex:0 1 auto;min-width:0;max-width:none;
+   padding:7px 6px;
+ }
+ .elite-shell .scene-hotspot .hotspot-label b{
+   font-size:10px;line-height:1.1;
+   white-space:normal;overflow-wrap:break-word;
+ }
+ .elite-shell .scene-hotspot .hotspot-label small{display:none}
+ /* Two spatial lanes leave room for 5 playable interaction points.
+    Inline left/top attributes from the world map are superseded on phones. */
+ .elite-shell .scene-hotspot.hotspot-0{left:29%!important;top:40%!important}
+ .elite-shell .scene-hotspot.hotspot-1{left:29%!important;top:67%!important}
+ .elite-shell .scene-hotspot.hotspot-2{left:73%!important;top:80%!important}
+ .elite-shell .scene-hotspot.hotspot-3{left:73%!important;top:27%!important}
+ .elite-shell .scene-hotspot.hotspot-4{left:73%!important;top:54%!important}
+ .elite-shell .scene-event-panel{
+   position:relative;inset:auto!important;
+   z-index:8;left:auto!important;right:auto!important;
+   display:grid;grid-template-columns:minmax(0,1fr);
+   align-items:stretch;gap:11px;
+   width:auto;max-width:none;min-width:0;
+   margin:0 9px 9px;
+   padding:13px 14px 14px;
+   border:1px solid #547860;
+   border-radius:5px;
+   background:#102923f5;
+   box-shadow:none;
+ }
+ .elite-shell .scene-event-text{
+   width:100%;min-width:0;
+   gap:8px;
+ }
+ .elite-shell .scene-event-text>span{
+   font-size:10px;letter-spacing:.03em;
+ }
+ .elite-shell .home-team-vs{
+   display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+   align-items:center;column-gap:10px;width:100%;min-width:0;
+ }
+ .elite-shell .home-team-vs strong{
+   min-width:0;max-width:none!important;
+   display:block;white-space:normal!important;
+   text-overflow:clip;overflow:visible;overflow-wrap:break-word;
+   font-size:clamp(19px,5.5vw,24px);
+   line-height:1.04;
+ }
+ .elite-shell .home-team-vs span{
+   font-size:17px;justify-self:center;
+ }
+ .elite-shell .home-team-vs strong:first-child{text-align:left}
+ .elite-shell .home-team-vs strong:last-child{text-align:right}
+ .elite-shell .scene-event-text>small{
+   font-size:10px;line-height:1.25;color:#b7d0bd;
+ }
+ .elite-shell .scene-event-cta{
+   display:block;position:relative;
+   flex:none;width:100%;min-width:0;
+ }
+ .elite-shell .scene-event-cta .btn{
+   display:flex!important;align-items:center;justify-content:center;
+   width:100%!important;min-width:0;max-width:none!important;
+   min-height:49px;padding:12px 16px;font-size:12px;
+   white-space:normal;overflow:visible;line-height:1.15;
+ }
+ .elite-shell .console-heading{margin-top:15px}
+ .elite-shell .game-stage[data-screen="dashboard"] .scene-content{
+   height:auto;min-height:100%;
+ }
+ .elite-shell .game-stage[data-screen="dashboard"]{
+   overflow-y:auto;overscroll-behavior:contain;
+ }
+}
+@media(max-width:350px){
+ .elite-shell .universe-stage{padding-top:250px}
+ .elite-shell .stadium-hotspots{height:250px}
+ .elite-shell .scene-hotspot{gap:3px;max-width:calc(50% - 7px)}
+ .elite-shell .scene-hotspot .hotspot-pin{width:34px;height:34px}
+ .elite-shell .scene-hotspot .hotspot-label{padding:6px 5px}
+ .elite-shell .scene-hotspot .hotspot-label b{font-size:9px}
+ .elite-shell .home-team-vs{column-gap:6px}
+ .elite-shell .home-team-vs strong{font-size:19px}
+ .elite-shell .scene-event-panel{padding:12px;margin:0 7px 7px}
+}

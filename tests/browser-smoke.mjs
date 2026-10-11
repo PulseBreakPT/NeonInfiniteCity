@@ -51,14 +51,45 @@ try{
  await page.locator('button[data-action="replay-pause"]').click();
  await page.screenshot({path:'.browser-qa/desktop-broadcast.png'});
  console.log('✓ Motor de jogo, cronologia, pausa e velocidade no replay');
- for(const [width,height] of [[320,650],[360,640],[390,844],[768,1024]]){
+ for(const [width,height] of [[320,650],[360,640],[377,715],[390,844],[414,896],[768,1024]]){
   await page.setViewportSize({width,height});
   await page.locator('.mobile-nav [data-nav="dashboard"]').click();
   await page.waitForSelector('.scene-hotspot',{timeout:5000});
   const layout=await page.evaluate(()=>({documentWidth:document.documentElement.scrollWidth,viewportWidth:innerWidth,bodyOverflow:getComputedStyle(document.body).overflow,hotspots:document.querySelectorAll('.scene-hotspot').length}));
   assert.ok(layout.documentWidth<=layout.viewportWidth+1,'Overflow horizontal em '+width+'×'+height+': '+JSON.stringify(layout));
   assert.equal(layout.hotspots,5);
+  if(width<=650){
+   const geometry=await page.evaluate(()=>{
+    const bounds=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
+    const fixture=document.querySelector('.scene-event-panel');
+    const play=fixture?.querySelector('[data-action="match"],[data-action="new-season"]');
+    const stadium=document.querySelector('.universe-stage');
+    const hotspots=[...document.querySelectorAll('.scene-hotspot')];
+    const overlap=(a,b)=>Math.max(0,Math.min(a.right,b.right)-Math.max(a.left,b.left))*Math.max(0,Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top));
+    const br=bounds(play),fr=bounds(fixture),sr=bounds(stadium);
+    const targets=hotspots.map(el=>{
+     const r=bounds(el);const centerX=(r.left+r.right)/2,centerY=(r.top+r.bottom)/2;
+     const hit=document.elementFromPoint(centerX,centerY);
+     return {label:el.getAttribute('aria-label'),x:r.left,y:r.top,inStage:r.left>=sr.left-1&&r.right<=sr.right+1&&r.top>=sr.top-1&&r.bottom<=sr.bottom+1,obscuredByFixture:overlap(r,fr)>1,centerClickable:hit===el||el.contains(hit)};
+    });
+    const text=play.innerText.trim().replace(/\s+/g,' ');
+    const range=document.createRange();
+    for(const child of play.childNodes){if(child.nodeType===Node.TEXT_NODE&&child.textContent.trim()){range.selectNodeContents(child);break;}}
+    const ink=[...range.getClientRects()].map(r=>({left:r.left,right:r.right,top:r.top,bottom:r.bottom}));
+    return {visibleCTA:br.width>90&&br.height>=43&&br.left>=fr.left-1&&br.right<=fr.right+1&&br.top>=fr.top-1&&br.bottom<=fr.bottom+1,
+      text,inkInside:ink.every(r=>r.left>=br.left-2&&r.right<=br.right+2&&r.top>=br.top-2&&r.bottom<=br.bottom+2),
+      fixtureBelowMap:fr.top>=Math.max(...targets.map(t=>t.y))+20,
+      targets,primaryActions:document.querySelectorAll('.game-stage button[data-action="match"],.game-stage button[data-action="new-season"]').length};
+   });
+   assert.equal(geometry.primaryActions,1,'Botão JOGAR duplicado '+width+': '+JSON.stringify(geometry));
+   assert.ok(geometry.visibleCTA&&geometry.inkInside,'Texto do botão cortado '+width+': '+JSON.stringify(geometry));
+   assert.equal(geometry.targets.length,5);
+   for(const target of geometry.targets)assert.ok(target.inStage&&!target.obscuredByFixture&&target.centerClickable,'Ponto do estádio oculto '+width+': '+JSON.stringify(target));
+   assert.ok(geometry.fixtureBelowMap,'Próximo jogo está por cima dos pontos '+width+': '+JSON.stringify(geometry));
+   console.log('✓ Android '+width+'px: um único JOGAR legível; cinco pontos de estádio sem sobreposição');
+  }
   if(width===390)await page.screenshot({path:'.browser-qa/mobile-stadium.png'});
+  if(width===377)await page.screenshot({path:'.browser-qa/android-377-matchday.png'});
   console.log('✓ Viewport '+width+'×'+height+' sem overflow horizontal');
  }
  await page.locator('.mobile-nav [data-nav="more"]').click();

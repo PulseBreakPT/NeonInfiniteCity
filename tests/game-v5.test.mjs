@@ -54,8 +54,8 @@ test('shell retains single page frame and accessible mobile game controls',()=>{
 });
 test('all new design resources are packaged for offline use',()=>{
  const index=load('index.html'),sw=load('sw.js'),css=load('styles-v4.css'),asset=load('assets/stadium-isometric.svg'),pkg=JSON.parse(load('package.json'));
- assert.ok(index.includes('styles-v6.css'));
- assert.ok(sw.includes('styles-v6.css'));
+ assert.ok(index.includes('styles-v7.css'));
+ assert.ok(sw.includes('styles-v7.css'));
  assert.ok(sw.includes('stadium-isometric.svg'));
  assert.ok(sw.includes('scene-ui.js'));
  assert.ok(css.includes('.scene-hotspot'));
@@ -72,4 +72,12 @@ test('room scenes escape user-controlled names and metrics',()=>{
  const html=shell(s,'dashboard',dashboard(s));
  assert.ok(!html.includes('<script>alert(1)</script>'));
  assert.ok(!html.includes('<img src=x onerror=alert(1)>'));
+});
+
+test('o gabinete tem só uma ação de jogar e nenhum marcador repetido',()=>{
+ const s=state(),html=dashboard(s);
+ assert.equal((html.match(/data-action="match"/g)||[]).length,1);
+ assert.equal((html.match(/COMPLEXO DESPORTIVO/g)||[]).length,1);
+ assert.ok(html.includes('class="scene-event-panel"'));
+ assert.ok(html.includes('JOGAR JORNADA'));
 });

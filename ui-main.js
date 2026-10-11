@@ -109,7 +109,7 @@ export function dashboard(s){
  const avg=Math.round(s.players.reduce((a,p)=>a+p.fitness,0)/Math.max(1,s.players.length));
  const morale=Math.round(s.players.reduce((a,p)=>a+p.morale,0)/Math.max(1,s.players.length));
  const strength=teamPower(s,0,false).toFixed(1),nextWeek=s.league.round;
- const online=s.league.completed?btn('new-season','INICIAR NOVA ÉPOCA '+icon('arrow'),'accent'):btn('match','ENTRAR EM CAMPO '+icon('play'),'accent');
+ const online=s.league.completed?btn('new-season','NOVA ÉPOCA '+icon('arrow'),'accent'):btn('match','JOGAR JORNADA '+icon('play'),'accent');
  const spots=[
   ['matches','pitch','ESTÁDIO','Jogar','57%','48%','01'],
   ['tactics','shield','Táticas','Definir onze','37%','39%','02'],
@@ -119,10 +119,10 @@ export function dashboard(s){
  ];
  const fast=[['matches','pitch','Partida','Jornada '+nextWeek],['tactics','shield','Táticas',s.formation],['squad','users','Equipa',s.players.length+' atletas'],
  ['market','swap','MERCADO','Negociações'],['training','bolt','TREINOS',s.trainingCount+'/3 sessões'],['more','grid','CLUBE','Todos os sistemas']];
- return title('ÉPOCA '+s.season,'Gabinete','',online)+
+ return title('ÉPOCA '+s.season,'Gabinete')+
  '<div class="universe-layout"><section class="home-stadium universe-stage" aria-label="Complexo desportivo interativo">'+
  '<div class="stadium-scene-image" role="img" aria-label="Vista isométrica original do estádio e complexo desportivo"></div><div class="stadium-scene-dimmer"></div>'+
- '<div class="scene-topbar"><span class="scene-sector"><span class="scene-radar">✧</span> COMPLEXO DESPORTIVO</span><span class="scene-chip">COMPLEXO DESPORTIVO</span></div>'+
+ '<div class="scene-topbar"><span class="scene-sector"><span class="scene-radar">✧</span> COMPLEXO DESPORTIVO</span></div>'+
  '<div class="scene-coordinate scene-coordinate-left">VISTA DO ESTÁDIO</div>'+
  '<div class="stadium-hotspots">'+spots.map(([id,ic,name,detail,left,top,n],i)=>'<button class="scene-hotspot hotspot-'+i+'" data-nav="'+id+'" style="left:'+left+';top:'+top+'" aria-label="'+esc(name)+' — '+esc(detail)+'"><span class="hotspot-pin">'+icon(ic,17)+'<span class="hotspot-pulse"></span></span><span class="hotspot-label"><b>'+esc(name)+'</b><small>'+esc(detail)+'</small></span><em>'+n+'</em></button>').join('')+'</div>'+
  '<div class="scene-event-panel"><div class="scene-event-text"><span>PRÓXIMO JOGO <b>·</b> LIGA NACIONAL</span><div class="home-team-vs"><strong>'+esc(s.club.name)+'</strong><span>VS</span><strong>'+esc(opp)+'</strong></div><small>JORNADA '+Math.min(nextWeek,30)+' · '+(f?(f.home===0?'EM CASA':'FORA'):'ÉPOCA CONCLUÍDA')+'</small></div><div class="scene-event-cta">'+online+'</div></div>'+
