@@ -10,7 +10,7 @@ function lineScore(state){return teamPower(state,0,false).toFixed(1);}
 function matchHistory(s){return s.results.slice(0,6).map(({type,round,result:r})=>{
  const own=r.home===0?r.hg:r.ag,opp=r.home===0?r.ag:r.hg;
  return '<div class="result-row"><span class="score-circle '+(own>opp?'win':own===opp?'draw':'loss')+'">'+(own>opp?'V':own===opp?'E':'D')+'</span><div class="grow"><strong>'+esc(r.homeName)+' <b>'+r.hg+'–'+r.ag+'</b> '+esc(r.awayName)+'</strong><small>'+(type==='cup'?'Taça':'Liga')+' · Ronda '+round+'</small></div>'+btn('open-result','Detalhes','quiet','data-round="'+round+'" data-kind="'+type+'"')+'</div>';}).join('')||'<div class="empty-state">Ainda não disputaste partidas.</div>';}
-export function dashboard(s){
+export function legacyDashboard(s){
  const f=nextFixture(s),opp=f?fixtureName(s,f.home===0?f.away:f.home):'Época concluída',rank=standings(s).findIndex(t=>t.id===0)+1;
  const avg=Math.round(s.players.reduce((n,p)=>n+p.fitness,0)/Math.max(1,s.players.length));
  const moral=Math.round(s.players.reduce((n,p)=>n+p.morale,0)/Math.max(1,s.players.length));
@@ -46,9 +46,11 @@ function matchPitch(s,view){
 export function matches(s){
  const f=nextFixture(s),r=s.lastMatch,extra=s.league.completed?'Época terminada':f?'Liga Nacional · Jornada '+f.round:'Sem partidas';
  return title('CENTRO DE PARTIDAS','MATCHDAY',extra,s.league.completed?btn('new-season','Nova época','accent'):btn('match','Jogar jornada '+s.league.round,'accent'))+
- '<div class="match-layout"><section class="panel live-card"><div class="match-heading"><div><span class="eyebrow">'+(r?'ÚLTIMA PARTIDA · REPLAY':'PRÓXIMA JORNADA')+'</span><div class="match-versus"><span>'+esc(r?r.homeName:f?fixtureName(s,f.home):s.club.name)+'</span><strong id="live-score">'+(r?r.hg+' : '+r.ag:'VS')+'</strong><span>'+esc(r?r.awayName:f?fixtureName(s,f.away):'Adversário')+'</span></div></div>'+pill(r?'FINALIZADO':'PRÉ-JOGO',r?'good':'gold')+'</div>'+
- matchPitch(s,r||null)+
- '<div class="commentary"><span id="live-minute">'+(r?'90’':'00’')+'</span><strong id="live-comment">'+esc(r?r.events.at(-1).text:'Define o teu onze antes da partida.')+'</strong></div><div class="match-controls">'+btn('replay','Rever a partida '+icon('play'),'subtle',r?'':'disabled')+btn('nav','Táticas '+icon('shield'),'subtle','data-to="tactics"')+(!s.league.completed?btn('match','Próxima jornada '+icon('arrow'),'accent'):'')+'</div></section>'+
+ '<div class="broadcast-banner"><div class="broadcast-left"><span class="broadcast-beacon"><b></b> '+(r?'REPLAY DISPONÍVEL':'ESTÚDIO DE JOGO')+'</span><strong>DYNASTY MATCH ENGINE <em>V3</em></strong></div><div class="broadcast-right"><span>90 MINUTOS</span><span>● 2D TÁTICO</span><span>'+esc(r?.weather||'METEOROLOGIA DINÂMICA')+'</span></div></div>'+
+ '<div class="match-layout broadcast-layout"><section class="panel live-card"><div class="match-heading"><div><span class="eyebrow">'+(r?'ÚLTIMA PARTIDA · REPLAY':'PRÓXIMA JORNADA')+'</span><div class="match-versus"><span>'+esc(r?r.homeName:f?fixtureName(s,f.home):s.club.name)+'</span><strong id="live-score">'+(r?r.hg+' : '+r.ag:'VS')+'</strong><span>'+esc(r?r.awayName:f?fixtureName(s,f.away):'Adversário')+'</span></div></div>'+pill(r?'FINALIZADO':'PRÉ-JOGO',r?'good':'gold')+'</div>'+
+ '<div class="pitch-camera-frame"><div class="pitch-camera-label">CAM 01 <span>↗</span> VISÃO TÁTICA</div>'+matchPitch(s,r||null)+'<div class="pitch-camera-corners"><i></i><i></i><i></i><i></i></div></div>'+
+ '<div class="match-timeline"><div class="timeline-top"><span>REPLAY DA PARTIDA</span><strong id="timeline-clock">'+(r?'90:00':'00:00')+'</strong></div><div class="timeline-track">'+(r?r.events.filter(e=>['goal','card','red','injury','half','penalties'].includes(e.kind)).map(e=>'<span class="timeline-marker marker-'+esc(e.kind)+'" style="left:'+(e.minute/90*100)+'%" title="'+esc(e.minute+' min: '+e.text)+'"></span>').join(''):'')+'<input type="range" aria-label="Minuto do replay" id="match-timeline" min="0" max="90" step="1" value="'+(r?90:0)+'" '+(r?'':'disabled')+'></div><div class="timeline-rulers"><span>00</span><span>15</span><span>30</span><span>45</span><span>60</span><span>75</span><span>90</span></div></div>'+
+ '<div class="commentary"><span id="live-minute">'+(r?'90’':'00’')+'</span><strong id="live-comment">'+esc(r?r.events.at(-1).text:'Define o teu onze antes da partida.')+'</strong></div><div class="match-controls cinematic-controls">'+btn('replay','▶ REPLAY','subtle',r?'':'disabled')+btn('replay-pause','<span id="replay-pause-label">PAUSAR</span>','subtle',r?'':'disabled')+btn('replay-speed','<span id="replay-speed-label">1×</span>','subtle',r?'':'disabled')+btn('nav','TÁTICAS '+icon('shield'),'subtle','data-to="tactics"')+(!s.league.completed?btn('match','Próxima jornada '+icon('arrow'),'accent'):'')+'</div></section>'+
  '<section class="panel stat-card"><div class="panel-heading"><h3>'+(r?'Estatísticas':'Preparação de jogo')+'</h3>'+pill(r?'FINAL':'PREVIEW')+'</div>'+(r?[
  ['Posse de bola',r.stats.possession+'%',(100-r.stats.possession)+'%',r.stats.possession],
  ['Remates',r.stats.shotsHome,r.stats.shotsAway,Math.round(r.stats.shotsHome/(r.stats.shotsHome+r.stats.shotsAway)*100)],
@@ -99,4 +101,38 @@ export function playerDetail(s,id){
  const p=getPlayer(s,id);if(!p)return'';
  return '<div class="modal-overlay" data-action="close-player"><div class="player-dialog" role="dialog" aria-modal="true" aria-label="Ficha do jogador"><div class="dialog-head">'+avatar(p)+'<div class="grow"><span class="eyebrow">CARTÃO DE JOGADOR</span><h2>'+esc(p.name)+'</h2><small>'+esc(p.nation)+' · '+POSITIONS[p.pos]+' · '+p.age+' anos</small></div>'+pill('OVR '+rating(p),'good')+btn('close-player','✕','quiet')+'</div><div class="attribute-grid">'+['pac','sho','pas','def','phy','gk'].map(k=>'<div><small>'+({pac:'VELOCIDADE',sho:'REMATE',pas:'PASSE',def:'DEFESA',phy:'FÍSICO',gk:'BALIZA'}[k])+'</small><b>'+p[k]+'</b>'+bar(p[k])+'</div>').join('')+'</div>'+
  '<div class="dialog-meta">'+info('Potencial',p.potential)+info('Estilo',esc(p.style||'Por desenvolver'))+info('Especialidade',esc(p.special||'Nenhuma'))+info('Classe',p.classLevel)+info('Golos',p.goals)+info('Assistências',p.assists)+info('Partidas',p.apps)+info('Contrato',p.contract+' épocas')+'</div><div class="row wrap" style="margin-top:12px"><label class="control-field grow"><span>Aprender posição · 2 tokens</span><select id="position-choice">'+Object.keys(POSITIONS).map(pos=>'<option value="'+pos+'" '+(pos===p.pos?'selected':'')+'>'+POSITIONS[pos]+'</option>').join('')+'</select></label>'+btn('position','Treinar posição','subtle','data-id="'+p.id+'"')+'</div><div class="dialog-actions">'+btn('renew','Renovar contrato','subtle','data-id="'+p.id+'"')+btn('player-class','Evoluir classe','subtle','data-id="'+p.id+'"')+btn('special','Especialidade','subtle','data-id="'+p.id+'"')+(p.injury>0?btn('heal','Tratar lesão','accent','data-id="'+p.id+'"'):'')+btn('sell','Vender jogador','danger','data-id="'+p.id+'"')+'</div></div></div>';
+}
+
+
+export function dashboard(s){
+ const f=nextFixture(s),rank=standings(s).findIndex(t=>t.id===0)+1,opp=f?fixtureName(s,f.home===0?f.away:f.home):'Fim de época';
+ const avg=Math.round(s.players.reduce((a,p)=>a+p.fitness,0)/Math.max(1,s.players.length));
+ const morale=Math.round(s.players.reduce((a,p)=>a+p.morale,0)/Math.max(1,s.players.length));
+ const strength=teamPower(s,0,false).toFixed(1),nextWeek=s.league.round;
+ const online=s.league.completed?btn('new-season','INICIAR NOVA ÉPOCA '+icon('arrow'),'accent'):btn('match','ENTRAR EM CAMPO '+icon('play'),'accent');
+ const spots=[
+  ['matches','pitch','ESTÁDIO','JOGAR PARTIDA','57%','48%','01'],
+  ['tactics','shield','ESTRATÉGIA','PREPARAR O ONZE','37%','39%','02'],
+  ['training','bolt','CENTRO DE TREINO','TREINAR EQUIPA','23%','67%','03'],
+  ['market','swap','OBSERVAÇÃO','TRANSFERÊNCIAS','77%','29%','04'],
+  ['academy','book','FORMAÇÃO','ACADEMIA','74%','73%','05']
+ ];
+ const fast=[['matches','pitch','MATCH CENTER','Jornada '+nextWeek],['tactics','shield','ESTRATÉGIA',s.formation],['squad','users','VESTIÁRIO',s.players.length+' atletas'],
+ ['market','swap','MERCADO','Negociações'],['training','bolt','TREINOS',s.trainingCount+'/3 sessões'],['more','grid','CLUBE','Todos os sistemas']];
+ return title('CARREIRA / '+s.season,'O TEU UNIVERSO','Cada escolha aproxima o teu clube da glória.',online)+
+ '<div class="universe-layout"><section class="home-stadium universe-stage" aria-label="Complexo desportivo interativo">'+
+ '<div class="stadium-scene-image" role="img" aria-label="Vista isométrica original do estádio e complexo desportivo"></div><div class="stadium-scene-dimmer"></div>'+
+ '<div class="scene-topbar"><span class="scene-sector"><span class="scene-radar">✧</span> BASE DO CLUBE <b>01 / 01</b></span><span class="scene-chip">● COMPLEXO DESPORTIVO</span></div>'+
+ '<div class="scene-coordinate scene-coordinate-left">CAMERA 01 <span>◆</span> VISÃO AÉREA</div>'+
+ '<div class="stadium-hotspots">'+spots.map(([id,ic,name,detail,left,top,n],i)=>'<button class="scene-hotspot hotspot-'+i+'" data-nav="'+id+'" style="left:'+left+';top:'+top+'" aria-label="'+esc(name)+' — '+esc(detail)+'"><span class="hotspot-pin">'+icon(ic,17)+'<span class="hotspot-pulse"></span></span><span class="hotspot-label"><b>'+esc(name)+'</b><small>'+esc(detail)+'</small></span><em>'+n+'</em></button>').join('')+'</div>'+
+ '<div class="scene-event-panel"><div class="scene-event-text"><span>PRÓXIMO DESAFIO <b>·</b> LIGA NACIONAL</span><div class="home-team-vs"><strong>'+esc(s.club.name)+'</strong><span>VS</span><strong>'+esc(opp)+'</strong></div><small>JORNADA '+Math.min(nextWeek,30)+' · '+(f?(f.home===0?'EM CASA':'FORA'):'ÉPOCA CONCLUÍDA')+'</small></div><div class="scene-event-cta">'+online+'</div></div>'+
+ '<div class="scene-corner top-left"></div><div class="scene-corner top-right"></div><div class="scene-corner bottom-left"></div><div class="scene-corner bottom-right"></div></section>'+
+ '<aside class="manager-console"><div class="manager-console-header"><span><i class="status-pulse"></i> MANAGER DATA</span><b>ESTADO EM TEMPO REAL</b></div>'+
+ '<div class="manager-power"><span class="manager-power-ring" style="--power:'+Number(strength)+'"><strong>'+strength+'</strong><small>OVR</small></span><div><small>FORÇA DO ONZE</small><strong>'+rank+'º <em>CLASSIFICADO</em></strong><span>DIVISÃO '+s.division+'</span></div></div>'+
+ '<div class="manager-readiness"><div><span>CONDIÇÃO FÍSICA</span><b>'+avg+'%</b></div>'+bar(avg)+'<div><span>MORAL DO PLANTEL</span><b>'+morale+'%</b></div>'+bar(morale)+'</div>'+
+ '<div class="manager-intel"><span class="intel-flag">◆ AVISO DA DIREÇÃO</span><strong>'+(rank<=4?'APONTAR AO TÍTULO':rank<=9?'GANHAR CONSISTÊNCIA':'RECUPERAR POSIÇÕES')+'</strong><small>CONFIANÇA '+(s.finance.boardConfidence??75)+'% · '+s.fans.toLocaleString('pt-PT')+' ADEPTOS</small></div>'+
+ '<div class="manager-commands"><button data-nav="league" class="manager-command">'+icon('trophy',17)+' CLASSIFICAÇÃO '+icon('arrow',16)+'</button><button data-nav="club" class="manager-command">'+icon('settings',17)+' DIREÇÃO DO CLUBE '+icon('arrow',16)+'</button></div></aside></div>'+
+ '<div class="console-heading"><div><span>OPERAÇÕES DISPONÍVEIS</span><strong>CENTROS DE CONTROLO</strong></div><small>SELECIONA UM MODO PARA CONTINUAR</small></div>'+
+ '<div class="home-module-grid command-grid">'+fast.map(([id,ic,label,meta],i)=>'<button class="home-module command-tile" data-nav="'+id+'"><span class="home-module-head"><span class="module-symbol">'+icon(ic,23)+'</span><span class="module-count">0'+(i+1)+'</span></span><span class="module-meta">'+esc(meta).toUpperCase()+'</span><strong>'+esc(label)+'</strong><span class="tile-arr">'+icon('arrow',17)+'</span></button>').join('')+'</div>'+
+ '<div class="command-bottom"><div class="hud-matches-history">'+matchHistory(s)+'</div><button data-nav="events" class="mini-event-link"><span>'+icon('star',17)+' MISSÕES & RECOMPENSAS</span>'+icon('arrow',17)+'</button></div>';
 }

@@ -103,3 +103,17 @@ O CLUB DYNASTY utiliza agora uma interface de jogo em ecrã completo (Game UI), 
 - **Design original**, sem copiar o grafismo ou assets de um jogo comercial.
 
 A folha `styles-v3.css` estende a camada anterior de estilos sem alterar qualquer save nem as regras do motor. O novo cenário é `assets/stadium.svg`, original e gerado exclusivamente em SVG.
+
+## V0.5 — Modo jogo SSS Tier
+
+O gabinete foi reconstruído como complexo desportivo isométrico original, com cinco zonas clicáveis que abrem os modos de jogo. O ecrã principal contém consola do treinador, estatísticas e comandos sem depender de uma página extensa de painéis.
+
+- Cenário original em SVG isométrico: `assets/stadium-isometric.svg`.
+- 12 salas de gestão possuem ambientação própria, sinal operacional, métrica contextual e atalhos.
+- Ecrã de partidas com HUD de transmissão desportiva, cronologia do jogo, marcadores de golos/cartões, pausa, velocidade e avanço manual do replay.
+- Layout adaptável a dispositivos móveis, com scroll apenas no conteúdo interno quando necessário.
+- Teclas de acesso rápido 1-5 e Escape em dispositivos com teclado.
+- Acessibilidade: botões com títulos e legendas, redução automática de animações segundo a preferência do sistema.
+- As regras de partida, economia, calendário e os saves antigos continuam preservados.
+
+A interface carrega `styles-v4.css` sobre os temas anteriores. O Service Worker tem uma nova versão para atualizar os recursos offline sem apagar os saves.

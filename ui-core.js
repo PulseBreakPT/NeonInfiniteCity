@@ -36,7 +36,7 @@ export function welcome(color=COLORS[0]){
  return '<div class="welcome"><div class="welcome-showcase"><span class="mark">CD <span>✦</span></span><div><span class="eyebrow">FOOTBALL MANAGER · 2026</span><h1>CRIA O<br><em>TEU LEGADO.</em></h1><p>Constrói uma equipa. Domina o campeonato. Deixa o teu nome gravado na história.</p></div><div class="stadium-art">◉</div><small>CLUB DYNASTY · JOGO ORIGINAL DE GESTÃO</small></div><div class="welcome-card"><span class="eyebrow">PRIMEIRO PASSO</span><h2>FUNDA O TEU CLUBE</h2><p>Escolhe a tua identidade e recebe um plantel com 26 jogadores. Os teus dados ficam guardados neste dispositivo.</p><form id="create-form"><label>Nome do clube<input name="name" maxlength="32" placeholder="Atlético Aurora" value="Atlético Aurora" required></label><label>Cidade<input name="city" maxlength="26" value="Lisboa" required></label><label>Cor principal</label><div class="swatches">'+COLORS.map(c=>'<button type="button" class="swatch '+(c===color?'chosen':'')+'" style="background:'+c+'" data-color="'+c+'" aria-label="Selecionar cor '+c+'"></button>').join('')+'</div><button class="btn accent large" type="submit">Fundar clube '+icon('arrow')+'</button></form><small class="muted">Single-player, sem registo. Dados guardados localmente.</small></div></div>';
 }
 
-export function shell(state,page,body,notice=''){
+export function previousShell(state,page,body,notice=''){
  const nav=navItems(),primary=['dashboard','matches','tactics','squad','more'];
  const shortcuts=['league','market','training','academy','campus','finance','mentors','events','collection','profile','social','club'];
  const navMap=Object.fromEntries(nav.map(x=>[x[0],x]));
@@ -59,4 +59,29 @@ export function shell(state,page,body,notice=''){
  '<main class="page game-stage" id="page" data-screen="'+esc(page)+'"><div class="screen-backdrop" aria-hidden="true"></div><div class="scene-content">'+body+'</div></main>'+
  '<div class="game-statusline"><span>✦ &nbsp; CLUB DYNASTY <em>/</em> FOOTBALL UNIVERSE</span><span>'+esc(state.coach?.name||'Treinador')+' <em>•</em> '+(state.league.completed?'ÉPOCA CONCLUÍDA':'ÉPOCA '+state.season+' EM CURSO')+'</span><span class="status-saved">● PROGRESSO LOCAL</span></div></div>'+
  '<nav class="mobile-nav" aria-label="Navegação principal">'+primary.map(id=>navLink(navMap[id]||['more','grid','Mais'],true)).join('')+'</nav>'+toast+'</div>';
+}
+
+export function shell(state,page,body,notice=''){
+ const nav=navItems(),navMap=Object.fromEntries(nav.map(x=>[x[0],x])),primary=['dashboard','matches','tactics','squad','more'];
+ const isMore=page==='more'||!primary.includes(page),current=navMap[page]||['more','grid','Operações'];
+ const rank=standings(state).findIndex(t=>t.id===0)+1,round=Math.min(30,state.league.round);
+ const navLink=(id,mobile=false)=>{
+  const [k,ic,label]=navMap[id]||['more','grid','Operações'],active=k===page||k==='more'&&isMore;
+  return '<button type="button" data-nav="'+k+'" class="nav-item '+(active?'active':'')+'" title="'+esc(label)+'" aria-current="'+(active?'page':'false')+'" aria-label="'+esc(label)+'"><span class="nav-glyph">'+icon(ic,mobile?22:23)+'</span><span class="nav-word">'+esc(label)+'</span></button>';
+ };
+ const sceneLabel=({dashboard:'QUARTEL-GENERAL',matches:'CENTRO DE JOGO',tactics:'QUADRO TÁTICO',squad:'VESTIÁRIO',more:'MAPA DE OPERAÇÕES'})[page]||current[2].toUpperCase();
+ const toast=notice?'<div class="toast" role="status"><span class="toast-mark">◆</span>'+esc(notice)+'</div>':'';
+ return '<div class="app-shell game-shell elite-shell" data-scene="'+esc(page)+'" style="--club-color:'+esc(state.club.color)+'">'+
+ '<aside class="side game-rail game-dock" aria-label="Comandos do treinador"><div class="brand"><span class="logo">CD<span class="logo-spark">✦</span></span><span class="rail-brand"><strong>CLUB DYNASTY</strong></span></div>'+
+ '<div class="rail-caption">MODO CARREIRA</div><nav class="nav-scroll" aria-label="Modos do jogo">'+primary.map(id=>navLink(id)).join('')+'</nav>'+
+ '<div class="rail-bottom"><button type="button" data-nav="league" class="rail-division rail-target" title="Ver classificação"><span class="mini-trophy">'+icon('trophy',18)+'</span><strong>'+rank+'º</strong><small>NA LIGA</small></button><button type="button" data-nav="club" class="rail-settings" title="Gestão do clube">'+icon('settings',21)+'</button></div></aside>'+
+ '<div class="main-frame game-canvas"><header class="top-bar game-hud cockpit-hud"><div class="hud-club">'+crest(state,true)+'<div class="hud-club-copy"><span class="hud-label"><i class="online-indicator"></i> CARREIRA SINGLE-PLAYER</span><strong>'+esc(state.club.name)+'</strong><small>'+esc(state.club.city)+' <i>◆</i> DIVISÃO '+state.division+'</small></div></div>'+
+ '<div class="hud-command"><div class="hud-season"><span class="hud-label">TEMPORADA EM CURSO</span><strong>ÉPOCA '+state.season+' <span class="hud-chapter">/ JORNADA '+round+'</span></strong><small>LIGA NACIONAL · '+rank+'º CLASSIFICADO</small></div>'+
+ '<div class="resources"><span class="hud-wallet">'+icon('coins',16)+'<span class="hud-number">'+money(state.budget)+'</span></span><span class="tokens"><b>✦</b>'+state.tokens+'</span></div>'+
+ '<button type="button" data-nav="club" class="top-settings" aria-label="Clube e opções">'+icon('settings',19)+'</button></div></header>'+
+ '<div class="game-ribbon mission-strip"><div class="ribbon-location"><span class="ribbon-led"></span> <span>MANAGER CONSOLE</span><span class="ribbon-slash">/</span><strong>'+esc(sceneLabel)+'</strong></div>'+
+ '<nav class="ribbon-links" aria-label="Salas do clube">'+['league','market','training','academy','campus','finance','mentors','events','collection','profile','social','club'].map(id=>{const x=navMap[id];return '<button type="button" data-nav="'+id+'" class="'+(page===id?'active':'')+'">'+icon(x[1],14)+' '+esc(x[2])+'</button>';}).join('')+'</nav><div class="ribbon-mark"><span>●</span> SISTEMAS ATIVOS</div></div>'+
+ '<main class="page game-stage" id="page" data-screen="'+esc(page)+'"><div class="screen-backdrop" aria-hidden="true"></div><div class="scene-content">'+body+'</div></main>'+
+ '<div class="game-statusline"><span><b>◆</b> CLUB DYNASTY <em>/</em> '+esc(sceneLabel)+'</span><span>ÉPOCA '+state.season+' · J'+round+' <em>/</em> '+esc(state.coach?.name||'Treinador')+'</span><span class="status-saved">● SAVE LOCAL AUTOMÁTICO</span></div></div>'+
+ '<nav class="mobile-nav" aria-label="Navegação principal">'+primary.map(id=>navLink(id,true)).join('')+'</nav>'+toast+'</div>';
 }

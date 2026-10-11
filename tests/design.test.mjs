@@ -10,9 +10,9 @@ const state=()=>makeState('Atlético Nova Era','Lisboa','#caf35b');
 const ui={slot:null,player:null,search:'',position:'ALL',color:'#caf35b'};
 test('the game uses an immersive, complete HUD with clear navigation',()=>{
  const s=state(),html=shell(s,'dashboard',dashboard(s),'');
- assert.ok(html.includes('class="app-shell game-shell"'));
- assert.ok(html.includes('class="top-bar game-hud"'));
- assert.ok(html.includes('class="game-ribbon"'));
+ assert.ok(html.includes('class="app-shell game-shell elite-shell"'));
+ assert.ok(html.includes('class="top-bar game-hud cockpit-hud"'));
+ assert.ok(html.includes('class="game-ribbon mission-strip"'));
  assert.ok(html.includes('class="game-statusline"'));
  assert.ok(html.includes('class="mobile-nav"'));
  for(const page of ['dashboard','matches','tactics','squad','more'])assert.ok(html.includes('data-nav="'+page+'"'));
@@ -20,10 +20,10 @@ test('the game uses an immersive, complete HUD with clear navigation',()=>{
 });
 test('matchday home presents rival, stadium and a direct play action',()=>{
  const s=state(),html=dashboard(s);
- assert.ok(html.includes('class="home-stadium"'));
+ assert.ok(html.includes('class="home-stadium universe-stage"'));
  assert.ok(html.includes('class="home-team-vs"'));
  assert.ok(html.includes('data-action="match"'));
- assert.ok(html.includes('class="home-module-grid"'));
+ assert.ok(html.includes('class="home-module-grid command-grid"'));
  assert.ok(html.includes('data-nav="league"'));
 });
 test('roster is composed of football player cards, not a spreadsheet',()=>{
@@ -55,7 +55,7 @@ test('premium design assets are wired and included in the offline cache',()=>{
  const css=readFileSync(new URL('../styles-v3.css',import.meta.url),'utf8');
  const sw=readFileSync(new URL('../sw.js',import.meta.url),'utf8');
  const svg=readFileSync(new URL('../assets/stadium.svg',import.meta.url),'utf8');
- assert.ok(html.includes('./styles-v3.css'));
+ assert.ok(html.includes('./styles-v4.css'));
  assert.ok(css.includes('styles-v2.css'));
  assert.ok(css.includes('.game-hud.top-bar'));
  assert.ok(css.includes('.football-card'));

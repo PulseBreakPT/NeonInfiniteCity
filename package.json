@@ -1,11 +1,11 @@
 {
   "name": "club-dynasty",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "description": "Event-driven offline football management simulator",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check model.js && node --check sim.js && node --check match-engine.js && node --check actions.js && node --check ui-core.js && node --check ui-main.js && node --check ui-extra.js && node --check main.js"
+    "check": "node --check model.js && node --check sim.js && node --check match-engine.js && node --check actions.js && node --check ui-core.js && node --check scene-ui.js && node --check ui-main.js && node --check ui-extra.js && node --check main.js"
   }
 }

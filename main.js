@@ -2,9 +2,10 @@
 import {COLORS,makeState,migrate,loadState,saveState,rating,FORMATIONS} from './model.js';
 import {execute} from './actions.js';
 import {shell,welcome,esc} from './ui-core.js';
+import {roomScene} from './scene-ui.js';
 import {dashboard,matches,tactics,squad} from './ui-main.js';
 import {league as leaguePage,market,training,academy,campus,finance,mentors,events,collection,profile,social,club,more} from './ui-extra.js';
-let state=loadState(),page='dashboard',ui={slot:null,player:null,search:'',position:'ALL',color:COLORS[0]},notice='',replayTimer=null,replayStep=0;
+let state=loadState(),page='dashboard',ui={slot:null,player:null,search:'',position:'ALL',color:COLORS[0]},notice='',replayTimer=null,replayStep=0,replaySpeed=1,replayPaused=false;
 const $=s=>document.querySelector(s);
 function persist(){if(state&&!saveState(state))notification('Não foi possível guardar o progresso. Verifica o armazenamento.');}
 function notification(message){notice=message;render();setTimeout(()=>{if(notice===message){notice='';const t=$('.toast');if(t)t.remove();}},4000);}
@@ -14,7 +15,8 @@ function render(){
  const holder=$('#app');if(!holder)return;
  const priorScroll=$('#page')?.scrollTop||0;
  if(!state){holder.innerHTML=welcome(ui.color);return;}
- const pageContent=pages[page]?pages[page](state,ui):dashboard(state,ui);
+ let pageContent=pages[page]?pages[page](state,ui):dashboard(state,ui);
+ if(page!=='dashboard'&&page!=='matches'&&page!=='tactics'&&page!=='squad')pageContent=pageContent.replace('</header>','</header>'+roomScene(page,state));
  holder.innerHTML=shell(state,page,pageContent,notice);
  if(ui.player!==null&&page!=='squad')ui.player=null;
 
@@ -33,6 +35,8 @@ function act(action,data={}){
    execute(state,'swap',{id:data.id,slot:ui.slot});ui.slot=null;persist();return notification('Onze inicial atualizado.');
   }
   if(action==='replay')return replay();
+  if(action==='replay-pause')return toggleReplay();
+  if(action==='replay-speed')return cycleReplaySpeed();
   if(action==='open-result'){
    const f=state.results.find(x=>String(x.round)===String(data.round)&&x.type===data.kind);
    if(f){state.lastMatch=f.result;go('matches');return;}
@@ -51,23 +55,43 @@ function act(action,data={}){
   notification(result.message);
  }catch(err){notification('⚠ '+(err?.message||'Operação não concluída.'));}
 }
-function replay(){
+function paintReplay(minute){
+ const r=state?.lastMatch;if(!r||page!=='matches')return;
+ const end=Math.min(90,Math.max(0,Math.round(minute))),events=r.events||[];
+ const clock=$('#live-minute'),comment=$('#live-comment'),score=$('#live-score'),ball=$('#ball'),slider=$('#match-timeline'),clockLive=$('#timeline-clock');
+ if(clock)clock.textContent=end+'’';
+ if(clockLive)clockLive.textContent=String(end).padStart(2,'0')+':00';
+ if(slider)slider.value=end;
+ const relevant=events.filter(e=>e.minute<=end),last=relevant.at(-1);
+ if(comment)comment.textContent=last?last.text:'A partida começa. As duas equipas procuram controlar o meio-campo.';
+ if(ball){ball.style.left=(last?.x??50)+'%';ball.style.top=(last?.y??50)+'%';}
+ if(score)score.textContent=events.filter(e=>e.kind==='goal'&&e.minute<=end&&e.team===r.home).length+' : '+events.filter(e=>e.kind==='goal'&&e.minute<=end&&e.team===r.away).length;
+}
+function toggleReplay(){
+ if(!state?.lastMatch)return;
+ if(!replayTimer&&!replayPaused){replay();return;}
+ if(replayPaused){replayPaused=false;replay(true);return;}
+ stopReplay();replayPaused=true;const el=$('#replay-pause-label');if(el)el.textContent='CONTINUAR';
+}
+function cycleReplaySpeed(){
+ replaySpeed=replaySpeed===1?2:replaySpeed===2?4:1;
+ const label=$('#replay-speed-label');if(label)label.textContent=replaySpeed+'×';
+ if(replayTimer)replay(true);
+}
+function replay(resume=false){
  stopReplay();if(!state?.lastMatch)return;
- const events=state.lastMatch.events||[];let step=0;
- const update=()=>{
+ if(!resume){replayStep=0;replaySpeed=1;}
+ replayPaused=false;
+ const pauseLabel=$('#replay-pause-label'),speedLabel=$('#replay-speed-label');
+ if(pauseLabel)pauseLabel.textContent='PAUSAR';
+ if(speedLabel)speedLabel.textContent=replaySpeed+'×';
+ paintReplay(replayStep);
+ replayTimer=setInterval(()=>{
   if(page!=='matches'||!$('#live-minute')){stopReplay();return;}
-  if(step>90){stopReplay();$('#live-minute').textContent='90’';return;}
-  $('#live-minute').textContent=step+'’';
-  const relevant=events.filter(e=>e.minute<=step);
-  const last=relevant.at(-1);
-  if(last){$('#live-comment').textContent=last.text;
-   const ball=$('#ball');if(ball){ball.style.left=(last.x??50)+'%';ball.style.top=(last.y??50)+'%';}
-  }else{$('#live-comment').textContent='A bola já rola. Ambiente intenso nas bancadas.';}
-  const home=state.lastMatch.home,away=state.lastMatch.away;
-  $('#live-score').textContent=events.filter(e=>e.kind==='goal'&&e.minute<=step&&e.team===home).length+' : '+events.filter(e=>e.kind==='goal'&&e.minute<=step&&e.team===away).length;
-  step+=2;
- };
- update();replayTimer=setInterval(update,180);
+  replayStep=Math.min(90,replayStep+1);
+  paintReplay(replayStep);
+  if(replayStep>=90){stopReplay();const el=$('#replay-pause-label');if(el)el.textContent='RECOMEÇAR';}
+ },Math.round(220/replaySpeed));
 }
 function exportSave(){
  const json=JSON.stringify(state,null,2);
@@ -111,6 +135,9 @@ document.addEventListener('change',event=>{
  }
 });
 document.addEventListener('input',event=>{
+ if(event.target.id==='match-timeline'){
+  replayStep=Number(event.target.value)||0;paintReplay(replayStep);return;
+ }
  if(event.target.id==='player-search'){
   ui.search=event.target.value;
   const caret=event.target.selectionStart;
@@ -143,6 +170,19 @@ document.addEventListener('submit',event=>{
    }catch(err){state=snapshot;throw err;}
   }
  }catch(e){notification('⚠ '+e.message);}
+});
+document.addEventListener('keydown',event=>{
+ if(!state||event.ctrlKey||event.metaKey||event.altKey)return;
+ const target=event.target;
+ if(['INPUT','SELECT','TEXTAREA'].includes(target?.tagName)||target?.isContentEditable)return;
+ if(event.key==='Escape'){
+  if(ui.player!==null){act('close-player');return;}
+  if(ui.slot!==null){act('cancel-slot');return;}
+  if(page!=='dashboard')go('dashboard');
+  return;
+ }
+ const hotkeys={'1':'dashboard','2':'matches','3':'tactics','4':'squad','5':'more'};
+ if(hotkeys[event.key]){event.preventDefault();go(hotkeys[event.key]);}
 });
 window.addEventListener('beforeunload',()=>{stopReplay();if(state)saveState(state);});
 if(state){ui.color=state.club.color;saveState(state);}
