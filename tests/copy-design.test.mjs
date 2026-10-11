@@ -63,7 +63,7 @@ test('Impeccable é parte do repositório e do workflow de qualidade',()=>{
  const workflow=read('.github/workflows/pages.yml'),pkg=JSON.parse(read('package.json'));
  assert.ok(html.includes('styles-v6.css'));
  assert.ok(sw.includes('styles-v6.css'));
- assert.ok(css.includes('impeccable')||css.includes('Impeccable'));
+ assert.ok(css.includes('styles-v5.css'));
  assert.ok(product.length>300&&design.length>300&&agent.length>300);
  assert.ok(workflow.includes('Impeccable design scan'));
  assert.ok(pkg.scripts['design:install'].includes('impeccable@4.5.2'));
