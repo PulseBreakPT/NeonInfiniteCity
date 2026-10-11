@@ -1,0 +1,264 @@
+@import url('./styles-v4.css');
+
+/* Impeccable design pass — Football management game, not a SaaS dashboard.
+   One active surface, contextual actions, readable stadium graphics and measured type. */
+:root{
+ --accent:#d0ed8b;--good:#b9e7a4;--warn:#eed29a;--danger:#f0a7a8;
+ --panel:#172a29;--panel2:#1c3430;--stroke:#40584e;--muted:#bdd0c2;
+ --ink:#f3f7ec;--hud:#0d1c21;--edge:#416859;
+ --type-heading:'Barlow Condensed',sans-serif;
+ --type-ui:'DM Sans',sans-serif;
+ color:#f1f7ed;
+}
+body{background:#0c1b20}
+.game-shell.elite-shell{background:#0c1b20}
+.elite-shell .main-frame.game-canvas{background:#0c1b20}
+.elite-shell .game-hud{background:#142725;box-shadow:none;border-bottom:1px solid #55725e}
+.elite-shell .game-hud:after{display:none}
+.elite-shell .game-rail{background:#12221f;border-right:1px solid #37564a;box-shadow:none}
+.elite-shell .game-rail:after{display:none}
+.elite-shell .game-rail .brand .logo{filter:none;background:#d0ed8b;color:#17251c}
+.elite-shell .game-rail .nav-item{color:#b9cebd;border-radius:5px}
+.elite-shell .game-rail .nav-item.active{background:#2e4736;box-shadow:none;border:1px solid #668b6a;color:#e3f7cf}
+.elite-shell .game-rail .nav-item.active:before{display:none}
+.elite-shell .game-rail .nav-item:hover{background:#244032;color:#edf9df}
+.elite-shell .game-ribbon{background:#102321;border-bottom:1px solid #304a40}
+.elite-shell .ribbon-location{color:#b2cbb6}
+.elite-shell .ribbon-location strong{color:#f4f8ec}
+.elite-shell .ribbon-led,.elite-shell .online-indicator{box-shadow:none;background:#aadb91}
+.elite-shell .game-ribbon .ribbon-mark{display:none}
+.elite-shell .game-statusline{background:#102321;color:#abc3b2}
+.elite-shell .game-stage.page{background:#0c1b20}
+.elite-shell .game-stage .screen-backdrop{display:none}
+.elite-shell .scene-content{animation:none}
+.elite-shell .page-title{border:0;padding:0 0 8px;min-height:0;margin:0 0 11px;align-items:center}
+.elite-shell .page-title:after{display:none}
+.elite-shell .page-title h1{font:900 clamp(29px,2.65vw,44px)/1 var(--type-heading);letter-spacing:.005em;text-transform:uppercase;color:#f5f8f0;text-shadow:none;margin:0}
+.elite-shell .page-title p{color:#c6d7c9;font:500 12px/1.4 var(--type-ui);margin-top:4px}
+.elite-shell .page-title .title-actions{flex:none}
+.elite-shell .btn{border-radius:4px;clip-path:none;letter-spacing:.01em;font-size:11px;min-height:42px;box-shadow:none}
+.elite-shell .btn.accent{color:#1b291b;background:#d0ed8b;border:1px solid #d0ed8b;box-shadow:none}
+.elite-shell .btn.accent:hover:not(:disabled){background:#e2f5b9;border-color:#e2f5b9;transform:none}
+.elite-shell .btn.subtle,.elite-shell .btn.quiet{background:#294036;border:1px solid #597564;color:#f2f8ea}
+.elite-shell .btn.subtle:hover,.elite-shell .btn.quiet:hover{background:#385649}
+.elite-shell .panel{border-radius:5px;border:1px solid #38554a;background:#152924;box-shadow:none}
+.elite-shell .panel:before{display:none}
+.elite-shell .panel-heading{border-bottom:1px solid #3b584d}
+.elite-shell .panel-heading h3:before{display:none}
+.elite-shell .panel-heading h3{font:800 23px/1 var(--type-heading);letter-spacing:0;color:#f3f8ee}
+.elite-shell .pill{background:#254338;border:1px solid #4b6c55;color:#e2f0dc;font-size:10px}
+.elite-shell .pill.good{background:#2c4832;color:#d9f2c0}
+.elite-shell .pill.danger{background:#543838;color:#ffcdca}
+.elite-shell .avatar{border-radius:4px}
+.elite-shell .kpi{border:0;border-radius:4px;background:#213c32;box-shadow:none}
+.elite-shell .kpi:after{display:none}
+.elite-shell .kpi small{color:#c1d5c4}
+.elite-shell .kpi strong{color:#f1f8e9;text-shadow:none}
+.elite-shell .market-card,.elite-shell .training-card,.elite-shell .academy-card,.elite-shell .facility-card,.elite-shell .mentor-card,.elite-shell .quest-card{border:1px solid #3b6050;border-radius:5px;background:#1a322b;box-shadow:none;padding:17px}
+.elite-shell .market-card:before,.elite-shell .training-card:before,.elite-shell .academy-card:before,.elite-shell .facility-card:before,.elite-shell .mentor-card:before,.elite-shell .quest-card:before{display:none}
+.elite-shell .market-card:hover,.elite-shell .facility-card:hover{border-color:#7caa81}
+.elite-shell .training-emoji{background:transparent;border:0;color:#d2e7b4;height:34px;width:34px}
+.elite-shell .training-emoji svg{stroke-width:1.7}
+.elite-shell .more-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:#456253;border:1px solid #456253;border-radius:4px;overflow:hidden}
+.elite-shell .more-tile{border:0;border-radius:0;background:#1b342e;box-shadow:none;padding:16px;min-height:104px;gap:8px}
+.elite-shell .more-tile:hover{background:#315344;transform:none}
+.elite-shell .more-tile:after{font-size:18px;bottom:10px;right:12px;color:#d1e9b2}
+.elite-shell .more-tile>span{width:27px;height:27px;border:0;background:none;color:#d6edb9;display:flex;justify-content:flex-start}
+.elite-shell .more-tile>span svg{width:23px;height:23px}
+.elite-shell .more-tile strong{font:800 21px/1 var(--type-heading);text-transform:none;color:#f4f8ec}
+.elite-shell .more-tile small{font-size:10px;color:#c7d9ca}
+.elite-shell .room-scene{min-height:109px;max-height:109px;margin:0 0 13px;border:0;border-radius:4px;background:#203d35;box-shadow:none}
+.elite-shell .room-scene:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#142c27 0%,#203d3580 65%,#183229e0 100%),url('./assets/stadium-isometric.svg') 72% 54%/cover;opacity:.65;z-index:-1}
+.elite-shell .room-scene:after{display:none}
+.elite-shell .room-foreground{height:109px;padding:13px 18px}
+.elite-shell .room-copy{flex:1}
+.elite-shell .room-copy h2{font:900 clamp(26px,2.7vw,41px)/1 var(--type-heading);color:#f6fbf0;letter-spacing:0;text-shadow:none;text-transform:none;margin:0 0 9px}
+.elite-shell .room-shortcuts{display:flex;gap:7px;margin:0}
+.elite-shell .room-shortcuts button{border:0;border-bottom:1px solid #a4cca3;background:transparent;min-height:28px;padding:2px 0;margin-right:10px;color:#e4f2d8;font:700 11px var(--type-ui);display:flex;align-items:center;gap:4px}
+.elite-shell .room-shortcuts button:hover{color:#fff;background:transparent;border-color:#f2ffec}
+.elite-shell .room-score{align-items:flex-end;min-width:115px}
+.elite-shell .room-score strong{font:900 45px/.9 var(--type-heading);color:#edf8d9;max-width:300px;text-shadow:none}
+.elite-shell .room-score small{font:700 10px var(--type-ui);color:#cce0ca;letter-spacing:0}
+.elite-shell .room-market:before,.elite-shell .room-academy:before,.elite-shell .room-finance:before,.elite-shell .room-collection:before{filter:none}
+.elite-shell .room-market,.elite-shell .room-finance,.elite-shell .room-academy{background:#1c3b34}
+.elite-shell .game-stage[data-screen="dashboard"] .page-title{padding:0 0 5px;margin:0 0 8px}
+.elite-shell .game-stage[data-screen="dashboard"] .page-title h1{font-size:37px}
+.elite-shell .universe-layout{grid-template-columns:minmax(0,1.75fr) minmax(246px,.6fr);gap:9px}
+.elite-shell .universe-stage{border:0;border-radius:5px;box-shadow:none;background:#12362d;min-height:280px}
+.elite-shell .universe-stage:before{box-shadow:none;background:linear-gradient(0deg,#07161dc4 0%,transparent 45%,#07151d50)}
+.elite-shell .stadium-scene-image{filter:saturate(.91) contrast(1.04);transform:scale(1.03)}
+.elite-shell .universe-stage:hover .stadium-scene-image{transform:scale(1.03)}
+.elite-shell .stadium-scene-dimmer{background:linear-gradient(180deg,#07151d5e 0%,transparent 30%,#061219c9 100%)}
+.elite-shell .scene-topbar{left:16px;right:16px;top:12px}
+.elite-shell .scene-radar{display:none}
+.elite-shell .scene-sector{color:#f3f9e9;font:800 11px var(--type-ui);letter-spacing:.03em}
+.elite-shell .scene-sector b{display:none}
+.elite-shell .scene-chip{border:0;background:#193d32dd;color:#eff9e9;backdrop-filter:none;letter-spacing:0;font-size:10px;padding:7px 10px}
+.elite-shell .scene-coordinate{display:none}
+.elite-shell .scene-corner{display:none}
+.elite-shell .scene-hotspot em{display:none}
+.elite-shell .hotspot-pin{border:1px solid #e0f6c0;border-radius:50%;height:34px;width:34px;background:#d0e7a2;color:#183223;box-shadow:0 0 0 3px #13291f85}
+.elite-shell .hotspot-pulse{animation:none;border:0}
+.elite-shell .hotspot-label{clip-path:none;background:#0e2520e8;border:1px solid #557b60;border-radius:4px;backdrop-filter:none;padding:7px 10px}
+.elite-shell .hotspot-label b{font:800 11px var(--type-ui);color:#f5f8e9}
+.elite-shell .hotspot-label small{font:500 9px var(--type-ui);color:#d0e4cc}
+.elite-shell .scene-hotspot:hover .hotspot-pin{transform:scale(1.05);background:#e3f4c2;box-shadow:0 0 0 3px #13291f85}
+.elite-shell .scene-hotspot:hover .hotspot-label{background:#2b4c3a}
+.elite-shell .scene-event-panel{left:10px;right:10px;bottom:10px;background:#122b25ef;border:0;border-radius:4px;border-left:0;padding:12px 14px;box-shadow:none;backdrop-filter:none}
+.elite-shell .scene-event-text>span{color:#d4eac6;font:800 10px var(--type-ui);letter-spacing:0}
+.elite-shell .scene-event-text>small{color:#c6d9c5;font-size:10px}
+.elite-shell .home-team-vs strong{font:900 clamp(17px,1.9vw,25px) var(--type-heading);max-width:205px}
+.elite-shell .home-team-vs>span{font-size:20px;color:#dcecc5}
+.elite-shell .manager-console{background:#1b332c;border:0;border-radius:4px;box-shadow:none;gap:12px}
+.elite-shell .manager-console:after{display:none}
+.elite-shell .manager-console-header{color:#b9cebe}
+.elite-shell .manager-console-header span{color:#eff8e9}
+.elite-shell .manager-console-header b{display:none}
+.elite-shell .manager-power-ring{width:76px;height:76px;box-shadow:none;background:transparent;border:2px solid #8bb087}
+.elite-shell .manager-power-ring strong{font-size:36px;color:#ecf8df}
+.elite-shell .manager-power>div>strong{font-size:37px;color:#f3f8e9}
+.elite-shell .manager-intel{background:none;border:0;border-top:1px solid #456454;padding:11px 0}
+.elite-shell .manager-intel strong{font-size:22px;color:#eef8e4}
+.elite-shell .manager-command{background:transparent;border:0;border-top:1px solid #456454;padding:9px 3px;font-size:11px;color:#e8f4df;letter-spacing:0}
+.elite-shell .manager-command:hover{background:#29483c}
+.elite-shell .console-heading{border:0;padding-left:0;margin:13px 0 7px}
+.elite-shell .console-heading>div>span{display:none}
+.elite-shell .console-heading strong{font:800 22px var(--type-heading);letter-spacing:0;text-transform:none;color:#f3f8ea}
+.elite-shell .command-grid.home-module-grid{gap:1px;border:1px solid #3a5a4b;background:#3a5a4b;border-radius:4px;overflow:hidden}
+.elite-shell .command-tile.home-module{border:0;border-radius:0;background:#213b32;min-height:101px;box-shadow:none;padding:13px}
+.elite-shell .command-tile:hover{background:#315342;transform:none}
+.elite-shell .command-tile .module-symbol{background:none;border:0;width:25px;height:25px;color:#d4e7c5}
+.elite-shell .command-tile .module-count{display:none}
+.elite-shell .command-tile .module-meta{font:500 10px var(--type-ui);color:#b8d4c2;letter-spacing:0}
+.elite-shell .command-tile strong{font:800 19px/1 var(--type-heading);text-transform:none}
+.elite-shell .command-tile .tile-arr{color:#d4e4c6}
+.elite-shell .match-layout{gap:10px}
+.elite-shell .broadcast-banner{border:0;background:#244338}
+.elite-shell .broadcast-beacon b{animation:none;box-shadow:none;background:#b9e5a3}
+.elite-shell .broadcast-left strong{font-size:18px}
+.elite-shell .pitch-camera-frame{border:0;background:#183b2b;padding:4px}
+.elite-shell .pitch-camera-corners{display:none}
+.elite-shell .pitch-camera-label{border:0;background:#10271ed9}
+.elite-shell .match-timeline{border:0;background:#244338}
+.elite-shell .commentary{border:0;border-radius:4px;background:#264a3a}
+.elite-shell .football-card{border:1px solid #658f68;border-radius:4px;box-shadow:none;background:linear-gradient(145deg,#3f694d 0%,#1f3d35 55%,#152b2c 100%)}
+.elite-shell .football-card:hover{box-shadow:0 10px 25px #0005;transform:translateY(-2px)}
+.elite-shell .football-card:before{background:none}
+.elite-shell .football-card:after{display:none}
+.elite-shell .football-card-label{background:#1e3e2d}
+.elite-shell .football-player-name{border-color:#6e9a70}
+.elite-shell .player-dialog{background:#172e29;border-radius:6px}
+.elite-shell .modal-overlay{background:#071312dc;backdrop-filter:blur(5px)}
+.elite-shell .table-wrap.panel{border-radius:4px}
+.elite-shell .table-player b{font-size:13px}
+.elite-shell .data-table th{font-size:10px;color:#c2d5c5}
+.elite-shell .data-table td{font-size:12px}
+.elite-shell .control-field{color:#d5e4d5;font-size:12px}
+.elite-shell .control-field input,.elite-shell .control-field select,.elite-shell .filters input,.elite-shell .filters select{background:#102821;border:1px solid #53755f;color:#f0f8eb;border-radius:4px;font-size:13px}
+.elite-shell .control-field input::placeholder,.elite-shell .filters input::placeholder{color:#b0c4b2}
+.elite-shell .facility-card p,.elite-shell .mentor-card p,.elite-shell .quest-card p{color:#c0d6c6;font-size:12px}
+.elite-shell .campus-banner,.elite-shell .profile-banner,.elite-shell .event-hero{border:0;border-radius:4px;box-shadow:none}
+.elite-shell .campus-banner h2,.elite-shell .event-hero h2{color:#f1f8e6}
+.elite-shell .rival-grid.friendly-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.elite-shell .rival-card{border:0;border-radius:4px;background:#223f33}
+.elite-shell .rival-card strong{font-size:13px;color:#eff7e9}
+.elite-shell .rival-card small{color:#d0e0ca}
+.elite-shell .welcome-showcase{background:linear-gradient(90deg,#0d2529b3,#0a1e24a8),url('./assets/stadium-isometric.svg') center/cover;border-right:0;box-shadow:none}
+.elite-shell .welcome-card{background:#162c27}
+.elite-shell .welcome-card h2{font-size:48px}
+.elite-shell .welcome-card p{color:#c9dacd;font-size:13px}
+.elite-shell .welcome-card input{background:#112921;border-color:#55775f}
+.elite-shell .welcome-showcase h1{font-size:clamp(75px,8.2vw,138px)}
+.elite-shell .toast{background:#d9eeb9;color:#1b2b20;border:0;border-radius:4px;box-shadow:0 13px 32px #0006}
+::selection{background:#c9e69f;color:#142b22}
+:focus-visible{outline:2px solid #dff7b4;outline-offset:2px}
+input:focus-visible,select:focus-visible{outline-offset:1px}
+.elite-shell .mobile-nav{background:#152b25;border-color:#55715d;box-shadow:none}
+.elite-shell .mobile-nav .nav-item.active{background:#3b5a44;border:0}
+.elite-shell .mobile-nav .nav-item.active:before{background:#d0ed8b;box-shadow:none}
+@media(max-width:1250px){
+ .elite-shell .universe-layout{grid-template-columns:minmax(0,1.75fr) minmax(220px,.6fr)}
+ .elite-shell .manager-console{padding:11px}
+ .elite-shell .manager-power-ring{width:62px;height:62px}
+ .elite-shell .manager-power-ring strong{font-size:30px}
+}
+@media(max-width:1050px){
+ .elite-shell .universe-layout{grid-template-columns:1fr}
+ .elite-shell .manager-console{display:none}
+ .elite-shell .room-score strong{font-size:37px}
+}
+@media(max-width:850px){
+ .elite-shell .game-stage.page{padding:14px 13px calc(88px + env(safe-area-inset-bottom))}
+ .elite-shell .game-stage[data-screen="dashboard"]{overflow-y:auto}
+ .elite-shell .page-title h1{font-size:36px}
+ .elite-shell .room-scene{min-height:98px;max-height:98px}
+ .elite-shell .room-foreground{height:98px;padding:10px 15px}
+ .elite-shell .room-copy h2{font-size:31px}
+ .elite-shell .room-score strong{font-size:30px}
+ .elite-shell .more-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .elite-shell .rival-grid.friendly-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .elite-shell .welcome{grid-template-columns:1fr}
+}
+@media(max-width:550px){
+ .elite-shell .game-stage[data-screen="dashboard"] .page-title{min-height:40px;margin-bottom:9px}
+ .elite-shell .game-stage[data-screen="dashboard"] .page-title h1{font-size:30px}
+ .elite-shell .page-title p{display:block;font-size:11px}
+ .elite-shell .universe-stage{min-height:280px}
+ .elite-shell .scene-chip{font-size:9px}
+ .elite-shell .hotspot-label{padding:6px}
+ .elite-shell .hotspot-label b{font-size:9px}
+ .elite-shell .hotspot-label small{display:none}
+ .elite-shell .scene-event-panel{padding:10px 8px}
+ .elite-shell .home-team-vs strong{max-width:94px;font-size:17px}
+ .elite-shell .command-grid.home-module-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .elite-shell .command-tile.home-module{padding:10px 8px;min-height:93px}
+ .elite-shell .command-tile strong{font-size:17px}
+ .elite-shell .command-tile .module-meta{font-size:9px}
+ .elite-shell .console-heading{margin:11px 0 6px}
+ .elite-shell .room-scene{min-height:91px;max-height:91px}
+ .elite-shell .room-foreground{height:91px}
+ .elite-shell .room-copy h2{font-size:27px}
+ .elite-shell .room-shortcuts button{font-size:10px;margin-right:6px}
+ .elite-shell .room-score strong{font-size:27px;max-width:94px}
+ .elite-shell .room-score small{font-size:9px}
+ .elite-shell .more-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .elite-shell .rival-grid.friendly-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .elite-shell .broadcast-banner{padding:7px 9px}
+ .elite-shell .broadcast-right{display:none}
+ .elite-shell .welcome-showcase{min-height:245px}
+}
+@media(max-height:690px) and (max-width:550px){
+ .elite-shell .universe-stage{min-height:233px}
+ .elite-shell .command-tile.home-module{min-height:85px}
+}
+@media(prefers-reduced-motion:reduce){
+ .elite-shell .hotspot-pulse,.elite-shell .broadcast-beacon b,.elite-shell .scene-content{animation:none!important;transition:none!important}
+}
+
+/* Touch and typography resilience. */
+.elite-shell .scene-hotspot{min-height:44px}
+.elite-shell .hotspot-pin{height:44px;width:44px}
+.elite-shell .room-scene{min-height:122px;max-height:122px}
+.elite-shell .room-foreground{height:122px}
+.elite-shell .room-shortcuts button{min-height:39px}
+.elite-shell .timeline-track{height:44px}
+.elite-shell .timeline-track input{min-height:44px}
+.elite-shell .game-hud .top-settings{width:44px;height:44px}
+.elite-shell .game-ribbon .ribbon-links button{min-height:40px}
+.elite-shell .room-copy{min-width:0}
+.elite-shell .room-copy h2{overflow-wrap:anywhere}
+@media(max-width:850px){
+ .elite-shell .room-scene{min-height:119px;max-height:119px}
+ .elite-shell .room-foreground{height:119px}
+ .elite-shell .room-shortcuts button{min-height:40px}
+ .elite-shell .scene-hotspot{min-height:44px}
+ .elite-shell .hotspot-pin{width:42px;height:42px}
+}
+@media(max-width:550px){
+ .elite-shell .room-scene{min-height:111px;max-height:111px}
+ .elite-shell .room-foreground{height:111px}
+ .elite-shell .room-copy h2{font-size:26px}
+ .elite-shell .room-shortcuts button{font-size:9px;min-height:38px}
+ .elite-shell .hotspot-pin{width:41px;height:41px}
+ .elite-shell .hotspot-label{max-width:115px}
+}

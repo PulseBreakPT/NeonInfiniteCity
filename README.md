@@ -117,3 +117,23 @@ O gabinete foi reconstruído como complexo desportivo isométrico original, com 
 - As regras de partida, economia, calendário e os saves antigos continuam preservados.
 
 A interface carrega `styles-v4.css` sobre os temas anteriores. O Service Worker tem uma nova versão para atualizar os recursos offline sem apagar os saves.
+
+## v0.6 — Design e escrita com Impeccable
+
+- Retiradas frases publicitárias genéricas e rótulos decorativos; as descrições que permanecem comunicam custos, limites e consequências.
+- Cabeçalhos dos modos simplificados, menos painéis repetitivos e destaque para estádio, preparação da jornada e decisões do treinador.
+- Ícones consistentes no treino, salas de gestão mais compactas, ecrã de amigáveis concentrado nas equipas IA realmente jogáveis.
+- Melhor contraste, estados de foco e áreas de toque. Preservados os dados locais e os sistemas do motor.
+- Produto e regras visuais descritos em PRODUCT.md e DESIGN.md; o projeto inclui o skill Impeccable (Apache-2.0) sob .agents/skills/impeccable.
+- Workflow instala o CLI oficial Impeccable 4.5.2 em modo de projeto, gera um relatório determinístico e executa os testes em Chromium.
+
+### Desenvolvimento / auditoria
+
+Executar num ambiente com Node 22.18+ e acesso ao npm:
+
+    npm run design:install
+    npm run design:audit
+    npm run check
+    npm test
+
+O comando design:audit é uma auditoria, não substitui inspeção visual. O ficheiro impeccable-audit.json pode ser descarregado nos artefactos do workflow; findings de estilo devem ser interpretados no contexto do jogo. Os resultados da auditoria não interferem com a experiência no navegador.
