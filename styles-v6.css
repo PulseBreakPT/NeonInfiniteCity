@@ -187,3 +187,27 @@
  .elite-shell .game-stage[data-screen="dashboard"] .scene-content{height:auto;min-height:100%}
  .elite-shell .command-grid.home-module-grid{margin-bottom:6px}
 }
+
+/* Tactical board: touchable shirt markers can sit near a touchline,
+ * but names must never be clipped by the pitch or the containing panel. */
+.elite-shell .tactic-pitch{overflow:visible}
+.elite-shell .formation-player{
+  min-width:0;max-width:70px;width:min(16%,70px);
+  overflow:visible;line-height:1.05;gap:3px;white-space:normal;
+}
+.elite-shell .formation-player b{
+  max-width:100%;min-width:0;white-space:normal;overflow:visible;
+  text-overflow:clip;overflow-wrap:anywhere;line-height:1.05;text-align:center;
+}
+.elite-shell .formation-player small{
+  max-width:100%;white-space:normal;overflow:visible;text-overflow:clip;
+  overflow-wrap:break-word;line-height:1.06;text-align:center;
+}
+@media(max-width:620px){
+ .elite-shell .tactic-pitch{min-height:425px;aspect-ratio:auto}
+ .elite-shell .formation-player{width:15%;max-width:62px}
+ .elite-shell .formation-player[data-slot="0"]{top:85%!important}
+ .elite-shell .formation-player b{font-size:9px;padding:3px 2px}
+ .elite-shell .formation-player small{font-size:8px}
+ .elite-shell .formation-player .shirt{width:30px;height:34px}
+}

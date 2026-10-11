@@ -137,3 +137,7 @@ Executar num ambiente com Node 22.18+ e acesso ao npm:
     npm test
 
 O comando design:audit é uma auditoria, não substitui inspeção visual. O ficheiro impeccable-audit.json pode ser descarregado nos artefactos do workflow; findings de estilo devem ser interpretados no contexto do jogo. Os resultados da auditoria não interferem com a experiência no navegador.
+
+## v0.6.2 — Correção dos textos cortados
+
+Auditoria em Chromium de todos os 17 ecrãs a 320, 360, 390, 768, 1024 e 1440 px. Os painéis de jogo foram adaptados para aceitar quebra de linha de nomes, quantias e ações; o gabinete apresenta duas colunas em telemóveis pequenos. Atalhos horizontais em larguras intermédias passam a estar no menu «Mais». O quadro tático adapta os nomes junto às linhas laterais. O script `tests/clipping-audit.mjs` ignora conteúdo deslocado para fora da área visível mas acessível por scroll e sinaliza apenas truncagem real. Preservados os dados do jogo e o motor de simulação.

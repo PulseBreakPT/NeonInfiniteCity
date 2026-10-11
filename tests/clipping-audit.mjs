@@ -57,6 +57,9 @@ try{
        let clip=e;
        while(clip&&clip!==document.body){
         const style=getComputedStyle(clip);
+        // The page is intentionally scrollable inside the full-screen game frame.
+        // Content below its viewport is not clipped; it is reachable by scrolling.
+        if(clip.classList.contains('game-canvas')||/^(auto|scroll)$/.test(style.overflowY)&&clip.scrollHeight>clip.clientHeight+2)break;
         const clipX=['hidden','clip'].includes(style.overflowX),clipY=['hidden','clip'].includes(style.overflowY);
         if(clipX||clipY){
          const box=clip.getBoundingClientRect();
