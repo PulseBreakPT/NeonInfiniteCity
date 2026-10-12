@@ -42,7 +42,7 @@ function matchPitch(s,view){
  return '<div class="pitch-dot home-dot" style="left:'+x+'%;top:'+y+'%;--delay:'+i*.3+'s" title="'+esc(p?.name)+'"><span>'+esc(String(p?.number??(i+1)))+'</span></div>';
  }).join('');
  const opponents=positions.map(([x,y],i)=>'<div class="pitch-dot away-dot" style="left:'+x+'%;top:'+(100-y)+'%;--delay:'+i*.2+'s"><span>'+(i+1)+'</span></div>').join('');
- return '<div class="live-pitch">'+pitchLines+points+opponents+(s.liveMatch?'<canvas id="live-spatial-canvas" class="live-spatial-canvas" aria-label="Movimentação tática 2D dos 22 jogadores, bola e lances"></canvas>':'')+'<span id="ball" class="football" style="left:50%;top:50%">⚽</span><span class="pitch-foot">'+esc(home)+' vs '+esc(away)+'</span></div>';
+ return '<div class="live-pitch">'+pitchLines+points+opponents+(s.liveMatch?'<canvas id="live-spatial-canvas" class="live-spatial-canvas" aria-label="Simulação de futebol em 2,5D com jogadores articulados, bola e condições meteorológicas"></canvas>':'')+'<span id="ball" class="football" style="left:50%;top:50%">⚽</span><span class="pitch-foot">'+esc(home)+' vs '+esc(away)+'</span></div>';
 }
 function liveMatchView(s){
  const live=s.liveMatch,r=live.result,clock=matchClock(live),scores=liveScore(live);
@@ -56,7 +56,7 @@ function liveMatchView(s){
  '<div class="live-matchday-score"><div class="live-matchday-team"><small>CASA</small><strong>'+esc(r.homeName)+'</strong></div>'+
  '<div class="live-central"><span id="live-clock" class="live-clock">'+clock+'</span><strong id="live-score">'+scores.home+' : '+scores.away+'</strong><small id="live-added">'+(live.minute<=45?'45 + '+live.firstAdded+' MIN':'90 + '+live.secondAdded+' MIN')+'</small></div>'+
  '<div class="live-matchday-team away"><small>FORA</small><strong>'+esc(r.awayName)+'</strong></div></div>'+
- '<div class="live-matchday-content"><section class="live-pitch-panel"><div class="live-pitch-hud"><span><i></i> TRANSMISSÃO DO RELVADO</span><strong id="live-clock-small">'+clock+'</strong></div>'+
+ '<div class="live-matchday-content"><section class="live-pitch-panel"><div class="live-pitch-hud"><span><i></i> TRANSMISSÃO · <em id="live-weather">'+esc(live.world?.weather?.condition||'limpo')+'</em></span><strong id="live-clock-small">'+clock+'</strong></div>'+
  '<div class="pitch-camera-frame live-camera">'+matchPitch(s,r)+'</div>'+
  '<div class="live-progress"><div class="live-progress-track"><span class="live-halfmark" style="left:'+(firstEnd/timeTotal*100)+'%"></span><div id="live-progress-fill" class="live-progress-fill" style="width:'+(live.minute/timeTotal*100)+'%"></div></div><div class="live-progress-labels"><span>00′</span><span>45 + '+live.firstAdded+'′</span><span>90 + '+live.secondAdded+'′</span></div></div>'+
  '<div class="live-commentary"><span id="live-comment-minute">'+clock+'</span><p id="live-comment">A bola começa a rolar. As duas equipas procuram o primeiro ataque.</p></div>'+
