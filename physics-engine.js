@@ -171,6 +171,14 @@ function inflictInjury(w,p,reason,impact=5){
  event(w,'injury',p.name+' sai lesionado ('+reason+', '+weeks+' sem.).',w.teams[p.side].id,
   {player:p.name,playerId:p.sourceId??p.id,weeks});
 }
+function temporaryTreatment(w,p){
+ if(!p||p.active===false||p.injury>0)return;
+ p.active=false;p.temporaryExitUntilTick=w.tick+STEPS_PER_MINUTE;
+ p.pose='injured';p.poseUntil=1.8;p.vx=0;p.vy=0;
+ if(w.ball.owner===p.id){w.ball.owner=null;w.carrier=null;}
+ event(w,'treatment',p.name+' sai para avaliação médica durante um minuto.',w.teams[p.side].id,
+  {player:p.name,playerId:p.sourceId??p.id});
+}
 function physicalContacts(w){
  // Body collision capsules prevent overlapping footballers in a live match.
  const ps=w.players;
@@ -192,6 +200,8 @@ function physicalContacts(w){
     const hazard=clamp((1-surfaceGrip(w.weather))*1.4,0,.55);
     if(a.side!==b.side&&approaching>3.3&&rand(w)<(.00023+hazard*.0008)*approaching){
      inflictInjury(w,rand(w)<.5?a:b,'choque',approaching);
+    }else if(a.side!==b.side&&approaching>3.6&&rand(w)<.00017*approaching){
+     temporaryTreatment(w,rand(w)<.5?a:b);
     }
    }
    clampPos(a);clampPos(b);
@@ -203,7 +213,7 @@ function minimumPlayers(w){
  for(let side=0;side<2;side++){
   const n=teamPlayers(w,side).length;
   if(n>=7)continue;
-  if(w.players.some(p=>p.side===side&&p.entryTick!==undefined))continue;
+  if(w.players.some(p=>p.side===side&&(p.entryTick!==undefined||p.temporaryExitUntilTick!==undefined)))continue;
   w.forfeit={team:w.teams[side].id,reason:'Menos de sete jogadores em campo'};
   const winner=1-side;
   w.score[winner]=Math.max(3,w.score[winner]);w.score[side]=0;
@@ -711,6 +721,10 @@ export function stepWorld(w,dt=FIXED_DT){
  w.referee??={advantage:null,keeperHold:0};
  w.weather??=createWeather(hash('old:'+w.seed));
  advanceWeather(w.weather,w.tick,dt);
+ for(const p of w.players)if(p.temporaryExitUntilTick!==undefined&&w.tick>=p.temporaryExitUntilTick){
+  delete p.temporaryExitUntilTick;p.active=true;p.pose='idle';p.poseUntil=0;
+  event(w,'treatment',p.name+' regressa ao jogo após avaliação médica.',w.teams[p.side].id);
+ }
  for(const p of w.players)if(p.poseUntil>0&&Number.isFinite(p.poseUntil))p.poseUntil=Math.max(0,p.poseUntil-dt);
  if(w.phase==='open'&&w.ball.owner!==null)w.stats[w.possessor].possession+=dt;
  if(w.phase==='open'&&w.ball.owner!==null&&w.ball.keeperHeld){
