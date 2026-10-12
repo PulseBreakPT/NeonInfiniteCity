@@ -98,7 +98,15 @@ function manageBench(w){
  if(!w.bench||!w.substitutions||!w.pendingSubstitutions)return;
  for(let side=0;side<2;side++){
   if(w.substitutions[side].length>=5||w.pendingSubstitutions.some(q=>q.side===side))continue;
-  const bench=w.bench[side];if(!bench?.length)continue;
+  const bench=w.bench[side];
+  const goalkeeper=teamPlayers(w,side).find(p=>p.pos==='GK');
+  const injuredKeeper=w.players.find(p=>p.side===side&&p.pos==='GK'&&p.injury>0&&!p.replaced);
+  if(!goalkeeper&&!injuredKeeper){
+   // A goalkeeper sent off cannot be replaced; an outfielder must take the role.
+   const deputy=teamPlayers(w,side).sort((a,b)=>b.gk-a.gk)[0];
+   if(deputy){deputy.pos='GK';deputy.gk=clamp(deputy.gk*.8,15,99);
+    event(w,'goalkeeper','Passa a guarda-redes: '+deputy.name+'.',w.teams[side].id);}
+  }if(!bench?.length)continue;
   const all=w.players.filter(p=>p.side===side&&!p.replaced);
   const injured=all.find(p=>p.injury>0&&p.active===false);
   const tacticalAI=w.teams[side].id!==0;
