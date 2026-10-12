@@ -1,7 +1,7 @@
 
 import {COLORS,makeState,migrate,loadState,saveState,rating,FORMATIONS} from './model.js';
 import {execute} from './actions.js';
-import {beginLiveMatch,tickLiveMatch,tickLiveMatchStep,PHYSICS_FRAME_MS,pauseLiveMatch,resumeLiveMatch,finishLiveMatch,visibleEvents,eventAtMinute,liveScore,matchClock,matchPhase} from './match-live.js';
+import {beginLiveMatch,tickLiveMatch,tickLiveMatchStep,PHYSICS_FRAME_MS,pauseLiveMatch,resumeLiveMatch,finishLiveMatch,requestLiveSubstitution,visibleEvents,eventAtMinute,liveScore,matchClock,matchPhase} from './match-live.js';
 import {shell,welcome,esc} from './ui-core.js';
 import {createPitchRenderer} from './pitch-render.js';
 import {roomScene} from './scene-ui.js';
@@ -211,6 +211,15 @@ function act(action,data={}){
    persist();paintLive();
    if(live.schema!==2)startLiveClock();
    resumeSpatial();return;
+  }
+  if(action==='live-substitute'){
+   const outgoing=document.getElementById('live-sub-out')?.value;
+   const incoming=document.getElementById('live-sub-in')?.value;
+   if(!outgoing||!incoming)throw Error('Seleciona um titular e um suplente.');
+   requestLiveSubstitution(state,outgoing,incoming);
+   persist();
+   notification('Substituição agendada para a próxima paragem.');
+   return;
   }
   if(action==='match'){
    if(state?.liveMatch){go('matches');return;}
