@@ -5,7 +5,7 @@ import {shell,welcome,esc} from './ui-core.js';
 import {roomScene} from './scene-ui.js';
 import {dashboard,matches,tactics,squad} from './ui-main.js';
 import {league as leaguePage,market,training,academy,campus,finance,mentors,events,collection,profile,social,club,more} from './ui-extra.js';
-let state=loadState(),page='dashboard',ui={slot:null,player:null,search:'',position:'ALL',color:COLORS[0]},notice='',replayTimer=null,replayStep=0,replaySpeed=1,replayPaused=false;
+let state=loadState(),page='dashboard',ui={slot:null,candidate:null,player:null,search:'',position:'ALL',color:COLORS[0]},notice='',replayTimer=null,replayStep=0,replaySpeed=1,replayPaused=false;
 const $=s=>document.querySelector(s);
 function persist(){if(state&&!saveState(state))notification('Não foi possível guardar o progresso. Verifica o armazenamento.');}
 function notification(message){notice=message;render();setTimeout(()=>{if(notice===message){notice='';const t=$('.toast');if(t)t.remove();}},4000);}
@@ -22,17 +22,48 @@ function render(){
 
  const viewport=$('#page');if(viewport)viewport.scrollTop=priorScroll;
 }
-function go(to){if(!pages[to])return;stopReplay();page=to;ui.slot=null;ui.player=null;notice='';render();const el=$('#page');if(el)el.scrollTop=0;}
+function go(to){if(!pages[to])return;stopReplay();page=to;ui.slot=null;ui.candidate=null;ui.player=null;notice='';render();const el=$('#page');if(el)el.scrollTop=0;}
 function act(action,data={}){
  try{
   if(action==='nav')return go(data.to);
-  if(action==='select-slot'){ui.slot=data.slot;return render();}
-  if(action==='cancel-slot'){ui.slot=null;return render();}
+  if(action==='select-slot'){
+   if(page!=='tactics')return;
+   const slot=Number(data.slot);
+   if(!Number.isInteger(slot)||slot<0||slot>10)return notification('Posição inválida.');
+   if(ui.candidate!==null){
+    const result=execute(state,'swap',{id:ui.candidate,slot});
+    ui.candidate=null;ui.slot=null;persist();return notification(result.message);
+   }
+   ui.slot=slot;render();
+   if(window.matchMedia('(max-width:850px)').matches)requestAnimationFrame(()=>$('#lineup-picker')?.scrollIntoView({block:'start',behavior:'instant'}));
+   return;
+  }
+  if(action==='cancel-slot'){ui.slot=null;ui.candidate=null;return render();}
   if(action==='close-player'){ui.player=null;return render();}
   if(action==='show-player'){ui.player=data.id;return render();}
-  if(action==='swap-slot'){
+  if(action==='lineup-from-card'){
+   const player=state.players.find(p=>p.id===Number(data.id));
+   if(!player)return notification('Jogador não encontrado.');
+   if(player.injury>0||(player.suspendedUntilWeek||0)>=state.week||(player.contract??0)<=0)return notification('O jogador está indisponível.');
+   go('tactics');ui.candidate=player.id;ui.slot=null;render();return;
+  }
+  if(action==='pick-player'){
+   const player=state.players.find(p=>p.id===Number(data.id));
+   if(!player)return notification('Jogador não encontrado.');
+   if(player.injury>0||(player.suspendedUntilWeek||0)>=state.week||(player.contract??0)<=0)return notification('O jogador está indisponível.');
+   ui.candidate=player.id;ui.slot=null;render();
+   if(window.matchMedia('(max-width:850px)').matches)requestAnimationFrame(()=>$('#starting-pitch')?.scrollIntoView({block:'center',behavior:'instant'}));
+   return;
+  }
+  if(action==='unassign-slot'){
    if(ui.slot===null)return notification('Seleciona uma posição no relvado.');
-   execute(state,'swap',{id:data.id,slot:ui.slot});ui.slot=null;persist();return notification('Onze inicial atualizado.');
+   const result=execute(state,'unassign-slot',{slot:ui.slot});
+   persist();return notification(result.message);
+  }
+  if(action==='swap-slot'){
+   if(ui.slot===null)return act('pick-player',{id:data.id});
+   const result=execute(state,'swap',{id:data.id,slot:ui.slot});
+   ui.slot=null;ui.candidate=null;persist();return notification(result.message);
   }
   if(action==='replay')return replay();
   if(action==='replay-pause')return toggleReplay();
@@ -117,7 +148,7 @@ document.addEventListener('click',event=>{
 });
 document.addEventListener('change',event=>{
  const el=event.target;
- if(el.dataset.action==='formation'){act('formation',{value:el.value});ui.slot=null;}
+ if(el.dataset.action==='formation'){ui.slot=null;ui.candidate=null;act('formation',{value:el.value});}
  if(el.dataset.tactic)act('tactic',{key:el.dataset.tactic,value:el.value});
  if(el.id==='player-filter'){ui.position=el.value;render();}
  if(el.id==='import-save'){
@@ -177,7 +208,7 @@ document.addEventListener('keydown',event=>{
  if(['INPUT','SELECT','TEXTAREA'].includes(target?.tagName)||target?.isContentEditable)return;
  if(event.key==='Escape'){
   if(ui.player!==null){act('close-player');return;}
-  if(ui.slot!==null){act('cancel-slot');return;}
+  if(ui.slot!==null||ui.candidate!==null){act('cancel-slot');return;}
   if(page!=='dashboard')go('dashboard');
   return;
  }

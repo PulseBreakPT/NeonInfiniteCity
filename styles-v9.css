@@ -1,0 +1,126 @@
+@import url('./styles-v8.css');
+
+/* CLUB DYNASTY — interactive eleven editor.
+   The field and the roster remain visible; this is a game control,
+   not a modal or a non-interactive player directory. */
+.elite-shell .lineup-toolbar{
+ display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+ gap:9px;padding:10px 14px;margin:0 0 12px;
+ background:#19392f;border:1px solid #628361;border-radius:6px;
+ color:#e7f5de;font:800 11px 'DM Sans',sans-serif;
+}
+.elite-shell .lineup-toolbar span{white-space:nowrap;letter-spacing:.04em}
+.elite-shell .lineup-toolbar b{font:900 26px/.95 var(--font);color:#d5ff9c}
+.elite-shell .lineup-toolbar small{flex:1 1 240px;color:#cadfca;font-size:11px;line-height:1.4}
+.elite-shell .lineup-workspace{align-items:start;grid-template-columns:minmax(0,1.1fr) minmax(310px,.9fr)}
+.elite-shell .lineup-field-panel,.elite-shell .lineup-bench-panel{min-width:0}
+.elite-shell .lineup-bench-panel{background:linear-gradient(145deg,#183831,#102a31);padding:14px}
+.elite-shell .lineup-bench-panel .panel-heading{padding-bottom:11px;display:flex;justify-content:space-between;gap:8px}
+.elite-shell .lineup-bench-panel .panel-heading h3{font-size:24px;overflow-wrap:anywhere}
+.elite-shell .lineup-bench-counter{white-space:nowrap;font-size:10px;font-weight:800;color:#b9d4c1}
+.elite-shell .lineup-picker-guide{
+ font-size:12px;line-height:1.45;color:#c6e1ce;margin:10px 0 13px
+}
+.elite-shell .lineup-selection{
+ background:#234b3d;border:1px solid #a1d58c;border-radius:5px;
+ margin:0 0 13px;padding:12px;display:flex;align-items:center;
+ justify-content:space-between;gap:8px;flex-wrap:wrap;
+}
+.elite-shell .lineup-selection>span{display:flex;flex-direction:column;min-width:0;gap:3px}
+.elite-shell .lineup-selection small{font:750 10px 'DM Sans',sans-serif;color:#c7e4c6}
+.elite-shell .lineup-selection strong{font:900 25px/1 var(--font);color:#f0ffe3;overflow-wrap:anywhere}
+.elite-shell .lineup-selection-actions{display:flex;gap:7px;flex-wrap:wrap}
+.elite-shell .lineup-selection .btn{min-height:43px;padding:10px 12px;font-size:10px}
+.elite-shell .lineup-empty-label{color:#f8cba3;font-size:11px;font-weight:900}
+.elite-shell .lineup-list{
+ display:flex;flex-direction:column;gap:7px;
+ max-height:clamp(340px,54dvh,605px);overflow-y:auto;overscroll-behavior:contain;
+ padding:1px 4px 4px 1px;scrollbar-color:#6b9974 #163027;scrollbar-width:thin
+}
+.elite-shell .lineup-player{
+ display:flex;align-items:center;gap:10px;text-align:left;
+ width:100%;min-width:0;min-height:60px;padding:9px 11px;
+ background:#1c3434;color:#f3fbee;border:1px solid #496e62;
+ border-radius:5px;cursor:pointer;
+}
+.elite-shell .lineup-player:hover:not(:disabled),
+.elite-shell .lineup-player:focus-visible{
+ background:#2a5041;border-color:#c4f59a;
+}
+.elite-shell .lineup-player.role-match{background:#214538}
+.elite-shell .lineup-player.chosen-player{background:#426542;border-color:#e1ffad}
+.elite-shell .lineup-player:disabled{opacity:.56;cursor:not-allowed;filter:grayscale(.25)}
+.elite-shell .lineup-player-num{
+ flex:none;display:grid;place-items:center;
+ height:35px;width:31px;border:1px solid #739c79;
+ background:#102922;font:900 18px var(--font);color:#d5edcb;border-radius:3px
+}
+.elite-shell .lineup-player-info{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
+.elite-shell .lineup-player-info strong{
+ color:#eef9e7;font:900 17px/1.1 var(--font);
+ white-space:normal;overflow-wrap:break-word
+}
+.elite-shell .lineup-player-info small{color:#c1d7c7;font:650 10px/1.15 'DM Sans',sans-serif}
+.elite-shell .lineup-player-rating{font:900 24px/.9 var(--font);color:#d8ff9f}
+.elite-shell .lineup-player-action{
+ min-width:76px;max-width:94px;font-size:9px;font-weight:900;
+ letter-spacing:.04em;text-align:right;color:#c8e6b5;
+ overflow-wrap:break-word;line-height:1.3
+}
+.elite-shell .lineup-player.is-starter .lineup-player-action{color:#beecc5}
+.elite-shell .lineup-player:disabled .lineup-player-action{color:#efb7ae}
+.elite-shell .lineup-field-panel .tactic-pitch{overflow:visible}
+.elite-shell .lineup-field-panel .tactical-line,.elite-shell .lineup-field-panel .tactical-circle,
+.elite-shell .lineup-field-panel .tactical-box{pointer-events:none}
+.elite-shell .lineup-field-panel .formation-player{
+ z-index:5;border:2px solid transparent;border-radius:6px;
+ cursor:pointer;min-height:65px;transition:border-color .12s,background .12s
+}
+.elite-shell .lineup-field-panel .formation-player:focus-visible,
+.elite-shell .lineup-field-panel .formation-player.slot-selected{
+ border-color:#efff9f;background:#0b342fe3;
+ box-shadow:0 0 0 3px #b3f36b44
+}
+.elite-shell .lineup-field-panel .formation-player.slot-targetable:not(.slot-selected) .shirt{
+ box-shadow:0 0 0 2px #daf991b8
+}
+.elite-shell .lineup-field-panel .formation-player.slot-empty .shirt{
+ background:#36554c!important;color:#efffa7;
+ border:1px dashed #d4fca6;filter:none;
+ clip-path:none;border-radius:5px
+}
+.elite-shell .lineup-field-panel .formation-player.slot-empty b{color:#d8e9af}
+@media(max-width:900px){
+ .elite-shell .lineup-workspace{grid-template-columns:1fr}
+ .elite-shell .lineup-list{max-height:none;overflow-y:visible}
+ .elite-shell .lineup-bench-panel{scroll-margin-top:10px}
+ .elite-shell .lineup-field-panel .tactic-pitch{min-height:410px}
+ .elite-shell .lineup-player-action{min-width:69px}
+}
+@media(max-width:550px){
+ .elite-shell .lineup-toolbar{padding:10px}
+ .elite-shell .lineup-toolbar small{flex-basis:100%}
+ .elite-shell .lineup-field-panel{padding:10px}
+ .elite-shell .lineup-field-panel .tactic-pitch{min-height:435px}
+ .elite-shell .lineup-bench-panel{padding:10px}
+ .elite-shell .lineup-player{gap:7px;padding:8px;min-height:60px}
+ .elite-shell .lineup-player-num{height:32px;width:29px}
+ .elite-shell .lineup-player-info strong{font-size:16px}
+ .elite-shell .lineup-player-info small{font-size:9px}
+ .elite-shell .lineup-player-rating{font-size:22px}
+ .elite-shell .lineup-player-action{min-width:53px;max-width:69px;font-size:8px}
+ .elite-shell .lineup-field-panel .formation-player{min-height:60px}
+ .elite-shell .lineup-field-panel .formation-player .shirt{width:33px;height:37px}
+ .elite-shell .lineup-field-panel .formation-player b{font-size:10px}
+ .elite-shell .lineup-field-panel .formation-player small{font-size:8px}
+ .elite-shell .lineup-selection{align-items:flex-start;flex-direction:column}
+}
+@media(max-width:360px){
+ .elite-shell .lineup-player-action{min-width:50px}
+ .elite-shell .lineup-player-num{width:27px;height:30px}
+ .elite-shell .lineup-player-info strong{font-size:15px}
+ .elite-shell .lineup-field-panel .tactic-pitch{min-height:425px}
+}
+@media(prefers-reduced-motion:reduce){
+ .elite-shell .lineup-player,.elite-shell .lineup-field-panel .formation-player{transition:none}
+}

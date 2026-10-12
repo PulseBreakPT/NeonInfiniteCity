@@ -65,7 +65,7 @@ export function matches(s){
  panel('Histórico de resultados',matchHistory(s))+
  '<p class="muted note">Motor de acontecimentos: passes, interceções, faltas, remates e golos geram os resultados e as estatísticas. O replay 2D é esquemático; prepara alterações táticas antes de iniciar a jornada.</p>';
 }
-function positionalLayout(s){
+function positionalLayout(s,ui={}){
  const positions={
  '4-3-3':[[50,88],[16,70],[38,73],[62,73],[84,70],[25,51],[50,55],[75,51],[21,29],[50,22],[79,29]],
  '4-4-2':[[50,88],[16,70],[38,73],[62,73],[84,70],[14,50],[38,51],[62,51],[86,50],[36,27],[64,27]],
@@ -73,17 +73,51 @@ function positionalLayout(s){
  '3-5-2':[[50,88],[25,74],[50,75],[75,74],[12,53],[32,54],[50,58],[68,54],[88,53],[35,29],[65,29]],
  '5-3-2':[[50,88],[10,73],[30,76],[50,77],[70,76],[90,73],[28,52],[50,54],[72,52],[37,28],[63,28]]
  }[s.formation];
- return '<div class="tactic-pitch">'+positions.map(([x,y],i)=>{
- const p=getPlayer(s,s.lineups[s.formation]?.[i]);
- return '<button class="formation-player" style="left:'+x+'%;top:'+y+'%" data-action="select-slot" data-slot="'+i+'"><span class="shirt" style="--shirt:'+esc(s.club.color)+'">'+esc(p?.number||'?')+'</span><b>'+esc(short(p?.name))+'</b><small>'+FORMATIONS[s.formation][i]+' • '+rating(p)+'</small></button>';
+ const ids=s.lineups[s.formation]||[];
+ return '<div class="tactic-pitch" id="starting-pitch" aria-label="Onze inicial interativo">'+positions.map(([x,y],i)=>{
+  const p=getPlayer(s,ids[i]),selected=ui.slot===i,targeting=ui.candidate!==null&&ui.candidate!==undefined;
+  return '<button type="button" class="formation-player '+(selected?'slot-selected ':'')+(p?'':'slot-empty ')+(targeting?'slot-targetable':'')+'" '+
+  'style="left:'+x+'%;top:'+y+'%" data-action="select-slot" data-slot="'+i+'" aria-pressed="'+selected+'" aria-label="'+esc(FORMATIONS[s.formation][i]+': '+(p?.name||'posição vaga'))+'">'+
+  '<span class="shirt" style="--shirt:'+esc(s.club.color)+'">'+esc(p?.number??'+')+'</span>'+
+  '<b>'+esc(p?short(p.name):'VAGA')+'</b><small>'+FORMATIONS[s.formation][i]+' · '+(p?rating(p):'—')+'</small></button>';
  }).join('')+'<div class="tactical-line mid"></div><div class="tactical-circle"></div><div class="tactical-box top"></div><div class="tactical-box bottom"></div></div>';
 }
-export function tactics(s,ui){
- const slot=ui.slot,arr=s.lineups[s.formation],available=s.players.filter(p=>p.injury===0&&(slot===null||!arr.includes(p.id)||arr[slot]===p.id)).sort((a,b)=>rating(b)-rating(a));
- return title('Táticas','QUADRO TÁTICO','Controla a estrutura e o comportamento da tua equipa.',btn('best-eleven','Otimizar onze','accent'))+
- '<div class="content-two wider"><section class="panel"><div class="panel-heading"><h3>Onze inicial</h3><label class="inline-select">Formação <select data-action="formation">'+Object.keys(FORMATIONS).map(f=>'<option '+(s.formation===f?'selected':'')+'>'+f+'</option>').join('')+'</select></label></div>'+positionalLayout(s)+'<div class="panel-foot">'+pill('FORÇA '+lineScore(s)+' OVR','good')+pill('FORMAÇÃO '+s.formation)+'</div></section>'+
- panel(slot===null?'Banco de suplentes':'Escolhe um substituto',slot===null?'<p class="note">Toca num jogador no relvado para escolheres quem ocupa essa posição. Lesionados não podem ser selecionados.</p>'+s.players.filter(p=>!arr.includes(p.id)).slice(0,6).map(p=>'<div class="compact-player">'+avatar(p)+'<span>'+esc(p.name)+'</span>'+pill(rating(p))+'</div>').join(''):'<div class="chosen-slot">Posição: <b>'+FORMATIONS[s.formation][slot]+'</b>'+btn('cancel-slot','Cancelar','quiet')+'</div><div class="scroll-players">'+available.map(p=>playerItem(p,'swap-slot')).join('')+'</div>')+'</div>'+
- panel('Ordens de equipa','<div class="tactics-grid">'+tacticSelector(s,'mentality',['defensiva','equilibrada','ofensiva'],'Mentalidade')+tacticSelector(s,'pressure',['baixa','media','alta'],'Pressão')+tacticSelector(s,'passing',['curto','misto','longo'],'Tipos de passe')+tacticSelector(s,'tempo',['lento','normal','rapido'],'Ritmo')+tacticSelector(s,'marking',['zona','individual'],'Marcação')+tacticSelector(s,'halftimePlan',['auto','agressivo','proteger','manter'],'Plano de intervalo')+'</div><p class="note muted">Estas escolhas influenciam ataque, defesa, controlo do meio-campo e fadiga no motor de partidas.</p>') ;
+function playerSelectRow(p,s,selectedRole,xi,ui){
+ const starterIndex=xi.indexOf(p.id),isStarter=starterIndex>=0,available=p.injury<=0&&(p.suspendedUntilWeek||0)<s.week&&(p.contract??0)>0;
+ const roleMatch=selectedRole===null||p.pos===selectedRole,selecting=ui.slot!==null&&ui.slot!==undefined;
+ const isPick=ui.candidate===p.id,reason=!available?(p.injury>0?'LESIONADO':(p.suspendedUntilWeek||0)>=s.week?'SUSPENSO':'SEM CONTRATO'):null;
+ const role=esc(POSITIONS[p.pos]||p.pos);
+ return '<button type="button" class="lineup-player '+(isStarter?'is-starter ':'')+(roleMatch?'role-match ':'')+(isPick?'chosen-player ':'')+'" '+
+ 'data-action="'+(selecting?'swap-slot':'pick-player')+'" data-id="'+p.id+'" '+(available?'':'disabled ')+'aria-label="'+esc((selecting?'Colocar ':'Selecionar ')+p.name+(reason?' indisponível: '+reason:''))+'">'+
+ '<span class="lineup-player-num">'+p.number+'</span><span class="lineup-player-info"><strong>'+esc(p.name)+'</strong><small>'+role+' · '+p.fitness+'% condição'+(isStarter?' · Titular':'')+'</small></span>'+
+ '<b class="lineup-player-rating">'+rating(p)+'</b><span class="lineup-player-action">'+(reason?reason:selecting?'COLOCAR':isPick?'ESCOLHIDO':'ESCOLHER')+'</span></button>';
+}
+export function tactics(s,ui={}){
+ const ids=s.lineups[s.formation]||[],slot=Number.isInteger(ui.slot)?ui.slot:null;
+ const candidate=getPlayer(s,ui.candidate),chosen=slot===null?null:getPlayer(s,ids[slot]),count=ids.filter(id=>getPlayer(s,id)).length;
+ const role=slot===null?null:FORMATIONS[s.formation][slot],selecting=slot!==null;
+ const players=s.players.slice().sort((a,b)=>{
+  const aReady=a.injury<=0&&(a.suspendedUntilWeek||0)<s.week&&(a.contract??0)>0;
+  const bReady=b.injury<=0&&(b.suspendedUntilWeek||0)<s.week&&(b.contract??0)>0;
+  if(aReady!==bReady)return aReady?-1:1;
+  if(role&&(a.pos===role)!==(b.pos===role))return a.pos===role?-1:1;
+  return rating(b)-rating(a);
+ });
+ const pickerHeading=selecting?'Jogador para '+POSITIONS[role]:'Escolher jogador';
+ const pickerText=selecting?'Escolhe um suplente ou outro titular para trocar de posição.':candidate?'Toca numa posição do relvado para colocar '+esc(candidate.name)+'.':'Escolhe um jogador desta lista ou toca primeiro numa posição do relvado.';
+ const selectedLabel=selecting?'<div class="lineup-selection"><span><small>POSIÇÃO SELECIONADA</small><strong>'+esc(POSITIONS[role])+' · '+(slot+1)+'</strong><small>'+esc(chosen?.name||'Posição vaga')+'</small></span><div class="lineup-selection-actions">'+
+ (chosen?btn('unassign-slot','RETIRAR DO ONZE','subtle'):'<span class="lineup-empty-label">VAGA</span>')+
+ btn('cancel-slot','CANCELAR','quiet')+'</div></div>':
+ (candidate?'<div class="lineup-selection"><span><small>JOGADOR ESCOLHIDO</small><strong>'+esc(candidate.name)+'</strong><small>Toca numa posição no relvado</small></span>'+btn('cancel-slot','CANCELAR','quiet')+'</div>':'');
+ const playerList=players.map(p=>playerSelectRow(p,s,role,ids,ui)).join('');
+ return title('Táticas','QUADRO TÁTICO','Escolhe uma posição e atribui-lhe um jogador.',btn('best-eleven','Otimizar onze','accent'))+
+ '<div class="lineup-toolbar"><span><b>'+count+'/11</b> TITULARES</span><small>'+(count===11?'Onze completo':(11-count)+' posição'+(11-count===1?'':'ões')+' por preencher. Serão completadas automaticamente antes do jogo.')+'</small></div>'+
+ '<div class="content-two wider lineup-workspace"><section class="panel lineup-field-panel"><div class="panel-heading"><h3>Onze inicial</h3><label class="inline-select">Formação <select data-action="formation">'+Object.keys(FORMATIONS).map(f=>'<option '+(s.formation===f?'selected':'')+'>'+f+'</option>').join('')+'</select></label></div>'+
+ positionalLayout(s,ui)+'<div class="panel-foot">'+pill('FORÇA '+lineScore(s)+' OVR','good')+pill('FORMAÇÃO '+s.formation)+'</div></section>'+
+ '<section class="panel lineup-bench-panel" id="lineup-picker"><div class="panel-heading"><h3>'+pickerHeading+'</h3><span class="lineup-bench-counter">'+s.players.length+' atletas</span></div>'+
+ '<div class="lineup-picker-guide">'+pickerText+'</div>'+selectedLabel+
+ '<div class="lineup-list" aria-label="Jogadores do plantel">'+playerList+'</div></section></div>'+
+ panel('Ordens de equipa','<div class="tactics-grid">'+tacticSelector(s,'mentality',['defensiva','equilibrada','ofensiva'],'Mentalidade')+tacticSelector(s,'pressure',['baixa','media','alta'],'Pressão')+tacticSelector(s,'passing',['curto','misto','longo'],'Tipos de passe')+tacticSelector(s,'tempo',['lento','normal','rapido'],'Ritmo')+tacticSelector(s,'marking',['zona','individual'],'Marcação')+tacticSelector(s,'halftimePlan',['auto','agressivo','proteger','manter'],'Plano de intervalo')+'</div><p class="note muted">Estas escolhas influenciam ataque, defesa, controlo do meio-campo e fadiga no motor de partidas.</p>');
 }
 export function squad(s,ui){
  const filtered=s.players.filter(p=>(ui.position==='ALL'||p.pos===ui.position)&&p.name.toLowerCase().includes(ui.search.toLowerCase())).sort((a,b)=>rating(b)-rating(a));
@@ -100,7 +134,7 @@ export function squad(s,ui){
 export function playerDetail(s,id){
  const p=getPlayer(s,id);if(!p)return'';
  return '<div class="modal-overlay" data-action="close-player"><div class="player-dialog" role="dialog" aria-modal="true" aria-label="Ficha do jogador"><div class="dialog-head">'+avatar(p)+'<div class="grow"><span class="eyebrow">CARTÃO DE JOGADOR</span><h2>'+esc(p.name)+'</h2><small>'+esc(p.nation)+' · '+POSITIONS[p.pos]+' · '+p.age+' anos</small></div>'+pill('OVR '+rating(p),'good')+btn('close-player','✕','quiet')+'</div><div class="attribute-grid">'+['pac','sho','pas','def','phy','gk'].map(k=>'<div><small>'+({pac:'VELOCIDADE',sho:'REMATE',pas:'PASSE',def:'DEFESA',phy:'FÍSICO',gk:'BALIZA'}[k])+'</small><b>'+p[k]+'</b>'+bar(p[k])+'</div>').join('')+'</div>'+
- '<div class="dialog-meta">'+info('Potencial',p.potential)+info('Estilo',esc(p.style||'Por desenvolver'))+info('Especialidade',esc(p.special||'Nenhuma'))+info('Classe',p.classLevel)+info('Golos',p.goals)+info('Assistências',p.assists)+info('Partidas',p.apps)+info('Contrato',p.contract+' épocas')+'</div><div class="row wrap" style="margin-top:12px"><label class="control-field grow"><span>Aprender posição · 2 tokens</span><select id="position-choice">'+Object.keys(POSITIONS).map(pos=>'<option value="'+pos+'" '+(pos===p.pos?'selected':'')+'>'+POSITIONS[pos]+'</option>').join('')+'</select></label>'+btn('position','Treinar posição','subtle','data-id="'+p.id+'"')+'</div><div class="dialog-actions">'+btn('renew','Renovar contrato','subtle','data-id="'+p.id+'"')+btn('player-class','Evoluir classe','subtle','data-id="'+p.id+'"')+btn('special','Especialidade','subtle','data-id="'+p.id+'"')+(p.injury>0?btn('heal','Tratar lesão','accent','data-id="'+p.id+'"'):'')+btn('sell','Vender jogador','danger','data-id="'+p.id+'"')+'</div></div></div>';
+ '<div class="dialog-meta">'+info('Potencial',p.potential)+info('Estilo',esc(p.style||'Por desenvolver'))+info('Especialidade',esc(p.special||'Nenhuma'))+info('Classe',p.classLevel)+info('Golos',p.goals)+info('Assistências',p.assists)+info('Partidas',p.apps)+info('Contrato',p.contract+' épocas')+'</div><div class="row wrap" style="margin-top:12px"><label class="control-field grow"><span>Aprender posição · 2 tokens</span><select id="position-choice">'+Object.keys(POSITIONS).map(pos=>'<option value="'+pos+'" '+(pos===p.pos?'selected':'')+'>'+POSITIONS[pos]+'</option>').join('')+'</select></label>'+btn('position','Treinar posição','subtle','data-id="'+p.id+'"')+'</div><div class="dialog-actions">'+btn('lineup-from-card','ESCOLHER PARA O ONZE','accent','data-id="'+p.id+'"')+btn('renew','Renovar contrato','subtle','data-id="'+p.id+'"')+btn('player-class','Evoluir classe','subtle','data-id="'+p.id+'"')+btn('special','Especialidade','subtle','data-id="'+p.id+'"')+(p.injury>0?btn('heal','Tratar lesão','accent','data-id="'+p.id+'"'):'')+btn('sell','Vender jogador','danger','data-id="'+p.id+'"')+'</div></div></div>';
 }
 
 
