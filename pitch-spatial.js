@@ -65,12 +65,12 @@ export function restartPositions(teams,kind,teamId,location){
  const keeper=theirs.find(p=>p.pos==='GK');
  if(kind==='corner'){
   const near=sideX===3?10:90;
-  ours[1]={...ours[1],...clampPoint({x:sideX,y:goalY+behind*3})};
+  ours[1]={...ours[1],...clampPoint({x:sideX,y:goalY+behind*1})};
   const target=[28,41,53,65,76];
   [8,9,10,5,6].forEach((i,j)=>ours[i]={...ours[i],...atGoal(target[j],j%2?11:6)});
   [1,2,3,4,5,6].forEach((i,j)=>theirs[i]={...theirs[i],...atGoal(25+j*9,7+(j%2)*6)});
   ours[4]={...ours[4],x:near,y:goalY+behind*30};
-  if(keeper)Object.assign(keeper,atGoal(50,2));
+  if(keeper)Object.assign(keeper,atGoal(50,0));
  }else if(kind==='freekick'){
   const ball=clampPoint(location);
   ours[9]={...ours[9],x:ball.x,y:ball.y};

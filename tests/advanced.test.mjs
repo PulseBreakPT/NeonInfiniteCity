@@ -19,7 +19,7 @@ test('oponentes têm plantéis, técnicos, finanças e táticas independentes',(
 test('resultados são derivados de remates, posse, passes e ocasiões',()=>{
  const s=game(),fixture=s.league.rounds[0].find(f=>f.home===0||f.away===0);
  const r=runMatch(s,fixture),e=r.events,k=r.stats;
- assert.equal(r.engine,'events-v3');
+ assert.equal(r.engine,'events-v4');
  assert.equal(e.filter(x=>x.kind==='goal').length,r.hg+r.ag);
  assert.ok(k.shotsHome>=r.hg&&k.shotsAway>=r.ag);
  assert.ok(k.onTargetHome>=r.hg&&k.onTargetAway>=r.ag);
