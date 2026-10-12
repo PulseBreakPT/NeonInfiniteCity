@@ -1,3 +1,4 @@
+import {articulatedPose,projectBodyJoint} from './player-biomechanics.js';
 // CLUB DYNASTY Match Broadcast v3.
 // Procedural 2.5D stadium and articulated footballers, no image downloads,
 // no textures, no dependencies. Physics & saves stay entirely separate.
@@ -164,44 +165,44 @@ export function createBroadcastRenderer(canvas,session){
  }
  function footballer(p,pr,frame){
   const c=ctx,pt=pr.project(p.x,p.y),home=p.side===0,keeper=p.pos==='GK';
-  const speed=p.speed||0;
-  const stride=clamp(speed/7,0,1);
-  const scale=pr.mode==='sideline'?1.28:pr.mode==='tv'?1.04:pr.mode==='aerial'?.72:.88;
-  const size=clamp(Math.min(width/39,12)*scale,5.3,13);
-  const tick=frame.tick||0;
-  const swing=Math.sin(tick*.66+(p.index+p.side*11)*1.71)*stride;
-  // Heading uses smoothed velocity, not direction to the ball or random motion.
-  // The footballer's torso faces the projected direction of movement.
-  // In a TV/sideline camera, the world axes rotate 90 degrees on screen.
-  const heading=p.facing??Math.atan2(p.vy||0,p.vx||0);
-  const next=pr.project(p.x+Math.cos(heading),p.y+Math.sin(heading));
-  const facing=Math.atan2(next.y-pt.y,next.x-pt.x);
-  const jersey=keeper?(home?'#f8c662':'#baadfa'):(home?'#eeffc8':'#fd646a');
-  const shorts=keeper?'#162b33':home?'#143d3a':'#f7f6ec';
+  const size=clamp(Math.min(width/39,12)*(pr.mode==='sideline'?1.28:pr.mode==='tv'?1.04:pr.mode==='aerial'?.72:.88),5.3,13);
+  const pose=articulatedPose(p,frame.tick||0);
+  const project=j=>projectBodyJoint(j,p,{angle:pose.facing,project:pr.project},size*1.13);
+  const sk={pelvis:project(pose.pelvis),chest:project(pose.chest),head:project(pose.head),
+   hips:pose.hips.map(project),knees:pose.knees.map(project),feet:pose.feet.map(project),
+   shoulders:pose.shoulders.map(project),elbows:pose.elbows.map(project),hands:pose.hands.map(project)};
+  const color=keeper?(home?'#e8ba66':'#a79ee3'):(home?'#dffaaf':'#f96c77');
+  const shorts=keeper?'#142c34':home?'#173c3a':'#f0ecdf';
   const skin=['#dbb597','#b67e58','#e2c6a6','#956243'][((p.index+p.side*11)*7)%4];
-  // Ground-contact shadow and pressure marker.
-  c.beginPath();c.ellipse(pt.x+1,pt.y+size*.7,size*.76,size*.28,0,0,Math.PI*2);
-  c.fillStyle='rgba(0,17,16,.54)';c.fill();
-  c.save();c.translate(pt.x,pt.y);c.rotate(facing+Math.PI/2);
-  capsule(c,-size*.28,size*.12-swing*size*.23,-size*.23,size*.84+swing*size*.18,size*.24,shorts);
-  capsule(c,size*.28,size*.12+swing*size*.23,size*.23,size*.84-swing*size*.18,size*.24,shorts);
-  capsule(c,-size*.23,size*.83+swing*size*.18,-size*.37,size*.87+swing*size*.18,size*.13,'#f9fcf0');
-  capsule(c,size*.23,size*.83-swing*size*.18,size*.41,size*.87-swing*size*.18,size*.13,'#f9fcf0');
-  capsule(c,-size*.50,-size*.27-swing*size*.08,-size*.66,size*.25+swing*size*.18,size*.18,skin);
-  capsule(c,size*.50,-size*.27+swing*size*.08,size*.66,size*.25-swing*size*.18,size*.18,skin);
-  polygon(c,[[-size*.48,-size*.55],[size*.48,-size*.55],[size*.43,size*.35],[-size*.43,size*.35]],jersey,home?'#b8e7ad':'#a74249',.7);
-  c.beginPath();c.ellipse(0,-size*.72,size*.28,size*.31,0,0,Math.PI*2);
+  c.beginPath();c.ellipse(pt.x+1,pt.y+size*.19,size*.7,size*.25,0,0,Math.PI*2);
+  c.fillStyle='rgba(0,17,16,.50)';c.fill();
+  const drawBone=(a,b,w,col)=>capsule(c,a.x,a.y,b.x,b.y,w,col);
+  // Rear leg and arm, then the torso, then the near limbs create depth.
+  for(let i=0;i<2;i++){
+   drawBone(sk.hips[i],sk.knees[i],size*.30,shorts);
+   drawBone(sk.knees[i],sk.feet[i],size*.19,home?'#eff5ec':'#faf9f0');
+   drawBone(sk.elbows[i],sk.hands[i],size*.19,skin);
+  }
+  polygon(c,[
+   [sk.pelvis.x-size*.28,sk.pelvis.y],[sk.pelvis.x+size*.28,sk.pelvis.y],
+   [sk.chest.x+size*.45,sk.chest.y],[sk.chest.x-size*.45,sk.chest.y]
+  ],color,home?'#729e75':'#883f46',.8);
+  for(let i=0;i<2;i++){
+   drawBone(sk.shoulders[i],sk.elbows[i],size*.23,color);
+   c.beginPath();c.arc(sk.hands[i].x,sk.hands[i].y,size*.12,0,Math.PI*2);
+   c.fillStyle=keeper?'#f5ee8c':skin;c.fill();
+  }
+  c.beginPath();c.ellipse(sk.head.x,sk.head.y,size*.29,size*.36,0,0,Math.PI*2);
   c.fillStyle=skin;c.fill();
-  c.beginPath();c.ellipse(0,-size*.94,size*.26,size*.13,0,0,Math.PI*2);
-  c.fillStyle='#28251e';c.fill();
-  c.rotate(-(facing+Math.PI/2));
-  c.font='900 '+Math.max(7,size*.88)+'px sans-serif';c.fillStyle=home?'#17432f':'#fff';
-  c.strokeStyle='rgba(5,30,23,.9)';c.lineWidth=1.4;c.textAlign='center';c.textBaseline='middle';
-  c.strokeText(String(p.number||p.index+1),0,-size*.13);
-  c.fillText(String(p.number||p.index+1),0,-size*.13);
-  c.restore();
+  c.beginPath();c.ellipse(sk.head.x,sk.head.y-size*.19,size*.28,size*.13,0,0,Math.PI*2);
+  c.fillStyle='#232920';c.fill();
+  c.font='900 '+Math.max(7,size*.8)+'px sans-serif';c.textAlign='center';c.textBaseline='middle';
+  c.strokeStyle='rgba(0,18,12,.88)';c.lineWidth=2;c.fillStyle=home?'#173d2d':'#fff';
+  const number=String(p.number||p.index+1);
+  c.strokeText(number,sk.chest.x,sk.chest.y+size*.16);
+  c.fillText(number,sk.chest.x,sk.chest.y+size*.16);
   if(frame.carrier===p.id){
-   c.beginPath();c.ellipse(pt.x,pt.y,size*1.35,size*.58,0,0,Math.PI*2);
+   c.beginPath();c.ellipse(pt.x,pt.y,size*1.28,size*.6,0,0,Math.PI*2);
    c.strokeStyle='#e3ff86';c.lineWidth=1.6;c.stroke();
   }
   return pt;
