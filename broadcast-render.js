@@ -10,7 +10,7 @@ const smooth=t=>t*t*(3-2*t);
 export function interpolateWorld(world,progress=1){
  const t=smooth(clamp(progress,0,1));
  const previous=new Map((world.previous?.players||[]).map(p=>[p.id,p]));
- const players=world.players.map(p=>{
+ const players=world.players.filter(p=>p.active!==false).map(p=>{
   const a=previous.get(p.id)||p;
   return {...p,x:mix(a.x,p.x,t),y:mix(a.y,p.y,t),
    speed:Math.hypot(p.vx||0,p.vy||0),
@@ -19,9 +19,7 @@ export function interpolateWorld(world,progress=1){
  const old=world.previous?.ball||world.ball;
  let ball={x:mix(old.x,world.ball.x,t),y:mix(old.y,world.ball.y,t),
    z:mix(old.z||0,world.ball.z||0,t)};
- // Ball glued to the foot of the real carrier for first touch and dribbling.
- const owner=world.ball.owner!==null?players.find(p=>p.id===world.ball.owner):null;
- if(owner){ball.x=owner.x;ball.y=owner.y+(owner.side===0?-.72:.72);ball.z=.12;}
+ // The renderer never invents a ball location: it follows the physical world exactly.
  return {players,ball,carrier:world.ball.owner,restart:world.restart,
   phase:world.phase,events:world.events,score:world.score};
 }
@@ -171,7 +169,7 @@ export function createBroadcastRenderer(canvas,session){
   const scale=pr.mode==='sideline'?1.28:pr.mode==='tv'?1.04:pr.mode==='aerial'?.72:.88;
   const size=clamp(Math.min(width/39,12)*scale,5.3,13);
   const tick=frame.tick||0;
-  const swing=Math.sin(tick*.66+p.id*1.71)*stride;
+  const swing=Math.sin(tick*.66+(p.index+p.side*11)*1.71)*stride;
   // Heading uses smoothed velocity, not direction to the ball or random motion.
   // The footballer's torso faces the projected direction of movement.
   // In a TV/sideline camera, the world axes rotate 90 degrees on screen.
@@ -180,7 +178,7 @@ export function createBroadcastRenderer(canvas,session){
   const facing=Math.atan2(next.y-pt.y,next.x-pt.x);
   const jersey=keeper?(home?'#f8c662':'#baadfa'):(home?'#eeffc8':'#fd646a');
   const shorts=keeper?'#162b33':home?'#143d3a':'#f7f6ec';
-  const skin=['#dbb597','#b67e58','#e2c6a6','#956243'][Math.abs((p.id||1)*7)%4];
+  const skin=['#dbb597','#b67e58','#e2c6a6','#956243'][((p.index+p.side*11)*7)%4];
   // Ground-contact shadow and pressure marker.
   c.beginPath();c.ellipse(pt.x+1,pt.y+size*.7,size*.76,size*.28,0,0,Math.PI*2);
   c.fillStyle='rgba(0,17,16,.54)';c.fill();
