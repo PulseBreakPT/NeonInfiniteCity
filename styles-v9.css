@@ -124,3 +124,12 @@
 @media(prefers-reduced-motion:reduce){
  .elite-shell .lineup-player,.elite-shell .lineup-field-panel .formation-player{transition:none}
 }
+
+/* Pitch scenery must never compete with the actual shirt controls for touches.
+   All interaction is on the buttons, never on the artificial grass. */
+.elite-shell #starting-pitch{pointer-events:none}
+.elite-shell #starting-pitch .formation-player{
+ position:absolute!important;z-index:30!important;pointer-events:auto!important;
+ touch-action:manipulation;cursor:pointer
+}
+.elite-shell #starting-pitch .formation-player>*{pointer-events:none}

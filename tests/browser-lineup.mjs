@@ -36,6 +36,13 @@ try{
   const bench=initial.players.find(p=>!initial.lineups[formation].includes(p.id)&&p.injury===0);
   assert.ok(bench,'Need a fit substitute');
   // Select a field position, remove the player and persist an empty slot.
+  const geometry=await page.locator('#starting-pitch .formation-player[data-slot="5"]').evaluate(el=>{
+   const r=el.getBoundingClientRect(),at=document.elementsFromPoint(r.left+r.width/2,r.top+r.height/2);
+   return {center:[Math.round(r.left+r.width/2),Math.round(r.top+r.height/2)],pointerEvents:getComputedStyle(el).pointerEvents,
+    pitchPointerEvents:getComputedStyle(document.querySelector('#starting-pitch')).pointerEvents,
+    hit:at.slice(0,5).map(x=>x.tagName.toLowerCase()+(x.className?.baseVal||x.className||''))};
+  });
+  console.log('XI pitch touch test '+width+': '+JSON.stringify(geometry));
   await page.locator('#starting-pitch .formation-player[data-slot="5"]').click();
   await page.waitForSelector('[data-action="unassign-slot"]');
   await page.locator('[data-action="unassign-slot"]').click();
