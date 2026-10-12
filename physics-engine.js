@@ -316,7 +316,7 @@ function restart(w,kind,team,where,reason=''){
    countdown:null};
  w.carrier=null;w.ball.owner=null;w.ball.vx=0;w.ball.vy=0;w.ball.vz=0;
  w.ball.x=w.restart.x;w.ball.y=w.restart.y;w.ball.z=.12;
- const words={corner:'Canto',throwin:'Lançamento lateral',freekick:'Livre',penalty:'Grande penalidade',goalkick:'Pontapé de baliza',kickoff:'Pontapé de saída',offside:'Fora de jogo'};
+ const words={corner:'Canto',throwin:'Lançamento lateral',freekick:'Livre',penalty:'Grande penalidade',goalkick:'Pontapé de baliza',kickoff:'Pontapé de saída',offside:'Fora de jogo',indirect:'Livre indireto',backpass:'Livre indireto',droppedball:'Bola ao solo'};
  event(w,kind,words[kind]+(reason?' — '+reason:''),w.teams[team].id);
  manageBench(w);applySubstitutionQueue(w);updateDelayedEntries(w);
 }
@@ -655,7 +655,7 @@ function ballPhysics(w,dt){
 }
 function restartTargets(w){
  if(!w.restart)return;
- const r=w.restart,kind=r.kind==='offside'?'freekick':r.kind==='goalkick'?'freekick':r.kind==='kickoff'?'freekick':r.kind;
+ const r=w.restart,kind=['offside','goalkick','kickoff','backpass','indirect'].includes(r.kind)?'freekick':r.kind;
  const normalized=w.teams.map(t=>({
   ...t,side:w.half===2?1-t.side:t.side,players:w.players.filter(p=>p.side===t.side).map(p=>({...p,x:p.x/FIELD.width*100,y:p.y/FIELD.length*100}))
  }));
