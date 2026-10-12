@@ -239,12 +239,17 @@ export function migrate(saved){
   const live=state.liveMatch,world=live?.schema===2?live.world:null;
   if(world){
    if(!Number.isInteger(world.half)){
-    const second=(live.minute||0)>45+(live.firstAdded||0);
+    const endFirst=45+(live.firstAdded||0);
+    const second=(live.minute||0)>endFirst||((live.minute||0)===endFirst&&live.phase==='running');
     world.half=second?2:1;
     if(second){
      for(const team of world.teams||[])for(const anchor of team.anchors||[])anchor.y=105-anchor.y;
      for(const player of world.players||[]){player.y=105-player.y;player.vx=0;player.vy=0;}
      if(world.ball)world.ball.y=105-world.ball.y;
+     if(world.previous){
+      for(const player of world.previous.players||[])player.y=105-player.y;
+      if(world.previous.ball)world.previous.ball.y=105-world.previous.ball.y;
+     }
     }
    }
    if(!Array.isArray(world.bench)){
