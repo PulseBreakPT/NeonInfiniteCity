@@ -173,7 +173,11 @@ export function createBroadcastRenderer(canvas,session){
   const tick=frame.tick||0;
   const swing=Math.sin(tick*.66+p.id*1.71)*stride;
   // Heading uses smoothed velocity, not direction to the ball or random motion.
-  const facing=(Math.abs(p.vx)+Math.abs(p.vy)>.18)?Math.atan2(p.vy,p.vx):p.facing??0;
+  // The footballer's torso faces the projected direction of movement.
+  // In a TV/sideline camera, the world axes rotate 90 degrees on screen.
+  const heading=p.facing??Math.atan2(p.vy||0,p.vx||0);
+  const next=pr.project(p.x+Math.cos(heading),p.y+Math.sin(heading));
+  const facing=Math.atan2(next.y-pt.y,next.x-pt.x);
   const jersey=keeper?(home?'#f8c662':'#baadfa'):(home?'#eeffc8':'#fd646a');
   const shorts=keeper?'#162b33':home?'#143d3a':'#f7f6ec';
   const skin=['#dbb597','#b67e58','#e2c6a6','#956243'][Math.abs((p.id||1)*7)%4];
