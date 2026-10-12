@@ -27,6 +27,7 @@ try{
  await page.goto(url,{waitUntil:'domcontentloaded'});
  await page.locator('#create-form button[type="submit"]').click();
  await page.waitForSelector('.career-hq');
+ await page.evaluate(()=>window.__CLUB_MATCH_TEST_RATE__=1);
  await page.locator('.career-hq [data-action="match"]').click();
  await page.waitForSelector('.live-matchday');
  await page.waitForSelector('.spatial-ready #live-spatial-canvas');
@@ -46,7 +47,6 @@ try{
  const balance=s.budget,round=s.league.round;
  // In real 1× playback, 36 fixed simulation steps MUST NOT complete in 320 ms.
  await page.evaluate(()=>window.__CLUB_MATCH_TEST_RATE__=1);
- const ticksBefore=await page.evaluate(()=>JSON.parse(localStorage.getItem('club-dynasty-v2')).liveMatch.world.tick);
  await page.waitForTimeout(650);
  const pacing=await page.evaluate(()=>{
   // State is written periodically, so inspect the animated browser's visible clock
