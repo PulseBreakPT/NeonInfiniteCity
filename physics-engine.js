@@ -293,7 +293,9 @@ function restart(w,kind,team,where,reason=''){
    ?available.slice().sort((a,b)=>b.pas-a.pas)[0]||available[0]
    :available[0];
  w.restart={kind,team,x:clamp(where.x,.1,FIELD.width-.1),y:clamp(where.y,.1,FIELD.length-.1),
-   reason,takerId:taker?.id??null,takerName:taker?.name??null,elapsed:0};
+   reason,takerId:taker?.id??null,takerName:taker?.name??null,elapsed:0,
+   deliberateDelay:(kind==='throwin'||kind==='goalkick')&&w.teams[team].tactics.tempo==='lento'&&rand(w)<.025,
+   countdown:null};
  w.carrier=null;w.ball.owner=null;w.ball.vx=0;w.ball.vy=0;w.ball.vz=0;
  w.ball.x=w.restart.x;w.ball.y=w.restart.y;w.ball.z=.12;
  const words={corner:'Canto',throwin:'Lançamento lateral',freekick:'Livre',penalty:'Grande penalidade',goalkick:'Pontapé de baliza',kickoff:'Pontapé de saída',offside:'Fora de jogo'};
@@ -655,6 +657,7 @@ function restartKick(w){
  if(!nearest)return;
  // Never teleport the taker: the restart stays frozen until they arrive.
  if(dist(nearest,r)>.85)return;
+ if(r.deliberateDelay)return;
  nearest.x=clamp(r.x,.2,67.8);nearest.y=clamp(r.y,.2,104.8);
  const kind=r.kind,goal={x:34,y:attackGoal(r.team,w)};
  if(kind==='penalty'){
@@ -720,6 +723,23 @@ export function stepWorld(w,dt=FIXED_DT){
  }return w;}
  if(w.phase==='restart'){
   restartTargets(w);w.phaseTime-=dt;w.restart.elapsed+=dt;
+  if(w.restart.deliberateDelay&&w.phaseTime<=0){
+   const r=w.restart,taker=w.players.find(p=>p.id===r.takerId);
+   if(taker&&dist(taker,r)<=.85){
+    if(r.countdown===null){
+     r.countdown=5;
+     event(w,'countdown','O árbitro inicia a contagem de cinco segundos.',w.teams[r.team].id);
+    }else r.countdown-=dt;
+    if(r.countdown<=0){
+     const opponent=1-r.team;
+     if(r.kind==='throwin')restart(w,'throwin',opponent,{x:r.x,y:r.y},'Atraso na reposição');
+     else{w.stats[opponent].corners++;restart(w,'corner',opponent,
+      {x:r.x<34?0:68,y:ownGoal(r.team,w)},'Pontapé de baliza demorado');}
+     return w;
+    }
+    return w;
+   }
+  }
   if(w.phaseTime<=0){
    restartKick(w);
    if(w.phase==='restart'&&w.restart.elapsed>14){
