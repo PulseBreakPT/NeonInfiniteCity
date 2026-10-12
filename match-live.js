@@ -80,6 +80,18 @@ export function beginLiveMatch(state,options={}){
  * neither the whole minute nor its end-state is precomputed.
  * Substeps are saved, so a reloaded match continues at the exact instant.
  */
+const INTERRUPTIONS=new Set(['goal','freekick','offside','penalty','corner','throwin','goalkick',
+ 'injury','treatment','substitution','handball','forfeit']);
+function adjustStoppageMinutes(session,half){
+ const firstEnd=45+session.firstAdded;
+ const start=half===1?0:firstEnd,end=half===1?45:90+session.firstAdded;
+ const stops=(session.world?.events||[]).filter(e=>INTERRUPTIONS.has(e.kind)&&
+  (e.clock??e.minute)>=start&&(e.clock??e.minute)<end).length;
+ const additional=clamp(Math.ceil(stops*.16),1,half===1?8:10);
+ if(half===1)session.firstAdded=Math.max(session.firstAdded,additional);
+ else session.secondAdded=Math.max(session.secondAdded,additional);
+ session.total=90+session.firstAdded+session.secondAdded;
+}
 export function tickLiveMatchStep(state){
  const session=state.liveMatch;
  if(!session)throw Error('Não há jogo em curso.');
@@ -101,6 +113,12 @@ export function tickLiveMatchStep(state){
   session.substep=0;
   session.minute=clamp(session.minute+1,0,session.total);
   world.minute=session.minute;
+  if(session.minute===45&&!session.stoppageCalibratedFirst){
+   adjustStoppageMinutes(session,1);session.stoppageCalibratedFirst=true;
+  }
+  if(session.minute===90+session.firstAdded&&!session.stoppageCalibratedSecond){
+   adjustStoppageMinutes(session,2);session.stoppageCalibratedSecond=true;
+  }
   if(session.minute>=session.total){
    session.phase='final';
    finalWorld(world);
