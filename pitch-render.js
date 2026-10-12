@@ -25,17 +25,20 @@ export function createPitchRenderer(canvas,session){
   if(session.schema===2&&session.world){
    const w=session.world;
    const progress=Math.max(0,Math.min(.95,minute-Math.floor(minute)));
-   const dt=progress*2.4;
-   const positions=w.players.map(p=>({
-    ...p,x:Math.max(0,Math.min(100,(p.x+p.vx*dt)*100/68)),
-    y:Math.max(0,Math.min(100,(p.y+p.vy*dt)*100/105))
-   }));
-   let ball={x:w.ball.x+(!w.ball.owner?w.ball.vx*dt:0),y:w.ball.y+(!w.ball.owner?w.ball.vy*dt:0)};
-   if(w.ball.owner!==null){
-    const holder=w.players.find(p=>p.id===w.ball.owner);
-    if(holder){ball={x:holder.x+holder.vx*dt,y:holder.y+holder.vy*dt};}
-   }
-   frame={players:positions,ball:{x:Math.max(0,Math.min(100,ball.x*100/68)),y:Math.max(0,Math.min(100,ball.y*100/105))},
+   const ease=progress*progress*(3-2*progress);
+   const prev=w.previous||{};
+   const prevPlayers=new Map((prev.players||[]).map(p=>[p.id,p]));
+   const positions=w.players.map(p=>{
+    const last=prevPlayers.get(p.id)||p;
+    return {...p,
+     x:Math.max(0,Math.min(100,(last.x+(p.x-last.x)*ease)*100/68)),
+     y:Math.max(0,Math.min(100,(last.y+(p.y-last.y)*ease)*100/105))
+    };
+   });
+   const oldBall=prev.ball||w.ball;
+   let ball={x:oldBall.x+(w.ball.x-oldBall.x)*ease,y:oldBall.y+(w.ball.y-oldBall.y)*ease,
+    z:oldBall.z+(w.ball.z-oldBall.z)*ease};
+   frame={players:positions,ball:{x:Math.max(0,Math.min(100,ball.x*100/68)),y:Math.max(0,Math.min(100,ball.y*100/105)),z:ball.z},
     setPiece:w.restart?.kind||null};
   }else frame=spatialFrame(session,minute,timeline);
   if(!frame)return;
@@ -66,7 +69,7 @@ export function createPitchRenderer(canvas,session){
   }
   const x=sx(ball.x),y=sy(ball.y);
   ctx.beginPath();ctx.arc(x+1,y+2,size*.71,0,Math.PI*2);ctx.fillStyle='rgba(0,12,10,.55)';ctx.fill();
-  ctx.beginPath();ctx.arc(x,y,size*.65,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+  ctx.beginPath();ctx.arc(x,y-Math.min(15,(ball.z||0)*2),size*.65,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
   ctx.lineWidth=1;ctx.strokeStyle='#132c2c';ctx.stroke();
   ctx.beginPath();ctx.arc(x-size*.14,y-size*.14,size*.18,0,Math.PI*2);ctx.fillStyle='#182d31';ctx.fill();
   if(frame.setPiece){

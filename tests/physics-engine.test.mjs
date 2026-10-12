@@ -55,8 +55,8 @@ test('o árbitro coloca a bola no sítio correto ao marcar canto, livre, penált
  stepWorld(world);
  assert.equal(world.restart?.kind,'throwin');
  assert.equal(world.restart.team,1);
- for(let i=0;i<15;i++)stepWorld(world);
- assert.equal(world.phase,'open');
+ for(let i=0;i<145&&world.phase==='restart';i++)stepWorld(world);
+ assert.equal(world.phase,'open','A reposição deve ser executada depois de o marcador alcançar a bola.');
 });
 test('golo é físico: só conta quando a bola atravessa a linha entre os postes',()=>{
  const {world}=start();

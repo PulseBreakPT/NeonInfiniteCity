@@ -72,13 +72,16 @@ function targetFor(w,p){
    y:clamp(p.y+dir*(8+(t.tempo==='rapido'?4:0)),7,98)};
  }
  const distanceToBall=dist(p,b);
+ const individual=t.marking==='individual'&&!attacker
+  ?teamPlayers(w,1-side).filter(q=>q.pos!=='GK').sort((a,c)=>Math.hypot(a.x-baseX,a.y-baseY)-Math.hypot(c.x-baseX,c.y-baseY))[0]
+  :null;
  const primary=teamPlayers(w,side).filter(q=>q.pos!=='GK').sort((a,c)=>dist(a,b)-dist(c,b)).slice(0,t.pressure==='alta'?2:1);
  if(!attacker&&primary.some(q=>q.id===p.id)&&distanceToBall<36*press){
   return {x:b.x+Math.sin(w.tick*.03+p.index)*1.3,y:b.y+dir*(p.pos==='DEF'?-1:2)};
  }
  const forward=p.pos==='ATT'?13:p.pos==='MID'?6:-3;
- const tX=baseX+(b.x-baseX)*(attacker?.25:.13*press)+(attacker&&(p.pos==='ATT'||p.pos==='MID')?Math.sin(w.tick*.012+p.index)*2:0);
- const tY=baseY+dir*(mind+(attacker?forward:0))+(b.y-baseY)*(attacker?.14:.09*press);
+ const tX=(individual?baseX*.55+individual.x*.45:baseX)+(b.x-baseX)*(attacker?.25+.015*(press-1):.13*press)+(attacker&&(p.pos==='ATT'||p.pos==='MID')?Math.sin(w.tick*.012+p.index)*2:0);
+ const tY=(individual?baseY*.55+individual.y*.45:baseY)+dir*(mind+(attacker?forward:0))+(b.y-baseY)*(attacker?.14:.09*press);
  return {x:clamp(tX,3,65),y:clamp(tY,7,98)};
 }
 function offside(w,passer,target){
@@ -99,7 +102,15 @@ function kick(w,p,target,power=15,height=0){
 }
 function restart(w,kind,team,where,reason=''){
  w.phase='restart';w.phaseTime=2.5;
- w.restart={kind,team,x:clamp(where.x,.1,FIELD.width-.1),y:clamp(where.y,.1,FIELD.length-.1),reason};
+ const available=teamPlayers(w,team).filter(p=>p.pos!=='GK')
+   .sort((a,b)=>Math.hypot(a.x-where.x,a.y-where.y)-Math.hypot(b.x-where.x,b.y-where.y));
+ const taker=kind==='penalty'
+  ?teamPlayers(w,team).filter(p=>p.pos==='ATT').sort((a,b)=>b.sho-a.sho)[0]||available[0]
+  :kind==='freekick'||kind==='corner'
+   ?available.slice().sort((a,b)=>b.pas-a.pas)[0]||available[0]
+   :available[0];
+ w.restart={kind,team,x:clamp(where.x,.1,FIELD.width-.1),y:clamp(where.y,.1,FIELD.length-.1),
+   reason,takerId:taker?.id??null,takerName:taker?.name??null,elapsed:0};
  w.carrier=null;w.ball.owner=null;w.ball.vx=0;w.ball.vy=0;w.ball.vz=0;
  w.ball.x=w.restart.x;w.ball.y=w.restart.y;w.ball.z=.12;
  const words={corner:'Canto',throwin:'Lançamento lateral',freekick:'Livre',penalty:'Grande penalidade',goalkick:'Pontapé de baliza',kickoff:'Pontapé de saída',offside:'Fora de jogo'};
@@ -246,15 +257,18 @@ function restartTargets(w){
  const normalized=w.teams.map(t=>({
   ...t,players:teamPlayers(w,t.side).map(p=>({...p,x:p.x/FIELD.width*100,y:p.y/FIELD.length*100}))
  }));
- const spots=restartPositions(normalized,kind,w.teams[r.team].id,{x:r.x/FIELD.width*100,y:r.y/FIELD.length*100});
+ const spots=restartPositions(normalized,kind,w.teams[r.team].id,
+  {x:r.x/FIELD.width*100,y:r.y/FIELD.length*100},r.takerName);
  const spotMap=new Map(spots.map(p=>[p.id,p]));
  for(const p of w.players){const spot=spotMap.get(p.id);if(spot)steer(p,{x:spot.x*.68,y:spot.y*1.05},FIXED_DT,.95);}
 }
 function restartKick(w){
  const r=w.restart;if(!r)return;
  const teammates=teamPlayers(w,r.team).filter(p=>p.pos!=='GK');
- const nearest=teammates.sort((a,b)=>dist(a,r)-dist(b,r))[0];
+ const nearest=teammates.find(p=>p.id===r.takerId)||teammates.sort((a,b)=>dist(a,r)-dist(b,r))[0];
  if(!nearest)return;
+ // Never teleport the taker: the restart stays frozen until they arrive.
+ if(dist(nearest,r)>1.7)return;
  nearest.x=clamp(r.x,1,67);nearest.y=clamp(r.y,1,104);
  const kind=r.kind,goal={x:34,y:attackGoal(r.team)};
  if(kind==='penalty'){
@@ -286,7 +300,15 @@ export function stepWorld(w,dt=FIXED_DT){
   const p=findCarrier(w);if(p){w.ball.owner=p.id;w.carrier=p.id;}w.phase='open';
  }return w;}
  if(w.phase==='restart'){
-  restartTargets(w);w.phaseTime-=dt;if(w.phaseTime<=0)restartKick(w);
+  restartTargets(w);w.phaseTime-=dt;w.restart.elapsed+=dt;
+  if(w.phaseTime<=0){
+   restartKick(w);
+   if(w.phase==='restart'&&w.restart.elapsed>14){
+    // Rare formation/pathfinding deadlock: avoid an endless stopped match.
+    const taker=w.players.find(p=>p.id===w.restart.takerId);
+    if(taker){steer(taker,w.restart,dt,1.9);if(dist(taker,w.restart)<3)restartKick(w);}
+   }
+  }
   return w;
  }
  const carrier=findCarrier(w);
@@ -304,6 +326,10 @@ export function stepWorld(w,dt=FIXED_DT){
 export function stepMatchMinute(session){
  const w=session.world;
  if(!w)throw Error('Motor físico não iniciado.');
+ w.previous={
+  players:w.players.map(p=>({id:p.id,x:p.x,y:p.y})),
+  ball:{x:w.ball.x,y:w.ball.y,z:w.ball.z}
+ };
  // Equivalent and deterministic whether driven by wall clock, headless tests or replay.
  for(let i=0;i<STEPS_PER_MINUTE;i++){
   w.minute=session.minute+i/STEPS_PER_MINUTE;
