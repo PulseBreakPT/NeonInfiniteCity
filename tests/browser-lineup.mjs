@@ -21,7 +21,7 @@ try{
  browser=await chromium.launch({executablePath:path,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  await mkdir('.browser-qa',{recursive:true});
  for(const [width,height] of [[390,844],[1440,900]]){
-  const ctx=await browser.newContext({viewport:{width,height}});
+  const ctx=await browser.newContext({viewport:{width,height},hasTouch:width<600});
   const page=await ctx.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin,{waitUntil:'domcontentloaded'});
