@@ -32,7 +32,7 @@ export function createWorld(session){
  const ps=teams.flatMap((team,side)=>team.players.map((p,i)=>player(p,side,i)));
  const own=ps.filter(p=>p.side===0&&p.pos==='MID'),carrier=own[0]||ps[5];
  const w={
-  version:3,seed:hash(session.id+':physics:v2')>>>0,
+  version:5,half:1,seed:hash(session.id+':physics:v2')>>>0,
   tick:0,minute:0,phase:'kickoff',phaseTime:1.2,
   teams:teams.map((t,i)=>({id:t.id,name:session.result.home===t.id?session.result.homeName:session.result.awayName,
     side:i,formation:t.formation,tactics:t.tactics,anchors:t.players.map(p=>({x:p.x*.68,y:p.y*1.05}))})),
@@ -48,9 +48,10 @@ export function createWorld(session){
 function teamPlayers(w,side){return w.players.filter(p=>p.side===side&&p.active!==false);}
 function findCarrier(w){return w.players.find(p=>p.id===w.carrier)||null;}
 function strengths(w,p,tag){return clamp((p[tag]||55)/65,.65,1.5)*clamp(p.stamina/90,.68,1.08);}
-function ownGoal(side){return side===0?FIELD.length:0;}
-function attackGoal(side){return side===0?0:FIELD.length;}
-function atGoalDistance(p,side){return Math.abs(p.y-attackGoal(side));}
+function direction(w,side){return (side===0?-1:1)*(w.half===2?-1:1);}
+function ownGoal(side,w){return direction(w,side)===-1?FIELD.length:0;}
+function attackGoal(side,w){return direction(w,side)===-1?0:FIELD.length;}
+function atGoalDistance(p,side,w){return Math.abs(p.y-attackGoal(side,w));}
 function steer(p,target,dt,boost=1,grip=1){
  const dx=target.x-p.x,dy=target.y-p.y,d=Math.max(.001,hypot(dx,dy));
  const speed=hypot(p.vx,p.vy);
@@ -131,18 +132,18 @@ function bookPlayer(w,p,kind='yellow'){
 
 function targetFor(w,p){
  const b=w.ball,side=p.side,t=w.teams[side].tactics;
- const attacker=w.possessor===side,dir=side===0?-1:1;
+ const attacker=w.possessor===side,dir=direction(w,side);
  const mind=t.mentality==='ofensiva'?8:t.mentality==='defensiva'?-7:0;
  const press=t.pressure==='alta'?1.4:t.pressure==='baixa'?.65:1;
  const baseX=(p.index<11? w.teams[side].anchors?.[p.index]?.x :null)??p.x;
  const baseY=(p.index<11? w.teams[side].anchors?.[p.index]?.y :null)??p.y;
  if(p.pos==='GK'){
-  const threatening=w.possessor!==side && Math.abs(b.y-ownGoal(side))<35;
+  const threatening=w.possessor!==side && Math.abs(b.y-ownGoal(side,w))<35;
   const projectedX=b.shot?.team===1-side
-   ?clamp(b.x+b.vx*Math.min(.36,Math.abs(b.y-ownGoal(side))/Math.max(12,Math.abs(b.vy))),29,39)
+   ?clamp(b.x+b.vx*Math.min(.36,Math.abs(b.y-ownGoal(side,w))/Math.max(12,Math.abs(b.vy))),29,39)
    :FIELD.width/2+(b.x-FIELD.width/2)*(threatening?.31:.16);
   return {x:clamp(projectedX,28,40),
-   y:clamp(ownGoal(side)+dir*(threatening?2.7:4.2),1.4,103.6)};
+   y:clamp(ownGoal(side,w)+dir*(threatening?2.7:4.2),1.4,103.6)};
  }
  const carrier=findCarrier(w);
  if(w.ball.owner===null&&w.phase==='open'&&w.ball.z<1.9){
@@ -169,10 +170,10 @@ function targetFor(w,p){
  return {x:clamp(tX,3,65),y:clamp(tY,7,98)};
 }
 function offside(w,passer,target){
- const side=passer.side,defenders=teamPlayers(w,1-side).map(p=>p.y).sort((a,b)=>side===0?a-b:b-a);
+ const side=passer.side,forward=direction(w,side),defenders=teamPlayers(w,1-side).map(p=>p.y).sort((a,b)=>forward===-1?a-b:b-a);
  if(defenders.length<2)return false;
  const line=defenders[1];
- return side===0?target.y<Math.min(line,FIELD.length/2,w.ball.y)-.3:
+ return forward===-1?target.y<Math.min(line,FIELD.length/2,w.ball.y)-.3:
  target.y>Math.max(line,FIELD.length/2,w.ball.y)+.3;
 }
 function kick(w,p,target,power=15,height=0){
@@ -213,7 +214,7 @@ function playerNear(w,side,where,includeKeeper=false){
  .sort((a,b)=>dist(a,where)-dist(b,where))[0];
 }
 function choosePass(w,p){
- const t=w.teams[p.side].tactics,dir=p.side===0?-1:1;
+ const t=w.teams[p.side].tactics,dir=direction(w,p.side);
  const candidates=teamPlayers(w,p.side).filter(q=>q.id!==p.id&&(q.pos!=='GK'||t.passing==='curto'))
  .map(q=>{
   const d=dist(p,q);
@@ -228,7 +229,7 @@ function choosePass(w,p){
  return candidates[0]?.score>-80?candidates[0].q:null;
 }
 function shoot(w,p){
- const side=p.side,goalY=attackGoal(side),target={x:34+(rand(w)-.5)*8,y:goalY};
+ const side=p.side,goalY=attackGoal(side,w),target={x:34+(rand(w)-.5)*8,y:goalY};
  const d=dist(p,target),quality=strengths(w,p,'sho');
  w.stats[side].shots++;
  const xg=clamp(.045+.4*Math.exp(-d/14)*quality,.025,.62);
@@ -245,7 +246,7 @@ function shoot(w,p){
  w.actionCooldown=.65;
 }
 function executeAction(w,p){
- const t=w.teams[p.side].tactics,goalDistance=atGoalDistance(p,p.side),defenders=teamPlayers(w,1-p.side);
+ const t=w.teams[p.side].tactics,goalDistance=atGoalDistance(p,p.side,w),defenders=teamPlayers(w,1-p.side);
  const close=defenders.filter(d=>d.pos!=='GK'&&dist(p,d)<5).length;
  if(goalDistance<32 && (goalDistance<12||rand(w)<(.21+.035*close))){
   shoot(w,p);return;
@@ -284,7 +285,7 @@ function executeAction(w,p){
   return;
  }
  // Dribble is an actual possession movement, not a camera animation.
- const dir=p.side===0?-1:1;
+ const dir=direction(w,p.side);
  const defendersAhead=defenders.filter(d=>Math.abs(d.x-p.x)<5 && dir*(d.y-p.y)>0);
  if(defendersAhead.length&&rand(w)<.15){
   const d=defendersAhead[0],win=rand(w)<clamp(.24+(d.def-p.pas)*.009,.1,.72);
@@ -345,7 +346,7 @@ function ballPhysics(w,dt){
  const b=w.ball;
  if(b.owner!==null){
   const p=w.players.find(q=>q.id===b.owner);
-  if(p){b.x=p.x;b.y=p.y+ (p.side===0?-1:1)*.85;b.z=.12;b.vx=p.vx;b.vy=p.vy;}
+  if(p){b.x=p.x;b.y=p.y+direction(w,p.side)*.85;b.z=.12;b.vx=p.vx;b.vy=p.vy;}
   else b.owner=null;
   return;
  }
@@ -428,7 +429,7 @@ function ballPhysics(w,dt){
   }
  }
  if(b.y<0||b.y>FIELD.length){
-  const end=b.y<0?0:FIELD.length,attacking=end===0?0:1;
+  const end=b.y<0?0:FIELD.length,attacking=attackGoal(0,w)===end?0:1;
   const legalGoal=b.x>=FIELD.goalLeft&&b.x<=FIELD.goalRight&&b.z<2.44;
   if(legalGoal){
    const verdict=restartGoalVerdict(b.restartKind,b.restartSide,attacking,b.restartTouched);
@@ -457,7 +458,7 @@ function restartTargets(w){
  if(!w.restart)return;
  const r=w.restart,kind=r.kind==='offside'?'freekick':r.kind==='goalkick'?'freekick':r.kind==='kickoff'?'freekick':r.kind;
  const normalized=w.teams.map(t=>({
-  ...t,players:w.players.filter(p=>p.side===t.side).map(p=>({...p,x:p.x/FIELD.width*100,y:p.y/FIELD.length*100}))
+  ...t,side:w.half===2?1-t.side:t.side,players:w.players.filter(p=>p.side===t.side).map(p=>({...p,x:p.x/FIELD.width*100,y:p.y/FIELD.length*100}))
  }));
  const spots=restartPositions(normalized,kind,w.teams[r.team].id,
   {x:r.x/FIELD.width*100,y:r.y/FIELD.length*100},r.takerName);
@@ -488,7 +489,7 @@ function restartKick(w){
  // Never teleport the taker: the restart stays frozen until they arrive.
  if(dist(nearest,r)>.85)return;
  nearest.x=clamp(r.x,1,67);nearest.y=clamp(r.y,1,104);
- const kind=r.kind,goal={x:34,y:attackGoal(r.team)};
+ const kind=r.kind,goal={x:34,y:attackGoal(r.team,w)};
  if(kind==='penalty'){
   const opposingKeeper=teamPlayers(w,1-r.team).find(p=>p.pos==='GK');
   // The goalkeeper must reach the line physically before the taker is allowed.
@@ -500,7 +501,7 @@ function restartKick(w){
   w.ball.shot={team:r.team,playerId:nearest.id,xg:.76,onTarget:true};
   event(w,'shot','Grande penalidade batida por '+nearest.name+'.',w.teams[r.team].id,{player:nearest.name,playerId:nearest.sourceId,xg:.76});
  }else if(kind==='corner'||kind==='freekick'){
-  const target=kind==='corner'?{x:29+rand(w)*10,y:goal.y+(r.team===0?8:-8)}:
+  const target=kind==='corner'?{x:29+rand(w)*10,y:goal.y-direction(w,r.team)*8}:
    {x:34+(rand(w)-.5)*8,y:goal.y};
   w.stats[r.team].passes++;
   kick(w,nearest,target,kind==='corner'?22:24,kind==='corner'?2.8:1.6);
@@ -529,7 +530,7 @@ export function stepWorld(w,dt=FIXED_DT){
   if(keeper?.pos==='GK'){
    w.referee.keeperHold=(w.referee.keeperHold||0)+dt;
    if(w.referee.keeperHold>8){
-    const opponent=1-keeper.side,goalY=ownGoal(keeper.side);
+    const opponent=1-keeper.side,goalY=ownGoal(keeper.side,w);
     w.stats[opponent].corners++;
     restart(w,'corner',opponent,{x:w.ball.x<34?0:68,y:goalY},'Guarda-redes excedeu oito segundos');
     w.referee.keeperHold=0;
@@ -566,7 +567,7 @@ export function stepWorld(w,dt=FIXED_DT){
  if(w.ball.owner!==null&&carrier&&carrier.active!==false){
   // A foot contact is ahead of the body's centre and follows the runner's stride.
   const stride=Math.sin(w.tick*.83+carrier.index)*.13;
-  const forward=carrier.side===0?-1:1;
+  const forward=direction(w,carrier.side);
   w.ball.x=clamp(carrier.x+Math.cos(carrier.facing)*(.55+stride),.03,67.97);
   w.ball.y=clamp(carrier.y+Math.sin(carrier.facing)*(.55+stride)+forward*.15,.03,104.97);
   w.ball.z=.12;w.ball.vx=carrier.vx;w.ball.vy=carrier.vy;
@@ -606,12 +607,18 @@ export function halfTimeWorld(w){
  event(w,'half','Intervalo.',-1);
 }
 export function secondHalfWorld(w){
- w.phase='kickoff';w.phaseTime=1;
+ if(w.half===2)return w;
+ w.half=2;
+ for(const team of w.teams)for(const anchor of team.anchors)anchor.y=FIELD.length-anchor.y;
+ for(const p of w.players){p.y=FIELD.length-p.y;p.vx=0;p.vy=0;p.facing=-p.facing;clampPos(p);}
+ w.phase='kickoff';w.phaseTime=1;w.restart=null;
  const newSide=1;w.possessor=newSide;
- const p=teamPlayers(w,newSide).filter(p=>p.pos==='MID')[0]||teamPlayers(w,newSide)[1];
+ const p=teamPlayers(w,newSide).find(p=>p.pos==='MID')||teamPlayers(w,newSide)[1];
+ if(!p){w.phase='final';return w;}
  p.x=34;p.y=52.5;w.carrier=p.id;
  w.ball={x:34,y:52.5,z:.12,vx:0,vy:0,vz:0,spin:0,owner:p.id,lastTouch:newSide};
- event(w,'kickoff','Começa a segunda parte.',w.teams[newSide].id);
+ event(w,'kickoff','Começa a segunda parte. As equipas trocaram de campo.',w.teams[newSide].id);
+ return w;
 }
 export function finalWorld(w){
  w.phase='final';w.ball.owner=null;w.ball.vx=0;w.ball.vy=0;
