@@ -109,3 +109,21 @@ test('tactical match simulation never commits budget or league before final whis
  assert.equal(s.results.length,0);
  assert.ok(live.result.events.some(e=>['pass','corner','throwin','freekick','penalty'].includes(e.kind)));
 });
+
+test('the actual named taker, not a random shirt, executes each set piece',()=>{
+ const state=initial(),teams=spatialTeams(state,nextFixture(state)),own=teams[0];
+ const player=own.players.find(p=>p.pos==='MID');
+ assert.ok(player);
+ for(const kind of ['corner','freekick','penalty','throwin']){
+  const place=kind==='corner'?{x:3,y:3}:kind==='throwin'?{x:3,y:48}:kind==='penalty'?{x:50,y:12}:{x:43,y:31};
+  const positions=restartPositions(teams,kind,own.id,place,player.name);
+  const actual=positions.slice(0,11).find(p=>p.name===player.name);
+  assert.ok(actual,kind);
+  if(kind==='corner'){assert.ok(actual.x<=4&&actual.y<=7);}
+  if(kind==='freekick'){assert.equal(actual.x,43);assert.equal(actual.y,31);}
+  if(kind==='penalty'){assert.equal(actual.x,50);assert.equal(actual.y,17);}
+  if(kind==='throwin'){assert.ok(actual.x<=4);assert.equal(actual.y,48);}
+  const goalie=positions.slice(11).find(p=>p.pos==='GK');
+  assert.equal(goalie.y,kind==='throwin'?8:5);
+ }
+});
