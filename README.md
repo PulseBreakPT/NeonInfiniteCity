@@ -4,11 +4,15 @@ Jogo original de gestão de futebol, em português europeu, single-player, publi
 
 **Jogar:** https://pulsebreakpt.github.io/NeonInfiniteCity/
 
-## Motor de futebol físico v3
+## Motor de futebol físico v4
 
 A partida principal utiliza um mundo métrico de **105 × 68 m**, com **22 jogadores independentes**, bola tridimensional e passos físicos determinísticos de **0,2 s**. O marcador e as estatísticas nascem de eventos simulados durante o jogo; a jornada só é confirmada ao apito final. A exibição visual interpola os mesmos estados do motor, sem gerar movimentos fictícios da bola.
 
 **Melhorias v3:** identidades únicas de atletas no campo; aceleração, travagem, fadiga e colisões corporais; deslocação sem bola em função de formação, posse, marcação e pressão; passe e remate com erros de execução; rotação, gravidade, atrito, ressalto e colisões com postes e barra; guarda-redes que antecipam, mergulham, agarram ou desviam a bola sem teletransportes; cantos, lançamentos, livres, pontapés de baliza e penáltis executados no local correto; infrações de fora de jogo só quando o destinatário intervém; cartões, expulsões e suspensão na jornada seguinte.
+
+**Novidades v4:** meteorologia progressiva gerada por seed (vento, chuva, aguaceiros, temperatura, relvado húmido e aderência), efeitos no voo/rolamento da bola, fadiga dependente do clima, contacto com risco de lesão e recuperação por semanas. O árbitro trata a lei da vantagem, o segundo toque após reposição, o limite de oito segundos do guarda-redes e os golos diretos não permitidos após lançamentos laterais e livres indiretos. A simulação usa também um esqueleto procedural tridimensional articulado para poses de corrida, remate, mergulho e queda, projetado nas quatro câmaras 2.5D.
+
+A cobertura de arbitragem é mais extensa, mas não é um motor certificado por todas as exceções IFAB; a biomecânica é aproximada e não utiliza um motor 3D rígido com deformações, roupa e corpos de colisão complexos. Os jogos principais continuam a ser calculados no motor 2D métrico.
 
 A física mantém os saves antigos e as quatro câmaras da transmissão. Os testes automáticos verificam os reinícios, o contacto, os ressaltos, a reprodutibilidade e a conclusão das partidas. Ainda é um **simulador estilizado 2.5D**, não uma reprodução biomecânica completa, VAR ou a implementação exaustiva de todas as exceções das Leis do Jogo.
 
