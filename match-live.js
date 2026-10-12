@@ -92,6 +92,10 @@ export function tickLiveMatchStep(state){
  };
  world.minute=session.minute+substep/STEPS_PER_MINUTE;
  stepWorld(world);
+ if(world.phase==='final'&&world.forfeit){
+  session.minute=session.total;session.substep=0;session.phase='final';
+  session.result=worldResult(world);return session;
+ }
  session.substep=substep+1;
  if(session.substep===STEPS_PER_MINUTE){
   session.substep=0;
