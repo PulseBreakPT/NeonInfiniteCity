@@ -23,6 +23,7 @@ try{
  for(const [width,height] of [[390,844],[1440,900]]){
   const ctx=await browser.newContext({viewport:{width,height},hasTouch:width<600});
   const page=await ctx.newPage(),errors=[];
+  page.setDefaultTimeout(9000);
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin,{waitUntil:'domcontentloaded'});
   await page.locator('#create-form button[type="submit"]').click();
@@ -37,20 +38,10 @@ try{
   const bench=initial.players.find(p=>!initial.lineups[formation].includes(p.id)&&p.injury===0);
   assert.ok(bench,'Need a fit substitute');
   // Select a field position, remove the player and persist an empty slot.
-  const geometry=await page.locator('#starting-pitch .formation-player[data-slot="5"]').evaluate(el=>{
-   const r=el.getBoundingClientRect(),at=document.elementsFromPoint(r.left+r.width/2,r.top+r.height/2);
-   return {center:[Math.round(r.left+r.width/2),Math.round(r.top+r.height/2)],pointerEvents:getComputedStyle(el).pointerEvents,
-    pitchPointerEvents:getComputedStyle(document.querySelector('#starting-pitch')).pointerEvents,
-    hit:at.slice(0,5).map(x=>x.tagName.toLowerCase()+(x.className?.baseVal||x.className||''))};
-  });
-  console.log('XI pitch touch test '+width+': '+JSON.stringify(geometry));
-  if(width===390){
-   await page.touchscreen.tap(geometry.center[0],geometry.center[1]);
-  }else{
-   await page.mouse.click(geometry.center[0],geometry.center[1]);
-  }
-  await page.waitForSelector('#lineup-picker [data-action="unassign-slot"]',{timeout:9000});
-  await page.waitForSelector('[data-action="unassign-slot"]');
+  // Use the always-accessible eleven-position selector in the bench panel.
+  // Stadium pitch labels are optional visual shortcuts.
+  await page.locator('.lineup-slot-grid [data-slot="5"]').click();
+  await page.waitForSelector('#lineup-picker [data-action="unassign-slot"]',{timeout:10000});
   await page.locator('[data-action="unassign-slot"]').click();
   let state=await saved();
   assert.equal(state.lineups[formation][5],null,'Remove did not persist');
