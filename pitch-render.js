@@ -4,7 +4,7 @@ import {buildSpatialTimeline,spatialFrame} from './pitch-spatial.js';
 // No per-player DOM writes, layouts or React-style re-renders in the animation loop.
 export function createPitchRenderer(canvas,session){
  const host=canvas?.parentElement;
- if(!canvas||!host||!session?.spatial?.teams)return null;
+ if(!canvas||!host||(!session?.spatial?.teams&&!session?.world))return null;
  const ctx=canvas.getContext('2d',{alpha:true,desynchronized:true});
  if(!ctx)return null;
  const timeline=buildSpatialTimeline(session);
@@ -21,13 +21,29 @@ export function createPitchRenderer(canvas,session){
   }
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,width,height);
-  const frame=spatialFrame(session,minute,timeline);
+  let frame;
+  if(session.schema===2&&session.world){
+   const w=session.world;
+   const progress=Math.max(0,Math.min(.95,minute-Math.floor(minute)));
+   const dt=progress*2.4;
+   const positions=w.players.map(p=>({
+    ...p,x:Math.max(0,Math.min(100,(p.x+p.vx*dt)*100/68)),
+    y:Math.max(0,Math.min(100,(p.y+p.vy*dt)*100/105))
+   }));
+   let ball={x:w.ball.x+(!w.ball.owner?w.ball.vx*dt:0),y:w.ball.y+(!w.ball.owner?w.ball.vy*dt:0)};
+   if(w.ball.owner!==null){
+    const holder=w.players.find(p=>p.id===w.ball.owner);
+    if(holder){ball={x:holder.x+holder.vx*dt,y:holder.y+holder.vy*dt};}
+   }
+   frame={players:positions,ball:{x:Math.max(0,Math.min(100,ball.x*100/68)),y:Math.max(0,Math.min(100,ball.y*100/105))},
+    setPiece:w.restart?.kind||null};
+  }else frame=spatialFrame(session,minute,timeline);
   if(!frame)return;
   const sx=x=>x/100*width,sy=y=>y/100*height;
-  const size=Math.max(7,Math.min(width/55,11));
+  const size=Math.max(6.5,Math.min(width/55,11));
   const ball=frame.ball;
   // Ball pass trajectory, an unobtrusive 0.5-second possession trail.
-  const line=timeline.findLast?.(e=>e.time<=minute)||timeline[0];
+  const line=session.schema===2?null:timeline.findLast?.(e=>e.time<=minute)||timeline[0];
   if(line){
    const ax=sx(line.x),ay=sy(line.y),bx=sx(ball.x),by=sy(ball.y);
    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);

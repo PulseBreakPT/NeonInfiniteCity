@@ -1,5 +1,5 @@
 import {applyRound} from './sim.js';
-import {clamp,hash,nextFixture} from './model.js';
+import {clamp,hash,nextFixture,autoLineup,getPlayer} from './model.js';
 import {spatialTeams} from './pitch-spatial.js';
 
 /** The event engine runs on an isolated clone at kick-off.

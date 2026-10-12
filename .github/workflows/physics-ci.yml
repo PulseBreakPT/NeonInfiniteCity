@@ -1,0 +1,37 @@
+name: Physics Engine V2 - isolated QA
+on:
+  push:
+    branches: [feat/simulation-engine-v2]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  physics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check modules
+        run: npm run check
+      - name: Simulate matches and test the referee
+        run: npm test
+      - name: Install browser QA
+        run: npm install --no-save --package-lock=false playwright-core@1.56.1
+      - name: Verify Android rendering and full-time settlements
+        run: node tests/browser-live.mjs
+      - name: Smoke test the UI and finances
+        run: |
+          node tests/browser-smoke.mjs
+          node tests/browser-economy.mjs
+      - name: Run layout audit
+        run: node tests/clipping-audit.mjs
+      - name: Archive screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: physics-v2-screenshots
+          path: .browser-qa/
+          if-no-files-found: ignore

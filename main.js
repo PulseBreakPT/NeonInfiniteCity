@@ -64,7 +64,7 @@ function paintLive(){
  if(el('live-pause-label'))el('live-pause-label').textContent=live.phase==='running'?'PAUSAR':live.phase==='halftime'?'INICIAR 2.ª PARTE':'CONTINUAR';
  if(el('live-speed-label'))el('live-speed-label').textContent=live.speed+'×';
  if(el('live-comment'))el('live-comment').textContent=last?.text||(live.minute>0?'A bola circula entre as duas equipas.':'A partida está prestes a começar.');
- const important=shown.filter(e=>['goal','card','red','injury','half','tactical','save','substitution','penalties','end','chance','corner'].includes(e.kind)).slice(-9).reverse();
+ const important=shown.filter(e=>['goal','card','red','injury','half','tactical','save','substitution','penalties','end','chance','corner','freekick','throwin','penalty','offside'].includes(e.kind)).slice(-9).reverse();
  if(el('live-reports-count'))el('live-reports-count').textContent=shown.length+' LANCES';
  if(el('live-events'))el('live-events').innerHTML=important.length?important.map(e=>'<div class="live-event-row '+(e.kind==='goal'?'is-goal':'')+'"><b>'+esc(matchClock(live,eventAtMinute(live,e)))+'</b><span>'+esc(e.text)+'</span></div>').join(''):'<div class="live-event-empty">Aguardam-se os primeiros lances.</div>';
  const ball=el('ball');
@@ -146,7 +146,7 @@ function act(action,data={}){
   }
   if(action==='match'){
    if(state?.liveMatch){go('matches');return;}
-   beginLiveMatch(state);persist();go('matches');startLiveClock();return;
+   beginLiveMatch(state,{engine:'physics'});persist();go('matches');startLiveClock();return;
   }
   if(state?.liveMatch)throw Error('Partida em curso. Aguarda o apito final.');
 

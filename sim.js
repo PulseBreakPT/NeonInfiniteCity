@@ -53,7 +53,7 @@ function awardMatch(state,result,fixture){
  updateProgress(state,'match');
  log(state,won?'Vitória importante!':draw?'Empate disputado':'Derrota da equipa',result.homeName+' '+result.hg+'–'+result.ag+' '+result.awayName);
 }
-export function applyRound(state){
+export function applyRound(state,{featuredResult=null}={}){
  const round=state.league.rounds[state.league.round-1];
  if(!round||round.every(f=>f.played))throw Error('Não existe jornada por disputar.');
  const playerFixture=round.find(f=>f.home===0||f.away===0);
@@ -68,7 +68,19 @@ export function applyRound(state){
  let featured=null;
  for(const fixture of round){
   if(fixture.played)continue;
-  const result=simulateMatch(state,fixture);
+  const result=fixture===playerFixture&&featuredResult?featuredResult:simulateMatch(state,fixture);
+  if(fixture===playerFixture&&featuredResult){
+   const line=state.lineups[state.formation]||[];
+   const userWon=(fixture.home===0?result.hg>result.ag:result.ag>result.hg);
+   const userLost=(fixture.home===0?result.hg<result.ag:result.ag<result.hg);
+   for(const id of line){const p=getPlayer(state,id);if(!p)continue;
+    p.apps=(p.apps||0)+1;p.xp=(p.xp||0)+(userWon?12:7);
+    p.fitness=clamp((p.fitness||90)-14,4,100);
+    p.morale=clamp((p.morale||80)+(userWon?4:userLost?-4:1),5,100);
+    if(p.pos==='GK'&&(fixture.home===0?result.ag:result.hg)===0)p.cleanSheets=(p.cleanSheets||0)+1;
+   }
+   for(const e of result.events||[]){if(e.kind==='goal'&&e.team===0&&e.playerId){const p=getPlayer(state,e.playerId);if(p)p.goals=(p.goals||0)+1;}}
+  }
   fixture.hg=result.hg;fixture.ag=result.ag;fixture.played=true;
   if(fixture===playerFixture){
    featured=result;
