@@ -36,7 +36,7 @@ try{
   for(let i=3;i<rgba.length;i+=48)if(rgba[i]>20)pixels++;
   return {width:w,height:h,pixels};
  });
- assert.ok(surface.width>=300&&surface.height>=200&&surface.pixels>45,'Canvas tactical players not rendered '+JSON.stringify(surface));
+ assert.ok(surface.width>=240&&surface.height>=240&&surface.pixels>45,'Canvas tactical players not rendered '+JSON.stringify(surface));
  let s=await state(),live=s.liveMatch;
  assert.ok(live,'Session should be persisted at kick-off');
  const balance=s.budget,round=s.league.round;
