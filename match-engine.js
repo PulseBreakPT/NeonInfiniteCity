@@ -71,7 +71,14 @@ export function runMatch(state,fixture,{cup=false,friendly=false}={}){
  const weather=['limpo','chuva','vento','nevoeiro'][Math.floor(random()*4)];
  const weatherPass=weather==='chuva'?.94:weather==='vento'?.96:weather==='nevoeiro'?.92:1;
  const weatherShot=weather==='vento'?.89:weather==='chuva'?.96:1;
- const event=(kind,side,text,extra={})=>events.push({minute:Math.min(90,Math.max(1,Math.floor(minute))),kind,team:side===-1?-1:teams[side].id,text,x:clamp(ball.x,3,97),y:clamp(ball.y,3,97),...extra});
+ const event=(kind,side,text,extra={})=>{
+  // World positions: local home attacks toward the northern goal (y=0).
+  // The ball is stored as progress and lateral displacement of current possession.
+  const mapX=clamp(current===0?ball.y:100-ball.y,3,97);
+  const mapY=clamp(current===0?100-ball.x:ball.x,2,98);
+  events.push({minute:Math.min(90,Math.max(1,Math.floor(minute))),kind,
+   team:side===-1?-1:teams[side].id,text,x:mapX,y:mapY,...extra});
+ };
  const choosing=(team,role)=>selectWeighted(random,team.starters.filter(p=>!team.sentOff.has(p.id)),p=>{
   if(role==='shot')return(p.pos==='ATT'?7:p.pos==='MID'?3:p.pos==='DEF'?.6:.05)*(p.sho/60)*specialist(p,'shot');
   if(role==='pass')return(p.pos==='MID'?4:p.pos==='DEF'?3:p.pos==='ATT'?2:.2)*specialist(p,'pass');
@@ -113,6 +120,21 @@ export function runMatch(state,fixture,{cup=false,friendly=false}={}){
   } else if(random()<.11) event('foul',side,'Falta de '+team.name+' — livre para '+other.name+'.');
   return true;
  }
+ function scored(team,side,shooter,kind,probability,assist=true){
+  const shotXg=clamp(probability,.025,.85);
+  statistics[side].shots++;statistics[side].onTarget++;
+  statistics[side].xg+=shotXg;
+  score[side]++;
+  event('goal',side,'GOLO! '+team.name+' — '+shooter.name+' ('+kind+').',
+   {player:shooter.name,playerId:shooter.id,xg:+shotXg.toFixed(3),source:kind});
+  if(!friendly&&team.isUser){
+   shooter.goals=(shooter.goals||0)+1;
+   if(assist){
+    const passer=selectWeighted(random,team.starters.filter(p=>p.id!==shooter.id),p=>p.pas+10);
+    if(passer&&random()<.62)passer.assists=(passer.assists||0)+1;
+   }
+  }
+ }
  const strength=(team,other,offense=true)=>{
   const p=offense?attackStrength(team)*team.tactical.attack:defendStrength(team)*team.tactical.defense;
   const x=team.starters.reduce((sum,player)=>sum+modifier(player),0)/Math.max(1,team.starters.length);
@@ -152,7 +174,12 @@ export function runMatch(state,fixture,{cup=false,friendly=false}={}){
   at.possession++;at.passes++;
   const pressure=defender.tactical.turnover,passChance=clamp(.67+(passSkill-60)*.003+(atk-def)*.0016+(attacker.tactical.success*weatherPass-1)*.38-(pressure-1)*.13,.40,.93);
   if(random()>passChance){
-   if(random()<.17)event('interception',1-current,'Interceção de '+defender.name+'.');
+   if(random()<.28){
+    // An imprecise pass can cross the touchline: restart from that touchline.
+    ball.y=random()<.5?3:97;
+    event('throwin',1-current,'Lançamento lateral para '+defender.name+'.',
+     {player:choosing(defender,'pass')?.name||null});
+   }else event('interception',1-current,'Recuperação de bola de '+defender.name+'.');
    current=1-current;ball.x=100-ball.x;ball.y=100-ball.y;continue;
   }
   at.accurate++;
@@ -160,8 +187,40 @@ export function runMatch(state,fixture,{cup=false,friendly=false}={}){
   ball.x=clamp((current===0?ball.x:100-ball.x)+progress,13,96);
   if(current===1)ball.x=100-ball.x;
   ball.y=clamp(ball.y+(random()-.5)*29,8,92);
-  if(random()<.08)event('pass',current,'Boa combinação de '+attacker.name+' por '+carrier.name+'.',{player:carrier.name});
-  if(foul(defender,attacker,1-current)){if(random()<.31)event('freekick',current,'Livre perigoso para '+attacker.name+'.');current=current;continue;}
+  // Every successful sequence produces a spatial ball movement — not a random dot wobble.
+  const receiver=choosing(attacker,ball.x>65?'shot':'pass');
+  event('pass',current,'Passe de '+carrier.name+(receiver?' para '+receiver.name:'')+'.',
+   {player:carrier.name,playerId:carrier.id,receiver:receiver?.name||null,
+    receiverId:receiver?.id??null,passType:attacker.tactical.progress>1.1?'longo':'curto'});
+  if(foul(defender,attacker,1-current)){
+   const relative=ball.x;
+   const taker=choosing(attacker,'shot')||carrier;
+   if(relative>80&&random()<.17&&taker){
+    // Foul in the area. The shot comes from the penalty mark.
+    ball.x=88;ball.y=50;
+    event('penalty',current,'Grande penalidade para '+attacker.name+'. '+taker.name+' prepara o remate.',
+     {player:taker.name,playerId:taker.id});
+    const keeper=choosing(defender,'keeper');
+    const chance=clamp(.73+(taker.sho-60)*.002-(keeper?.gk||55)*.0006,.52,.86);
+    if(random()<chance)scored(attacker,current,taker,'grande penalidade',.76,false);
+    else{
+     at.shots++;at.onTarget++;at.xg+=.76;de.saves++;
+     event('save',1-current,'Defesa do guarda-redes no penálti de '+taker.name+'.',{player:taker.name});
+    }
+   }else if(random()<.56){
+    ball.x=clamp(ball.x,65,85);
+    event('freekick',current,'Livre para '+attacker.name+' — '+taker.name+' na bola.',
+     {player:taker.name,playerId:taker.id});
+    const freeShotChance=clamp(.09+(taker.sho-55)*.002+(attacker.tactical.attack-1)*.06,.05,.24);
+    if(random()<freeShotChance){
+     scored(attacker,current,taker,'livre direto',.11,false);
+    }else if(random()<.55){
+     at.shots++;at.xg+=.07;
+     event('chance',current,'Livre de '+taker.name+' passa perto da baliza.',{player:taker.name});
+    }
+   }
+   continue;
+  }
   injury(attacker,current);injury(defender,1-current);
   const relativeX=current===0?ball.x:100-ball.x;
   const finishing=clamp(.04+(relativeX-35)*.0054+(atk-def)*.0018+(attacker.tactical.attack-1)*.12,.035,.42);
@@ -183,7 +242,22 @@ export function runMatch(state,fixture,{cup=false,friendly=false}={}){
       if(assister&&random()<.69)assister.assists=(assister.assists||0)+1;
      }
     }else{de.saves++;event('save',1-current,'Grande defesa de '+defender.name+' a remate de '+shooter.name+'.',{player:shooter.name,xg:+xg.toFixed(3)});}
-   }else if(random()<.28){at.corners++;event('corner',current,'Canto para '+attacker.name+'.');}
+   }else if(random()<.34){
+    at.corners++;
+    // Stationary corner first, then a header from the attacking line.
+    ball.x=97;ball.y=random()<.5?3:97;
+    const kicker=choosing(attacker,'pass')||carrier,header=choosing(attacker,'shot')||carrier;
+    event('corner',current,'Canto para '+attacker.name+'. '+kicker.name+' prepara o cruzamento.',
+     {player:kicker.name,playerId:kicker.id,receiver:header.name});
+    if(random()<clamp(.10+(header.sho-65)*.002,.05,.20)){
+     ball.x=91;ball.y=45+random()*10;
+     scored(attacker,current,header,'cabeceamento após canto',.16,true);
+    }else if(random()<.5){
+     ball.x=85;ball.y=35+random()*30;
+     at.shots++;at.xg+=.09;
+     event('chance',current,'Cruzamento do canto e cabeceamento de '+header.name+'.',{player:header.name});
+    }
+   }
    else if(random()<.20)event('chance',current,'Remate para fora de '+shooter.name+'.',{player:shooter.name,xg:+xg.toFixed(3)});
    current=1-current;ball={x:50,y:50};
   }else if(relativeX>72&&random()<.18){current=1-current;ball.x=100-ball.x;ball.y=100-ball.y;}
@@ -224,6 +298,6 @@ export function runMatch(state,fixture,{cup=false,friendly=false}={}){
    foulsHome:stats1.fouls,foulsAway:stats2.fouls,cornersHome:stats1.corners,cornersAway:stats2.corners,
    savesHome:stats1.saves,savesAway:stats2.saves,yellowHome:stats1.yellow,yellowAway:stats2.yellow,
    redHome:stats1.red,redAway:stats2.red},
-   penaltyWinner,shootout,weather,homeTactics:home.tactical,awayTactics:away.tactical,involved:home.isUser||away.isUser,cup,friendly,engine:'events-v3'};
+   penaltyWinner,shootout,weather,homeTactics:home.tactical,awayTactics:away.tactical,involved:home.isUser||away.isUser,cup,friendly,engine:'events-v4'};
 }
 export const tacticalModifiers=tactics;

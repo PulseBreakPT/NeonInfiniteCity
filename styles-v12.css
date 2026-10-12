@@ -1,0 +1,17 @@
+@import url('./styles-v11.css');
+
+/* GPU-friendly Canvas actors. We keep the pitch geometry in CSS, but move
+   all 22 player glyphs and the football into a single composited layer. */
+.elite-shell .live-camera .live-pitch{position:relative;overflow:hidden;isolation:isolate}
+.elite-shell .live-camera .live-spatial-canvas{
+ position:absolute;inset:0;width:100%;height:100%;display:block;
+ z-index:8;pointer-events:none;touch-action:none;
+}
+.elite-shell .live-camera .spatial-ready .pitch-dot,
+.elite-shell .live-camera .spatial-ready #ball{visibility:hidden!important}
+.elite-shell .live-camera .pitch-markings{pointer-events:none}
+.elite-shell .live-camera .pitch-foot{z-index:12;pointer-events:none;bottom:6px}
+.elite-shell .live-camera .live-pitch-hud{pointer-events:none}
+@media(prefers-reduced-motion:reduce){
+ .elite-shell .live-camera .live-spatial-canvas{transition:none}
+}

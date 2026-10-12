@@ -1,5 +1,6 @@
 import {applyRound} from './sim.js';
 import {clamp,hash,nextFixture} from './model.js';
+import {spatialTeams} from './pitch-spatial.js';
 
 /** The event engine runs on an isolated clone at kick-off.
  * League tables, finances, players and official results are committed atomically
@@ -51,7 +52,7 @@ export function beginLiveMatch(state){
   schema:1,id:state.season+':'+state.league.round+':'+fixture.id,
   round:fixture.round,minute:0,firstAdded,secondAdded,
   total:90+firstAdded+secondAdded,phase:'running',speed:1,
-  result,after
+  result,after,spatial:{schema:1,teams:spatialTeams(after,fixture)}
  };
  state.liveMatch=session;
  return session;

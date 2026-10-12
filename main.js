@@ -3,15 +3,38 @@ import {COLORS,makeState,migrate,loadState,saveState,rating,FORMATIONS} from './
 import {execute} from './actions.js';
 import {beginLiveMatch,tickLiveMatch,pauseLiveMatch,resumeLiveMatch,finishLiveMatch,visibleEvents,eventAtMinute,liveScore,matchClock,matchPhase} from './match-live.js';
 import {shell,welcome,esc} from './ui-core.js';
+import {createPitchRenderer} from './pitch-render.js';
 import {roomScene} from './scene-ui.js';
 import {dashboard,matches,tactics,squad} from './ui-main.js';
 import {league as leaguePage,market,training,academy,campus,finance,mentors,events,collection,profile,social,club,more} from './ui-extra.js';
 let state=loadState(),page=state?.liveMatch?'matches':'dashboard',ui={slot:null,candidate:null,player:null,search:'',position:'ALL',color:COLORS[0]},notice='',replayTimer=null,replayStep=0,replaySpeed=1,replayPaused=false;
 const $=s=>document.querySelector(s);
-let liveTimer=null,halftimeTimer=null;
+let liveTimer=null,halftimeTimer=null,spatialRenderer=null,spatialFrame=0,lastSpatialDraw=0,lastLiveTick=0;
 function persist(){if(state&&!saveState(state))notification('Não foi possível guardar o progresso. Verifica o armazenamento.');}
 function notification(message){notice=message;render();setTimeout(()=>{if(notice===message){notice='';const t=$('.toast');if(t)t.remove();}},4000);}
 function stopReplay(){if(replayTimer){clearInterval(replayTimer);replayTimer=null;}}
+function stopSpatial(){
+ if(spatialFrame){cancelAnimationFrame(spatialFrame);spatialFrame=0;}
+ if(spatialRenderer){spatialRenderer.dispose();spatialRenderer=null;}
+}
+function spatialLoop(t){
+ if(!spatialRenderer||!state?.liveMatch||page!=='matches')return;
+ if(t-lastSpatialDraw>33){
+  const live=state.liveMatch;
+  const fractional=live.phase==='running'?Math.min(.99,Math.max(0,(t-lastLiveTick)/(320/(live.speed||1)))):0;
+  spatialRenderer.draw(live.minute+fractional);
+  lastSpatialDraw=t;
+ }
+ spatialFrame=requestAnimationFrame(spatialLoop);
+}
+function initSpatial(){
+ stopSpatial();
+ if(!state?.liveMatch||page!=='matches')return;
+ const canvas=document.getElementById('live-spatial-canvas');
+ if(!canvas)return;
+ spatialRenderer=createPitchRenderer(canvas,state.liveMatch);
+ if(spatialRenderer){lastLiveTick=performance.now();lastSpatialDraw=0;spatialFrame=requestAnimationFrame(spatialLoop);}
+}
 function stopLiveClock(){
  if(liveTimer){clearInterval(liveTimer);liveTimer=null;}
  if(halftimeTimer){clearTimeout(halftimeTimer);halftimeTimer=null;}
@@ -40,8 +63,7 @@ function paintLive(){
   ball.style.left=Math.max(7,Math.min(93,baseX+Math.sin(n*.65)*Math.min(19,delta*2+7)))+'%';
   ball.style.top=Math.max(7,Math.min(93,baseY+Math.cos(n*.43)*Math.min(13,delta+5)))+'%';
  }
- const pts=document.querySelectorAll('.live-matchday .pitch-dot');
- pts.forEach((point,i)=>{const n=live.minute;point.style.translate=(Math.sin(n*.23+i)*10).toFixed(1)+'px '+(Math.cos(n*.28+i*1.7)*7).toFixed(1)+'px';});
+ if(spatialRenderer)spatialRenderer.draw(live.minute);
 }
 function startLiveClock(){
  stopLiveClock();
@@ -58,6 +80,7 @@ function startLiveClock(){
  if(live.phase!=='running')return;
  liveTimer=setInterval(()=>{
   if(!state?.liveMatch||page!=='matches'){stopLiveClock();return;}
+  lastLiveTick=performance.now();
   const session=tickLiveMatch(state);
   // The browser records the minute, not the result. The pending fixture is
   // resumable even if the app is closed in the middle of stoppage time.
@@ -77,6 +100,7 @@ function startLiveClock(){
 
 const pages={dashboard,matches,tactics,squad,league:leaguePage,market,training,academy,campus,finance,mentors,events,collection,profile,social,club,more};
 function render(){
+ stopSpatial();
  const holder=$('#app');if(!holder)return;
  const priorScroll=$('#page')?.scrollTop||0;
  if(!state){holder.innerHTML=welcome(ui.color);return;}
@@ -86,6 +110,7 @@ function render(){
  if(ui.player!==null&&page!=='squad')ui.player=null;
 
  const viewport=$('#page');if(viewport)viewport.scrollTop=priorScroll;
+ initSpatial();
 }
 function go(to){
  if(!pages[to])return;
@@ -183,7 +208,7 @@ function paintReplay(minute){
  if(slider)slider.value=end;
  const relevant=events.filter(e=>e.minute<=end),last=relevant.at(-1);
  if(comment)comment.textContent=last?last.text:'A partida começa. As duas equipas procuram controlar o meio-campo.';
- if(ball){ball.style.left=(last?.x??50)+'%';ball.style.top=(last?.y??50)+'%';}
+ if(ball&&!spatialRenderer){ball.style.left=(last?.x??50)+'%';ball.style.top=(last?.y??50)+'%';}
  if(score)score.textContent=events.filter(e=>e.kind==='goal'&&e.minute<=end&&e.team===r.home).length+' : '+events.filter(e=>e.kind==='goal'&&e.minute<=end&&e.team===r.away).length;
 }
 function toggleReplay(){
@@ -303,7 +328,7 @@ document.addEventListener('keydown',event=>{
  const hotkeys={'1':'dashboard','2':'matches','3':'tactics','4':'squad','5':'more'};
  if(hotkeys[event.key]){event.preventDefault();go(hotkeys[event.key]);}
 });
-window.addEventListener('beforeunload',()=>{stopReplay();stopLiveClock();if(state)saveState(state);});
+window.addEventListener('beforeunload',()=>{stopReplay();stopLiveClock();stopSpatial();if(state)saveState(state);});
 if(state){ui.color=state.club.color;saveState(state);}
 render();
 if(state?.liveMatch){if(state.liveMatch.phase==='running'||state.liveMatch.phase==='halftime')startLiveClock();else paintLive();}

@@ -28,6 +28,15 @@ try{
  await page.waitForSelector('.career-hq');
  await page.locator('.career-hq [data-action="match"]').click();
  await page.waitForSelector('.live-matchday');
+ await page.waitForSelector('.spatial-ready #live-spatial-canvas');
+ await page.waitForTimeout(180);
+ const surface=await page.locator('#live-spatial-canvas').evaluate(canvas=>{
+  const c=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+  const rgba=c.getImageData(0,0,w,h).data;let pixels=0;
+  for(let i=3;i<rgba.length;i+=48)if(rgba[i]>20)pixels++;
+  return {width:w,height:h,pixels};
+ });
+ assert.ok(surface.width>=300&&surface.height>=200&&surface.pixels>45,'Canvas tactical players not rendered '+JSON.stringify(surface));
  let s=await state(),live=s.liveMatch;
  assert.ok(live,'Session should be persisted at kick-off');
  const balance=s.budget,round=s.league.round;
