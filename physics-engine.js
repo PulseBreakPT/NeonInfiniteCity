@@ -3,6 +3,8 @@
 // The referee, ball, players and tactical managers share one simulation clock.
 import {clamp,hash} from './model.js';
 import {restartPositions} from './pitch-spatial.js';
+import {createWeather,advanceWeather,surfaceGrip,rollingDrag} from './weather-systems.js';
+import {restartGoalVerdict,goalkeeperHandlingAllowed,isPenaltyArea,requiredDistance} from './football-rules.js';
 export const FIELD={width:68,length:105,goalLeft:30.34,goalRight:37.66,boxLeft:13.84,boxRight:54.16,boxDepth:16.5};
 export const FIXED_DT=.2;
 export const STEPS_PER_MINUTE=36;
@@ -21,7 +23,8 @@ function player(p,side,index){
  return {id:side+':'+index,sourceId:p.id,number:p.number,name:p.name,side,index,pos:p.pos,
    x:p.x/100*FIELD.width,y:p.y/100*FIELD.length,
    vx:0,vy:0,facing:side===0?-Math.PI/2:Math.PI/2,pace:clamp(p.pace||55,25,99),pas:clamp(p.pas||55,20,99),
-   sho:clamp(p.sho||55,15,99),def:clamp(p.def||55,15,99),gk:clamp(p.gk||55,15,99),stamina:100,yellows:0,active:true,control:0};
+   sho:clamp(p.sho||55,15,99),def:clamp(p.def||55,15,99),gk:clamp(p.gk||55,15,99),stamina:100,yellows:0,active:true,control:0,
+   pose:'idle',poseUntil:0,stridePhase:0,gait:0,bodyLean:0,injury:0};
 }
 export function createWorld(session){
  const teams=session.spatial.teams;
@@ -33,7 +36,9 @@ export function createWorld(session){
   teams:teams.map((t,i)=>({id:t.id,name:session.result.home===t.id?session.result.homeName:session.result.awayName,
     side:i,formation:t.formation,tactics:t.tactics,anchors:t.players.map(p=>({x:p.x*.68,y:p.y*1.05}))})),
   players:ps,ball:{x:FIELD.width/2,y:FIELD.length/2,vx:0,vy:0,z:.12,vz:0,spin:0,owner:null,lastTouch:0},
-  carrier:carrier.id,possessor:0,restart:null,score:[0,0],events:[],
+  carrier:carrier.id,possessor:0,restart:null,score:[0,0],events:[],injuries:[],
+  weather:createWeather(hash(session.id+':climate')),
+  referee:{advantage:null,handballDecisions:0},
   stats:[0,1].map(()=>({shots:0,onTarget:0,xg:0,passes:0,accurate:0,possession:0,fouls:0,corners:0,saves:0,yellow:0,red:0})),
   actionCooldown:1.3,lastAction:'kickoff'
  };
@@ -45,7 +50,7 @@ function strengths(w,p,tag){return clamp((p[tag]||55)/65,.65,1.5)*clamp(p.stamin
 function ownGoal(side){return side===0?FIELD.length:0;}
 function attackGoal(side){return side===0?0:FIELD.length;}
 function atGoalDistance(p,side){return Math.abs(p.y-attackGoal(side));}
-function steer(p,target,dt,boost=1){
+function steer(p,target,dt,boost=1,grip=1){
  const dx=target.x-p.x,dy=target.y-p.y,d=Math.max(.001,hypot(dx,dy));
  const speed=hypot(p.vx,p.vy);
  const targetSpeed=clamp(3.8+p.pace*.036,4.6,7.4)*boost*(.6+.4*p.stamina/100);
@@ -55,18 +60,33 @@ function steer(p,target,dt,boost=1){
  // Bounded thrust/braking: inertia remains even when the target reverses.
  const ax=desiredVx-p.vx,ay=desiredVy-p.vy,a=hypot(ax,ay);
  const braking=(desiredVx*p.vx+desiredVy*p.vy)<0;
- const maxChange=(braking?7.8:5.3)*dt;
+ const maxChange=(braking?7.8:5.3)*dt*grip;
  const fraction=a>maxChange?maxChange/a:1;
  p.vx+=ax*fraction;p.vy+=ay*fraction;
  const actualAngle=Math.atan2(p.vy,p.vx);
+ p.stridePhase=(p.stridePhase||0)+hypot(p.vx,p.vy)*dt*2.2;
+ p.gait=clamp(hypot(p.vx,p.vy)/7,0,1);
+ p.bodyLean=clamp((p.bodyLean||0)*.7+Math.sin(actualAngle-(p.facing||actualAngle))*.12,-.3,.3);
+ if(p.poseUntil<=0)p.pose=p.gait>.65?'sprint':p.gait>.12?'run':'idle';
  if(speed>.08||hypot(p.vx,p.vy)>.08){
   let turn=(actualAngle-(p.facing??actualAngle)+Math.PI*3)%(Math.PI*2)-Math.PI;
-  p.facing=(p.facing??actualAngle)+clamp(turn,-dt*4.1,dt*4.1);
+  p.facing=(p.facing??actualAngle)+clamp(turn,-dt*4.1*grip,dt*4.1*grip);
  }
  p.x+=p.vx*dt;p.y+=p.vy*dt;
  if(p.x<.2||p.x>FIELD.width-.2)p.vx=0;
  if(p.y<.2||p.y>FIELD.length-.2)p.vy=0;
  clampPos(p);
+}
+function inflictInjury(w,p,reason,impact=5){
+ if(!p||p.active===false||p.injury>0)return;
+ const weeks=clamp(Math.round(1+(impact-4)*.45+rand(w)*2),1,7);
+ p.injury=weeks;p.active=false;p.pose='injured';p.poseUntil=Infinity;
+ p.vx=0;p.vy=0;
+ if(w.ball.owner===p.id){w.ball.owner=null;w.carrier=null;}
+ w.injuries??=[];w.injuries.push({playerId:p.sourceId??p.id,team:w.teams[p.side].id,
+  name:p.name,weeks,reason,minute:w.minute});
+ event(w,'injury',p.name+' sai lesionado ('+reason+', '+weeks+' sem.).',w.teams[p.side].id,
+  {player:p.name,playerId:p.sourceId??p.id,weeks});
 }
 function physicalContacts(w){
  // Body collision capsules prevent overlapping footballers in a live match.
@@ -86,6 +106,10 @@ function physicalContacts(w){
    if(approaching>0){
     a.vx-=approaching*nx*.38;a.vy-=approaching*ny*.38;
     b.vx+=approaching*nx*.38;b.vy+=approaching*ny*.38;
+    const hazard=clamp((1-surfaceGrip(w.weather))*1.4,0,.55);
+    if(a.side!==b.side&&approaching>3.3&&rand(w)<(.00023+hazard*.0008)*approaching){
+     inflictInjury(w,rand(w)<.5?a:b,'choque',approaching);
+    }
    }
    clampPos(a);clampPos(b);
   }
