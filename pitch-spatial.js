@@ -57,7 +57,7 @@ export function tacticalBase(team,ball={x:50,y:50},attacking=false){
 }
 export function restartPositions(teams,kind,teamId,location,takerName=null){
  const own=teams.find(t=>owned(t,teamId))||teams[0],other=teams.find(t=>!owned(t,teamId))||teams[1];
- const goalY=own.side===0?5:95,behind=own.side===0?1:-1;
+ const goalY=own.side===0?.2:99.8,behind=own.side===0?1:-1;
  const sideX=location.x<50?3:97;
  const atGoal=(dx,dy)=>clampPoint({x:dx,y:goalY+behind*dy});
  let players=[...tacticalBase(own,location,true),...tacticalBase(other,location,false)];
