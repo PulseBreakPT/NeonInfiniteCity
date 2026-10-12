@@ -196,7 +196,7 @@ export function makeState(name='Atlético Aurora',city='Lisboa',color=COLORS[0])
  const random=rng(hash(name+' / '+city));
  const pool=['GK','GK','GK',...Array(8).fill('DEF'),...Array(9).fill('MID'),...Array(6).fill('ATT')];
  const players=pool.map((pos,i)=>generatePlayer(i+1,pos,random,54+random()*18));
- const state={version:2,engineVersion:3,club:{name,city,color,baseColor:color,stadium:'Arena '+city,capacity:12500,kitAway:'#f5f6fa',sponsor:'Atlântico Energia',stadiumName:'Arena '+city},
+ const state={version:2,engineVersion:7,club:{name,city,color,baseColor:color,stadium:'Arena '+city,capacity:12500,kitAway:'#f5f6fa',sponsor:'Atlântico Energia',stadiumName:'Arena '+city},
  players,formation:'4-3-3',lineups:{},tactics:{mentality:'equilibrada',pressure:'media',passing:'misto',tempo:'normal',marking:'zona',halftimePlan:'auto'},
  budget:1850000,tokens:22,rest:3,moraleBoosts:2,medical:2,fans:8420,day:1,week:1,season:1,division:1,trainingCount:0,trainingTotal:0,
  league:null,cup:null,market:[],nextId:1000,history:[],results:[],lastMatch:null,fixtureCamera:'2d',
@@ -225,7 +225,7 @@ export function migrate(saved){
   const state={...base,...saved,club:{...base.club,...saved.club},tactics:{...base.tactics,...saved.tactics},facilities:{...base.facilities,...saved.facilities},coach:{...base.coach,...saved.coach},finance:{...base.finance,...saved.finance},inventory:{...base.inventory,...saved.inventory},events:{...base.events,...saved.events}};
   state.finance.economyRevision=Number(saved.finance?.economyRevision)||0;
   state.rivals=(saved.rivals&&Object.keys(saved.rivals).length)?saved.rivals:makeRivals(state);
-  state.engineVersion=3;
+  state.engineVersion=7;
   const seen=new Set(state.players.map(p=>p.id));
   state.market=(state.market||[]).filter(o=>o&&Number.isFinite(o.id));
   const observed=new Set(seen);
@@ -235,6 +235,32 @@ export function migrate(saved){
   for(const p of state.players){if(p.contract===undefined)p.contract=3;if(p.injury===undefined)p.injury=0;if(!Number.isFinite(p.xp))p.xp=0;}
   state.club.baseColor ||= state.club.color;
 
+  // Upgrade an unfinished live match in place without losing the score or seed.
+  const live=state.liveMatch,world=live?.schema===2?live.world:null;
+  if(world){
+   if(!Number.isInteger(world.half)){
+    const second=(live.minute||0)>45+(live.firstAdded||0);
+    world.half=second?2:1;
+    if(second){
+     for(const team of world.teams||[])for(const anchor of team.anchors||[])anchor.y=105-anchor.y;
+     for(const player of world.players||[]){player.y=105-player.y;player.vx=0;player.vy=0;}
+     if(world.ball)world.ball.y=105-world.ball.y;
+    }
+   }
+   if(!Array.isArray(world.bench)){
+    world.bench=(world.teams||[]).map((team,side)=>{
+     const snapshot=live.after||state;
+     const pool=team.id===0?snapshot.players:snapshot.rivals?.[team.id]?.players||[];
+     const onField=new Set((world.players||[]).filter(p=>p.side===side).map(p=>p.sourceId??p.id));
+     return (pool||[]).filter(p=>!onField.has(p.id)&&!(p.injury>0)&&(p.contract??1)>0)
+      .slice(0,9).map(p=>({id:p.id,name:p.name,number:p.number,pos:p.pos,
+       pace:p.pac||55,pas:p.pas||55,def:p.def||55,sho:p.sho||55,
+       gk:p.gk||55,phy:p.phy||55,fitness:p.fitness||90}));
+    });
+   }
+   world.substitutions??=[[],[]];world.subWindows??=[0,0];
+   world.pendingSubstitutions??=[];world.injuries??=[];world.version=5;
+  }
   if(!state.league?.rounds?.length)state.league=makeLeague(state.club.name,state.season);
   if(!state.cup?.participants)state.cup=makeCup(state);
   if(!Array.isArray(state.market))state.market=[];
