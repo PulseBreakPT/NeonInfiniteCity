@@ -331,22 +331,38 @@ function ballPhysics(w,dt){
   restart(w,'throwin',1-b.lastTouch,{x:outSide,y:clamp(b.y,2,103)});
   return;
  }
- // The goalkeeper must physically reach the ball; no goalkeeper teleport.
+ // Anticipation and diving reach follow the actual goalkeeper position.
+ // An outstretched dive extends the save envelope; the body never teleports.
  if(b.shot&&!b.shot.attemptedSave&&b.shot.onTarget&&b.y>=0&&b.y<=FIELD.length){
-  const attacking=b.shot.team,threat=attacking===0?b.y<13:b.y>92;
+  const attacking=b.shot.team,threat=attacking===0?b.y<14:b.y>91;
   if(threat){
    const goalkeeper=teamPlayers(w,1-attacking).find(p=>p.pos==='GK');
-   if(goalkeeper&&dist(goalkeeper,b)<2.2&&b.z<2.65){
-    b.shot.attemptedSave=true;
-    const chance=clamp(.39+goalkeeper.gk*.005, .42,.91);
-    if(rand(w)<chance){
-     w.stats[1-attacking].saves++;
-     b.owner=goalkeeper.id;w.carrier=goalkeeper.id;w.possessor=1-attacking;
-     b.vx=0;b.vy=0;b.vz=0;b.z=.12;
-     event(w,'save','Grande defesa de '+goalkeeper.name+'.',w.teams[1-attacking].id,
-       {player:goalkeeper.name,playerId:goalkeeper.sourceId});
-     delete b.shot;delete b.intended;delete b.pendingOffside;
-     w.actionCooldown=1.4;return;
+   if(goalkeeper){
+    const reach=dist(goalkeeper,b);
+    if(reach<3.85&&b.z<2.65){
+     b.shot.attemptedSave=true;
+     const skill=goalkeeper.gk/100;
+     const chance=clamp(.51+skill*.44-reach*.065,.29,.88);
+     if(rand(w)<chance){
+      w.stats[1-attacking].saves++;
+      b.lastTouch=1-attacking;
+      if(reach<1.45&&rand(w)<.48){
+       b.owner=goalkeeper.id;w.carrier=goalkeeper.id;w.possessor=1-attacking;
+       b.vx=0;b.vy=0;b.vz=0;b.z=.12;b.spin=0;
+      }else{
+       // Parry: the ball remains independent and can produce a real corner.
+       const outward=b.x<34?-1:1,away=attacking===0?1:-1;
+       b.vx=outward*(12+rand(w)*10);
+       b.vy=away*(3+rand(w)*6);
+       b.vz=.6+rand(w)*2.8;
+       b.spin=(rand(w)-.5)*3.5;
+       w.carrier=null;w.ball.owner=null;w.possessor=1-attacking;
+      }
+      event(w,'save','Defesa de '+goalkeeper.name+'.',w.teams[1-attacking].id,
+        {player:goalkeeper.name,playerId:goalkeeper.sourceId});
+      delete b.shot;delete b.intended;delete b.pendingOffside;
+      w.actionCooldown=1.4;return;
+     }
     }
    }
   }
