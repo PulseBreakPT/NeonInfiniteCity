@@ -33,6 +33,14 @@ export function articulatedPose(player,frameTime=0){
   hips.push(hip);knees.push(knee);feet.push(foot);shoulders.push(shoulder);elbows.push(elbow);hands.push(hand);
  }
  if(dive){head.y+=.3;head.z-=.55;chest.z-=.45;pelvis.z-=.39;}
+ if(action==='injured'){
+  // Player is temporarily rendered lying on the grass before medical exit.
+  pelvis.z=.18;chest.z=.26;chest.y+=.36;head.z=.24;head.y+=.82;
+  for(const j of knees){j.z=.14;j.y-=.2;}
+  for(const j of shoulders){j.z=.23;j.y+=.35;}
+  for(const j of elbows){j.z=.13;j.y+=.35;}
+  for(const j of hands){j.z=.09;j.y+=.43;}
+ }
  const facing=Number.isFinite(player.facing)?player.facing:Math.atan2(player.vy||-1,player.vx||0);
  return {pelvis,chest,neck,head,hips,knees,feet,shoulders,elbows,hands,facing,action,pace,
   dimensions:{height,shoulderWidth:.56,legLength:.93}};
