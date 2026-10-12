@@ -65,7 +65,7 @@ test('penalty: only taker and keeper inside the penalty zone',()=>{
  assert.ok(attacker[9].y<18);
  assert.ok(attacker.filter((p,i)=>i>0&&i!==9&&p.y<=18).length===0);
  assert.ok(defenders.filter((p,i)=>i>0&&p.y<=18).length===0);
- assert.ok(defenders[0].y<6);
+ assert.ok(Math.abs(defenders.find(p=>p.pos==='GK').y-5)<1,'the actual goalkeeper stays on the goal line');
 });
 test('throw-in restarts at the touchline with nearby passing options',()=>{
  const s=initial(),teams=spatialTeams(s,nextFixture(s));
