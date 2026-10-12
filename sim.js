@@ -71,9 +71,10 @@ export function applyRound(state,{featuredResult=null}={}){
   const result=fixture===playerFixture&&featuredResult?featuredResult:simulateMatch(state,fixture);
   if(fixture===playerFixture&&featuredResult){
    const line=state.lineups[state.formation]||[];
+   const played=new Set([...line,...(featuredResult.substitutions||[]).filter(x=>x.side=== (fixture.home===0?0:1)||x.team===0).map(x=>x.inId)]);
    const userWon=(fixture.home===0?result.hg>result.ag:result.ag>result.hg);
    const userLost=(fixture.home===0?result.hg<result.ag:result.ag<result.hg);
-   for(const id of line){const p=getPlayer(state,id);if(!p)continue;
+   for(const id of played){const p=getPlayer(state,id);if(!p)continue;
     p.apps=(p.apps||0)+1;p.xp=(p.xp||0)+(userWon?12:7);
     p.fitness=clamp((p.fitness||90)-Math.max(9,featuredResult.fatigue?.[p.id]??14),4,100);
     p.morale=clamp((p.morale||80)+(userWon?4:userLost?-4:1),5,100);
