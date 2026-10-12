@@ -486,6 +486,10 @@ function restartKick(w){
  nearest.x=clamp(r.x,1,67);nearest.y=clamp(r.y,1,104);
  const kind=r.kind,goal={x:34,y:attackGoal(r.team)};
  if(kind==='penalty'){
+  const opposingKeeper=teamPlayers(w,1-r.team).find(p=>p.pos==='GK');
+  // The goalkeeper must reach the line physically before the taker is allowed.
+  if(opposingKeeper&&Math.abs(opposingKeeper.y-goal.y)>.48)return;
+
   w.stats[r.team].shots++;w.stats[r.team].onTarget++;
   w.stats[r.team].xg+=.76;
   kick(w,nearest,{x:34+(rand(w)-.5)*7,y:goal.y},26,.5);
