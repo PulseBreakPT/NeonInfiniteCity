@@ -1,0 +1,41 @@
+name: Match Broadcast V3 - Isolated QA
+on:
+  push:
+    branches: [feat/match-broadcast-v3]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check module syntax
+        run: npm run check
+      - name: Run physics and broadcast tests
+        run: npm test
+      - name: Simulate 128 complete matches
+        run: MATCH_SOAK_COUNT=128 node tests/physics-soak.mjs
+      - name: Install browser tests
+        run: npm install --no-save --package-lock=false playwright-core@1.56.1
+      - name: Verify broadcast cameras and full game on Android
+        run: node tests/browser-live.mjs
+      - name: Check full desktop game
+        run: node tests/browser-smoke.mjs
+      - name: Verify XI editor
+        run: node tests/browser-lineup.mjs
+      - name: Verify economy and club saves
+        run: node tests/browser-economy.mjs
+      - name: Audit text clipping
+        run: node tests/clipping-audit.mjs
+      - name: Archive screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: broadcast-v3-android-and-desktop
+          path: .browser-qa/
+          if-no-files-found: ignore

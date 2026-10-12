@@ -1,3 +1,4 @@
+import {createBroadcastRenderer} from './broadcast-render.js';
 import {buildSpatialTimeline,spatialFrame} from './pitch-spatial.js';
 
 // Canvas layer renders player trajectories independently of the match clock.
@@ -5,6 +6,7 @@ import {buildSpatialTimeline,spatialFrame} from './pitch-spatial.js';
 export function createPitchRenderer(canvas,session){
  const host=canvas?.parentElement;
  if(!canvas||!host||(!session?.spatial?.teams&&!session?.world))return null;
+ if(session.schema===2&&session.world)return createBroadcastRenderer(canvas,session);
  const ctx=canvas.getContext('2d',{alpha:true,desynchronized:true});
  if(!ctx)return null;
  const timeline=buildSpatialTimeline(session);

@@ -20,7 +20,7 @@ function event(w,kind,text,team=-1,extra={}){
 function player(p,side,index){
  return {id:p.id,number:p.number,name:p.name,side,index,pos:p.pos,
    x:p.x/100*FIELD.width,y:p.y/100*FIELD.length,
-   vx:0,vy:0,pace:clamp(p.pace||55,25,99),pas:clamp(p.pas||55,20,99),
+   vx:0,vy:0,facing:side===0?-Math.PI/2:Math.PI/2,pace:clamp(p.pace||55,25,99),pas:clamp(p.pas||55,20,99),
    sho:clamp(p.sho||55,15,99),def:clamp(p.def||55,15,99),gk:clamp(p.gk||55,15,99),stamina:100};
 }
 export function createWorld(session){
@@ -51,7 +51,14 @@ function steer(p,target,dt,boost=1){
  const maxSpeed=clamp(3.8+p.pace*.036,4.6,7.4)*boost*(.6+.4*p.stamina/100);
  const wanted=d<2?maxSpeed*d/2:maxSpeed;
  const vx=dx/d*wanted,vy=dy/d*wanted;
- const smooth=Math.min(1,dt*3.8);
+ // Footwork and torso have inertia. A player cannot rotate 180 degrees
+ // between two 0.2-second steps, even if the tactical target changes.
+ if(wanted>.12){
+  const desired=Math.atan2(vy,vx);
+  let turn=(desired-(p.facing??desired)+Math.PI*3)%(Math.PI*2)-Math.PI;
+  p.facing=(p.facing??desired)+clamp(turn,-dt*3.6,dt*3.6);
+ }
+ const smooth=Math.min(1,dt*2.9);
  p.vx+=(vx-p.vx)*smooth;p.vy+=(vy-p.vy)*smooth;
  p.x+=p.vx*dt;p.y+=p.vy*dt;clampPos(p);
 }
@@ -64,11 +71,11 @@ function targetFor(w,p){
  const baseY=(p.index<11? w.teams[side].anchors?.[p.index]?.y :null)??p.y;
  if(p.pos==='GK'){
   return {x:clamp(FIELD.width/2+(b.x-FIELD.width/2)*.13,26,42),
-   y:clamp(ownGoal(side)-dir*(4+(Math.abs(b.y-ownGoal(side))<25?5:0)),2,103)};
+   y:clamp(ownGoal(side)+dir*(4+(Math.abs(b.y-ownGoal(side))<25?5:0)),2,103)};
  }
  const carrier=findCarrier(w);
  if(carrier===p&&w.ball.owner!==null){
-  return {x:clamp(p.x+(b.x-p.x)*.2+(rand(w)-.5)*2,4,64),
+  return {x:clamp(p.x+(b.x-p.x)*.2+Math.sin(w.tick*.032+p.id)*.72,4,64),
    y:clamp(p.y+dir*(8+(t.tempo==='rapido'?4:0)),7,98)};
  }
  const distanceToBall=dist(p,b);

@@ -187,6 +187,18 @@ function act(action,data={}){
    else{resumeLiveMatch(state);startLiveClock();resumeSpatial();}
    persist();paintLive();return;
   }
+  if(action==='live-camera'){
+   if(!state?.liveMatch)return;
+   const modes=['tv','balanced','sideline','aerial'];
+   const live=state.liveMatch;
+   const idx=modes.indexOf(live.camera||'tv');
+   live.camera=modes[(idx+1)%modes.length];
+   spatialRenderer?.setCamera?.(live.camera);
+   const name={tv:'TV',balanced:'EQUILIBRADA',sideline:'LATERAL',aerial:'TÁTICA'}[live.camera];
+   const el=document.getElementById('live-camera-label');
+   if(el)el.textContent=name;
+   persist();return;
+  }
   if(action==='live-speed'){
    if(!state?.liveMatch)return;
    const live=state.liveMatch;live.speed=live.speed===1?2:live.speed===2?4:1;

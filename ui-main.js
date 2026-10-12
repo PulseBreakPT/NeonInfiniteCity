@@ -56,10 +56,11 @@ function liveMatchView(s){
  '<div class="live-matchday-score"><div class="live-matchday-team"><small>CASA</small><strong>'+esc(r.homeName)+'</strong></div>'+
  '<div class="live-central"><span id="live-clock" class="live-clock">'+clock+'</span><strong id="live-score">'+scores.home+' : '+scores.away+'</strong><small id="live-added">'+(live.minute<=45?'45 + '+live.firstAdded+' MIN':'90 + '+live.secondAdded+' MIN')+'</small></div>'+
  '<div class="live-matchday-team away"><small>FORA</small><strong>'+esc(r.awayName)+'</strong></div></div>'+
- '<div class="live-matchday-content"><section class="live-pitch-panel"><div class="live-pitch-hud"><span><i></i> CAMPO TÁTICO EM DIRETO</span><strong id="live-clock-small">'+clock+'</strong></div>'+
+ '<div class="live-matchday-content"><section class="live-pitch-panel"><div class="live-pitch-hud"><span><i></i> TRANSMISSÃO DO RELVADO</span><strong id="live-clock-small">'+clock+'</strong></div>'+
  '<div class="pitch-camera-frame live-camera">'+matchPitch(s,r)+'</div>'+
  '<div class="live-progress"><div class="live-progress-track"><span class="live-halfmark" style="left:'+(firstEnd/timeTotal*100)+'%"></span><div id="live-progress-fill" class="live-progress-fill" style="width:'+(live.minute/timeTotal*100)+'%"></div></div><div class="live-progress-labels"><span>00′</span><span>45 + '+live.firstAdded+'′</span><span>90 + '+live.secondAdded+'′</span></div></div>'+
  '<div class="live-commentary"><span id="live-comment-minute">'+clock+'</span><p id="live-comment">A bola começa a rolar. As duas equipas procuram o primeiro ataque.</p></div>'+
+ '<div class="live-camera-menu"><span class="camera-live-indicator">● LIVE</span>'+btn('live-camera','<span id="live-camera-label">'+({tv:'TV',balanced:'EQUILIBRADA',sideline:'LATERAL',aerial:'TÁTICA'}[live.camera||'tv']||'TV')+'</span> · CÂMARA','subtle')+'</div>'+ 
  '<div class="live-buttons">'+btn('live-pause','<span id="live-pause-label">'+(active?'PAUSAR':isHalftime?'INICIAR 2.ª PARTE':'CONTINUAR')+'</span>','subtle')+
  btn('live-speed','<span id="live-speed-label">'+live.speed+'×</span> VELOCIDADE','subtle')+'</div></section>'+
  '<aside class="live-report-panel"><div class="live-report-header"><h3>RELATO DO JOGO</h3><span id="live-reports-count">'+sideEvents.length+' LANCES</span></div>'+

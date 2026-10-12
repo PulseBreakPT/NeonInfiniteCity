@@ -1,0 +1,83 @@
+@import url('./styles-v12.css');
+
+/* v3 Broadcast presentation: football match viewing, not a dashboard preview. */
+.elite-shell .live-camera .broadcast-ready.live-pitch{
+ background:#0b2d26!important;
+ border:0!important;
+ box-shadow:inset 0 0 55px #081f24;
+ min-height:360px;
+ height:clamp(350px,51vh,580px);
+ overflow:hidden;
+}
+.elite-shell .live-camera .broadcast-ready .live-spatial-canvas{
+ z-index:9;
+ image-rendering:auto;
+}
+.elite-shell .live-camera .broadcast-ready .pitch-dot,
+.elite-shell .live-camera .broadcast-ready .pitch-markings,
+.elite-shell .live-camera .broadcast-ready #ball{
+ display:none!important;
+}
+.elite-shell .live-camera .broadcast-ready .pitch-foot{
+ z-index:11;
+ bottom:7px;
+ left:50%;
+ transform:translateX(-50%);
+ width:max-content;max-width:93%;overflow:hidden;text-overflow:ellipsis;
+ padding:4px 12px;border:1px solid #a8d99e5f;
+ background:#0b201ecc!important;
+ border-radius:4px;backdrop-filter:blur(4px);
+ font:850 10px/1.2 'DM Sans',sans-serif;letter-spacing:.035em;
+ color:#e4f3d6;
+}
+.elite-shell .live-pitch-hud{padding-bottom:12px}
+.elite-shell .live-camera-menu{
+ display:flex;justify-content:space-between;align-items:center;
+ gap:12px;margin:11px 0 0;padding:8px 10px;
+ border:1px solid #4b7b6a;border-radius:4px;
+ background:linear-gradient(110deg,#112c2a,#193f37)
+}
+.elite-shell .live-camera-menu button{
+ min-height:42px;min-width:145px;
+ max-width:68%;border:1px solid #82ac88;
+ font-size:11px;font-weight:900;letter-spacing:.025em;
+ white-space:normal
+}
+.elite-shell .camera-live-indicator{
+ font-size:11px;font-weight:900;letter-spacing:.08em;
+ color:#d8ffa2;white-space:nowrap
+}
+.elite-shell .live-matchday-score{
+ background:radial-gradient(ellipse at 50% -35%,#2d6350,#16352f 68%,#0c242c);
+ border-color:#5c8670
+}
+.elite-shell .live-matchday-content{grid-template-columns:minmax(0,1.85fr) minmax(270px,.72fr)}
+.elite-shell .live-pitch-panel{padding:12px;background:#0c292b}
+.elite-shell .live-report-panel{background:#112b29}
+.elite-shell .live-camera{
+ padding:3px;border:1px solid #76a185;overflow:hidden;
+ box-shadow:0 10px 36px #0006,inset 0 0 24px #0006
+}
+.elite-shell .live-report-header h3{letter-spacing:.03em}
+.elite-shell .live-commentary{background:#204b3e}
+@media(max-width:1050px){
+ .elite-shell .live-matchday-content{grid-template-columns:1fr}
+ .elite-shell .live-camera .broadcast-ready.live-pitch{
+  height:clamp(390px,49vh,530px);min-height:380px
+ }
+}
+@media(max-width:650px){
+ .elite-shell .live-camera .broadcast-ready.live-pitch{
+  min-height:305px;height:clamp(315px,45vh,430px)
+ }
+ .elite-shell .live-camera-menu button{min-width:125px;min-height:43px}
+ .elite-shell .live-camera-menu{margin-top:8px;padding:7px 9px}
+ .elite-shell .camera-live-indicator{font-size:10px}
+ .elite-shell .live-pitch-panel{padding:7px}
+}
+@media(max-width:360px){
+ .elite-shell .live-camera .broadcast-ready.live-pitch{min-height:295px;height:300px}
+}
+@media(prefers-reduced-motion:reduce){
+ .elite-shell .live-camera .broadcast-ready .live-spatial-canvas{transition:none}
+}

@@ -43,6 +43,28 @@ try{
  assert.equal(live.schema,2,'Novo jogo tem de usar a física 11v11');
  assert.equal(live.world?.players.length,22,'O campo deve conter 22 jogadores');
  assert.ok(live.world?.ball&&Number.isFinite(live.world.ball.vx));
+ // All four camera modes must paint the same live game without resetting it.
+ const cameraControl=page.locator('[data-action="live-camera"]');
+ assert.equal(await cameraControl.count(),1);
+ assert.ok((await cameraControl.innerText()).includes('TV'));
+ const frames=[];
+ for(const label of ['EQUILIBRADA','LATERAL','TÁTICA','TV']){
+  await cameraControl.click();
+  await page.waitForTimeout(85);
+  assert.ok((await cameraControl.innerText()).includes(label),'Camera '+label);
+  const result=await page.locator('#live-spatial-canvas').evaluate(c=>{
+   const a=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+   let lit=0;
+   for(let i=3;i<a.length;i+=128)if(a[i]>0)lit++;
+   return {w:c.width,h:c.height,lit};
+  });
+  assert.ok(result.w>240&&result.h>240&&result.lit>100,'Empty broadcast '+label);
+  frames.push(label);
+ }
+ assert.equal((await state()).liveMatch.camera,'tv');
+ await page.screenshot({path:'.browser-qa/broadcast-tv-android.png'});
+ console.log('✓ 4 responsive broadcast cameras: '+frames.join(' / '));
+
  assert.ok(live,'Session should be persisted at kick-off');
  const balance=s.budget,round=s.league.round;
  // In real 1× playback, 36 fixed simulation steps MUST NOT complete in 320 ms.
