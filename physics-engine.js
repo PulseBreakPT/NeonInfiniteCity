@@ -385,6 +385,50 @@ function executeAction(w,p){
  }
  w.actionCooldown=.8;
 }
+function aerialContest(w){
+ const b=w.ball;
+ if(b.owner!==null||b.z<1.55||b.z>2.50||w.phase!=='open')return false;
+ const contenders=w.players.filter(p=>p.active!==false&&p.pos!=='GK'&&dist(p,b)<1.12);
+ if(!contenders.length)return false;
+ contenders.sort((a,c)=>dist(a,b)-dist(c,b));
+ const p=contenders[0],height=b.z;
+ const jumpReach=1.55+clamp((p.phy||55)/100,0,1)*.92;
+ if(height>jumpReach)return false;
+ const goalDistance=atGoalDistance(p,p.side,w);
+ const shot=goalDistance<20&&(rand(w)<.38);
+ const friend=teamPlayers(w,p.side).filter(q=>q.id!==p.id&&q.pos!=='GK')
+  .sort((a,c)=>dist(a,p)-dist(c,p))[0];
+ const target=shot?{x:34+(rand(w)-.5)*7,y:attackGoal(p.side,w)}
+   :friend?{x:friend.x,y:friend.y}:{x:34,y:attackGoal(p.side,w)};
+ kick(w,p,target,shot?15:12,shot?1.7:1.2);
+ b.z=height;b.vz=shot?1.6:1.2;p.pose='header';p.poseUntil=.85;
+ if(shot){
+  const xg=clamp(.31*Math.exp(-goalDistance/19),.015,.36);
+  w.stats[p.side].shots++;w.stats[p.side].xg+=xg;
+  const onTarget=target.x>=FIELD.goalLeft&&target.x<=FIELD.goalRight;
+  if(onTarget)w.stats[p.side].onTarget++;
+  b.shot={team:p.side,playerId:p.id,xg,onTarget};
+ }
+ event(w,'header',p.name+(shot?' cabeceia à baliza.':' ganha o duelo aéreo.'),w.teams[p.side].id,
+  {player:p.name,playerId:p.sourceId??p.id});
+ w.actionCooldown=.6;
+ return true;
+}
+function blockShot(w){
+ const b=w.ball;
+ if(b.owner!==null||!b.shot||b.z>2.1||w.phase!=='open')return false;
+ const opponents=teamPlayers(w,1-b.shot.team).filter(p=>p.pos!=='GK');
+ const d=opponents.sort((a,c)=>dist(a,b)-dist(c,b))[0];
+ if(!d||dist(d,b)>0.73)return false;
+ b.vx=-b.vx*(.25+rand(w)*.25);b.vy=-b.vy*(.4+rand(w)*.3);
+ b.vz=1.1+rand(w)*2;b.lastTouch=d.side;b.spin*=-.6;
+ delete b.shot;delete b.pendingOffside;delete b.intended;
+ w.stats[d.side].blocks=(w.stats[d.side].blocks||0)+1;
+ d.pose='block';d.poseUntil=.6;
+ event(w,'block','Remate bloqueado por '+d.name+'.',w.teams[d.side].id,
+  {player:d.name,playerId:d.sourceId??d.id});
+ return true;
+}
 function controlLooseBall(w){
  let best=null,bestDistance=Infinity;
  for(const p of w.players){
@@ -541,7 +585,7 @@ function ballPhysics(w,dt){
   delete b.shot;
   return;
  }
- controlLooseBall(w);
+ if(!blockShot(w)&&!aerialContest(w))controlLooseBall(w);
 }
 function restartTargets(w){
  if(!w.restart)return;
@@ -724,7 +768,7 @@ export function worldResult(w){
  xgHome:a.xg.toFixed(2),xgAway:b.xg.toFixed(2),passesHome:a.passes,passesAway:b.passes,
  accurateHome:a.accurate,accurateAway:b.accurate,completedPasses:a.accurate+b.accurate,
  foulsHome:a.fouls,foulsAway:b.fouls,cornersHome:a.corners,cornersAway:b.corners,
- savesHome:a.saves,savesAway:b.saves,yellowHome:a.yellow,yellowAway:b.yellow,redHome:a.red,redAway:b.red},
+ savesHome:a.saves,savesAway:b.saves,blocksHome:a.blocks||0,blocksAway:b.blocks||0,yellowHome:a.yellow,yellowAway:b.yellow,redHome:a.red,redAway:b.red},
  fatigue:Object.fromEntries(w.players.filter(p=>w.teams[p.side].id===0).map(p=>[p.sourceId??p.id,Math.max(9,Math.round((100-p.stamina)*.55))])),
  discipline:w.players.filter(p=>p.yellows>0||p.active===false).map(p=>({playerId:p.sourceId??p.id,team:w.teams[p.side].id,yellow:p.yellows||0,red:p.active===false})),
  injuries:(w.injuries||[]).slice(),substitutions:(w.substitutions||[[],[]]).flat(),forfeit:w.forfeit||null,engine:'physics-v2',physicsRevision:6,
