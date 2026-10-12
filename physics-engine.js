@@ -555,10 +555,22 @@ function ballPhysics(w,dt){
  b.vx*=drag;b.vy*=drag;b.spin=spin*Math.exp(-.28*dt);
  // Posts and crossbar are physical solid obstacles, not probabilistic misses.
  const goalEnd=b.y<0?0:b.y>FIELD.length?FIELD.length:null;
+ const sideEnd=b.x<0?0:b.x>FIELD.width?FIELD.width:null;
+ const goalFraction=goalEnd===null?Infinity:clamp((goalEnd-lastY)/((b.y-lastY)||1e-9),0,1);
+ const sideFraction=sideEnd===null?Infinity:clamp((sideEnd-lastX)/((b.x-lastX)||1e-9),0,1);
+ if(sideEnd!==null&&sideFraction<goalFraction){
+  // A throw-in wins only when the whole ball crosses that boundary first.
+  const crossY=lastY+(b.y-lastY)*sideFraction;
+  restart(w,'throwin',1-b.lastTouch,{x:sideEnd,y:clamp(crossY,2,103)});
+  return;
+ }
  if(goalEnd!==null){
+  // Award a goal/corner/goal kick at the exact intersection with the goal line.
+  b.x=lastX+(b.x-lastX)*goalFraction;
+  b.z=lastZ+(b.z-lastZ)*goalFraction;
   const crossing=lastY===b.y?1:clamp((goalEnd-lastY)/(b.y-lastY),0,1);
-  const contactX=lastX+(b.x-lastX)*crossing;
-  const contactZ=lastZ+(b.z-lastZ)*crossing;
+  const contactX=b.x;
+  const contactZ=b.z;
   const hitPost=contactZ<2.55&&(Math.abs(contactX-FIELD.goalLeft)<.15||Math.abs(contactX-FIELD.goalRight)<.15);
   const hitBar=contactX>FIELD.goalLeft&&contactX<FIELD.goalRight&&Math.abs(contactZ-2.44)<.16;
   if(hitPost||hitBar){
@@ -570,8 +582,8 @@ function ballPhysics(w,dt){
    return;
   }
  }
- if(b.x<0||b.x>FIELD.width){
-  const outSide=b.x<0?0:FIELD.width;
+ if(sideEnd!==null&&goalEnd===null){
+  const outSide=sideEnd;
   restart(w,'throwin',1-b.lastTouch,{x:outSide,y:clamp(b.y,2,103)});
   return;
  }
