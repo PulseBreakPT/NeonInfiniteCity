@@ -389,6 +389,31 @@ function executeAction(w,p){
  }
  w.actionCooldown=.8;
 }
+function detectHandball(w){
+ const b=w.ball;
+ if(b.owner!==null||b.z<1.05||b.z>1.75||w.phase!=='open')return false;
+ for(const p of w.players){
+  if(p.active===false||dist(p,b)>1.18)continue;
+  if(p.pos==='GK'&&isPenaltyArea(p.x,p.y,p.side))continue;
+  const angle=Number.isFinite(p.facing)?p.facing:0;
+  const perpendicular={x:-Math.sin(angle),y:Math.cos(angle)};
+  const extension=(p.pose==='sprint'? .48:.33)+(p.bodyLean||0)*.08;
+  for(const sign of [-1,1]){
+   const hand={x:p.x+perpendicular.x*extension*sign+.10*Math.cos(angle),
+    y:p.y+perpendicular.y*extension*sign+.10*Math.sin(angle)};
+   const contact=dist(hand,b);
+   if(contact>.22||Math.abs(b.z-1.4)>.28)continue;
+   const attacking=1-p.side,penalty=isPenaltyArea(p.x,p.y,p.side);
+   w.stats[p.side].fouls++;
+   event(w,'handball','Mão na bola de '+p.name+'.',w.teams[attacking].id,
+     {player:p.name,playerId:p.sourceId??p.id});
+   if(b.shot?.onTarget&&rand(w)<.14)bookPlayer(w,p);
+   restart(w,penalty?'penalty':'freekick',attacking,{x:p.x,y:p.y},'Mão na bola');
+   return true;
+  }
+ }
+ return false;
+}
 function aerialContest(w){
  const b=w.ball;
  if(b.owner!==null||b.z<1.55||b.z>2.50||w.phase!=='open')return false;
@@ -594,7 +619,7 @@ function ballPhysics(w,dt){
   delete b.shot;
   return;
  }
- if(!blockShot(w)&&!aerialContest(w))controlLooseBall(w);
+ if(!detectHandball(w)&&!blockShot(w)&&!aerialContest(w))controlLooseBall(w);
 }
 function restartTargets(w){
  if(!w.restart)return;
