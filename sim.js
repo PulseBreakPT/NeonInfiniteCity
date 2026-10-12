@@ -80,7 +80,10 @@ export function applyRound(state,{featuredResult=null}={}){
     p.morale=clamp((p.morale||80)+(userWon?4:userLost?-4:1),5,100);
     if(p.pos==='GK'&&(fixture.home===0?result.ag:result.hg)===0)p.cleanSheets=(p.cleanSheets||0)+1;
    }
-   for(const e of result.events||[]){if(e.kind==='goal'&&e.team===0&&e.playerId){const p=getPlayer(state,e.playerId);if(p)p.goals=(p.goals||0)+1;}}
+   for(const e of result.events||[])if(e.kind==='goal'&&e.team===0){
+    if(e.playerId&&!e.ownGoal){const scorer=getPlayer(state,e.playerId);if(scorer)scorer.goals=(scorer.goals||0)+1;}
+    if(e.assistId){const maker=getPlayer(state,e.assistId);if(maker)maker.assists=(maker.assists||0)+1;}
+   }
    // Match officials affect the next round: reds suspend the club player.
    // Persist physical injuries by player identity; weekly recovery below consumes
    // one week immediately, so retain the intended full recovery horizon.
