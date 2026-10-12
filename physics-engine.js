@@ -81,7 +81,7 @@ function steer(p,target,dt,boost=1,grip=1){
 function inflictInjury(w,p,reason,impact=5){
  if(!p||p.active===false||p.injury>0)return;
  const weeks=clamp(Math.round(1+(impact-4)*.45+rand(w)*2),1,7);
- p.injury=weeks;p.active=false;p.pose='injured';p.poseUntil=Infinity;
+ p.injury=weeks;p.active=false;p.pose='injured';p.poseUntil=Infinity;p.injuryTick=w.tick;
  p.vx=0;p.vy=0;
  if(w.ball.owner===p.id){w.ball.owner=null;w.carrier=null;}
  w.injuries??=[];w.injuries.push({playerId:p.sourceId??p.id,team:w.teams[p.side].id,
@@ -238,6 +238,7 @@ function shoot(w,p){
  const error=(rand(w)-.5)*clamp(d*1.06,6,36)*(1+pressure*.22)/quality;
  target.x+=error;
  kick(w,p,target,clamp(23+d*.15,21,31),.6+rand(w)*1.2);
+ p.pose='shot';p.poseUntil=.8;
  w.ball.shot={team:side,playerId:p.id,xg,onTarget:target.x>=FIELD.goalLeft&&target.x<=FIELD.goalRight};
  if(w.ball.shot.onTarget)w.stats[side].onTarget++;
  event(w,'shot','Remate de '+p.name+'.',w.teams[side].id,{player:p.name,playerId:p.sourceId,xg:+xg.toFixed(3)});
@@ -327,6 +328,7 @@ function controlLooseBall(w){
   event(w,'interception','Interceção de '+best.name+'.',w.teams[best.side].id,{player:best.name,playerId:best.sourceId});
  }
  if(b.shot&&best.pos==='GK'&&best.side!==b.shot.team){
+  best.pose='dive';best.poseUntil=1.1;
   w.stats[best.side].saves++;
   event(w,'save','Defesa de '+best.name+'.',w.teams[best.side].id,{player:best.name,playerId:best.sourceId});
  }
@@ -400,6 +402,7 @@ function ballPhysics(w,dt){
      const chance=clamp(.51+skill*.44-reach*.065,.29,.88);
      if(rand(w)<chance){
       w.stats[1-attacking].saves++;
+      goalkeeper.pose='dive';goalkeeper.poseUntil=1.1;
       b.lastTouch=1-attacking;
       if(reach<1.45&&rand(w)<.48){
        b.owner=goalkeeper.id;w.carrier=goalkeeper.id;w.possessor=1-attacking;
