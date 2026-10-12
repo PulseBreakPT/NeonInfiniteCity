@@ -374,7 +374,7 @@ function executeAction(w,p){
   const miss=rand(w)>precision;
   const target={x:clamp(receiver.x+(miss?(rand(w)-.5)*18:receiver.vx*.33),1,67),
    y:clamp(receiver.y+(miss?(rand(w)-.5)*16:receiver.vy*.33),1,104)};
-  kick(w,p,target,clamp(d*.85,10,28),d>20?.35:.05);
+  kick(w,p,target,clamp(d*.85,10,28),d>27?7.4:d>20?5.2:.15);
   w.ball.intended={side:p.side,receiverId:receiver.id,passerId:p.id};
   if(receiver.pos==='GK')w.ball.deliberateBackpass=p.side;
   if(flagged)w.ball.pendingOffside={side:p.side,receiverId:receiver.id};
@@ -692,7 +692,7 @@ function restartKick(w){
   const target=teamPlayers(w,r.team).filter(p=>p.id!==nearest.id&&p.pos!=='GK')
     .sort((a,b)=>dist(a,nearest)-dist(b,nearest))[0];
   const destination=target?{x:target.x,y:target.y}:{x:34,y:r.y};
-  kick(w,nearest,destination,12,4.5);
+  kick(w,nearest,destination,12,3.7);
   w.ball.x=r.x;w.ball.y=r.y;w.ball.z=1.82;
   nearest.pose='throw';nearest.poseUntil=1;
   w.stats[r.team].passes++;
@@ -701,7 +701,7 @@ function restartKick(w){
   const target=kind==='corner'?{x:29+rand(w)*10,y:goal.y-direction(w,r.team)*8}:
    {x:34+(rand(w)-.5)*8,y:goal.y};
   w.stats[r.team].passes++;
-  kick(w,nearest,target,kind==='corner'?22:24,kind==='corner'?2.8:1.6);
+  kick(w,nearest,target,kind==='corner'?22:24,kind==='corner'?8.5:6.4);
   if(kind==='corner'){w.ball.x=r.x;w.ball.y=r.y;}
   event(w,'cross',nearest.name+' cobra '+(kind==='corner'?'o canto':'o livre')+'.',w.teams[r.team].id,{player:nearest.name});
  }else{
