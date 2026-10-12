@@ -23,7 +23,8 @@ function player(p,side,index){
  return {id:side+':'+index,sourceId:p.id,number:p.number,name:p.name,side,index,pos:p.pos,
    x:p.x/100*FIELD.width,y:p.y/100*FIELD.length,
    vx:0,vy:0,facing:side===0?-Math.PI/2:Math.PI/2,pace:clamp(p.pace||55,25,99),pas:clamp(p.pas||55,20,99),
-   sho:clamp(p.sho||55,15,99),def:clamp(p.def||55,15,99),gk:clamp(p.gk||55,15,99),stamina:100,yellows:0,active:true,control:0,
+   sho:clamp(p.sho||55,15,99),def:clamp(p.def||55,15,99),gk:clamp(p.gk||55,15,99),phy:clamp(p.phy||55,15,99),
+   stamina:clamp(p.fitness||90,35,100),yellows:0,active:true,control:0,
    pose:'idle',poseUntil:0,stridePhase:0,gait:0,bodyLean:0,injury:0};
 }
 export function createWorld(session){
@@ -136,11 +137,12 @@ function targetFor(w,p){
  const baseX=(p.index<11? w.teams[side].anchors?.[p.index]?.x :null)??p.x;
  const baseY=(p.index<11? w.teams[side].anchors?.[p.index]?.y :null)??p.y;
  if(p.pos==='GK'){
-  const threatening=b.shot?.team===1-side && Math.abs(b.y-ownGoal(side))<28;
-  const projectedX=threatening?clamp(b.x+b.vx*Math.min(.45,Math.abs(b.y-ownGoal(side))/Math.max(9,Math.abs(b.vy))),30,38):
-   FIELD.width/2+(b.x-FIELD.width/2)*.16;
+  const threatening=w.possessor!==side && Math.abs(b.y-ownGoal(side))<35;
+  const projectedX=b.shot?.team===1-side
+   ?clamp(b.x+b.vx*Math.min(.36,Math.abs(b.y-ownGoal(side))/Math.max(12,Math.abs(b.vy))),29,39)
+   :FIELD.width/2+(b.x-FIELD.width/2)*(threatening?.31:.16);
   return {x:clamp(projectedX,28,40),
-   y:clamp(ownGoal(side)+dir*(threatening?1.9:4+(Math.abs(b.y-ownGoal(side))<25?2:0)),1.4,103.6)};
+   y:clamp(ownGoal(side)+dir*(threatening?2.7:4.2),1.4,103.6)};
  }
  const carrier=findCarrier(w);
  if(w.ball.owner===null&&w.phase==='open'&&w.ball.z<1.9){
@@ -233,7 +235,7 @@ function shoot(w,p){
  w.stats[side].xg+=xg;
  // The shot is a physical kick; crossing the goal line determines the goal.
  const pressure=teamPlayers(w,1-side).filter(q=>q.pos!=='GK'&&dist(q,p)<4.5).length;
- const error=(rand(w)-.5)*clamp(d*.90,5,31)*(1+pressure*.22)/quality;
+ const error=(rand(w)-.5)*clamp(d*1.06,6,36)*(1+pressure*.22)/quality;
  target.x+=error;
  kick(w,p,target,clamp(23+d*.15,21,31),.6+rand(w)*1.2);
  w.ball.shot={team:side,playerId:p.id,xg,onTarget:target.x>=FIELD.goalLeft&&target.x<=FIELD.goalRight};
@@ -450,8 +452,16 @@ function restartTargets(w){
   const spot=spotMap.get(p.side+':'+p.index);
   // The restart is taken from the ball's physical location, not from an
   // approximate tactical diagram a few metres inside the field.
-  const target=p.id===r.takerId?{x:r.x,y:r.y}:spot?{x:spot.x*.68,y:spot.y*1.05}:null;
-  if(target)steer(p,target,FIXED_DT,.95);
+  let target=p.id===r.takerId?{x:r.x,y:r.y}:spot?{x:spot.x*.68,y:spot.y*1.05}:null;
+  if(target&&p.side!==r.team&&p.pos!=='GK'){
+   const radius=requiredDistance(r.kind),dx=target.x-r.x,dy=target.y-r.y,d=hypot(dx,dy);
+   if(radius>0&&d<radius){
+    const angle=d>.001?Math.atan2(dy,dx):Math.PI*.35+p.index*.3;
+    target={x:clamp(r.x+Math.cos(angle)*(radius+.35),1,67),
+      y:clamp(r.y+Math.sin(angle)*(radius+.35),1,104)};
+   }
+  }
+  if(target)steer(p,target,FIXED_DT,.95,surfaceGrip(w.weather));
  }
  physicalContacts(w);
 }
