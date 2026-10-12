@@ -76,8 +76,9 @@ function physicalContacts(w){
   for(let j=i+1;j<ps.length;j++){
    const b=ps[j];if(b.active===false)continue;
    const dx=b.x-a.x,dy=b.y-a.y,ds=dx*dx+dy*dy;
-   if(ds>=.64||ds<1e-9)continue;
-   const d=Math.sqrt(ds),overlap=(.8-d)*.5,nx=dx/d,ny=dy/d;
+   if(ds>=.64)continue;
+   const d=Math.sqrt(ds),overlap=(.8-d)*.5;
+   const nx=d>1e-6?dx/d:((i+j)%2?1:-1),ny=d>1e-6?dy/d:0;
    a.x-=nx*overlap;a.y-=ny*overlap;
    b.x+=nx*overlap;b.y+=ny*overlap;
    // Dampen velocity pointing into the other body.
