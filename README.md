@@ -4,13 +4,19 @@ Jogo original de gestão de futebol, em português europeu, single-player, publi
 
 **Jogar:** https://pulsebreakpt.github.io/NeonInfiniteCity/
 
-## Motor de futebol físico v4
+## Motor de futebol físico v7
 
 A partida principal utiliza um mundo métrico de **105 × 68 m**, com **22 jogadores independentes**, bola tridimensional e passos físicos determinísticos de **0,2 s**. O marcador e as estatísticas nascem de eventos simulados durante o jogo; a jornada só é confirmada ao apito final. A exibição visual interpola os mesmos estados do motor, sem gerar movimentos fictícios da bola.
 
 **Melhorias v3:** identidades únicas de atletas no campo; aceleração, travagem, fadiga e colisões corporais; deslocação sem bola em função de formação, posse, marcação e pressão; passe e remate com erros de execução; rotação, gravidade, atrito, ressalto e colisões com postes e barra; guarda-redes que antecipam, mergulham, agarram ou desviam a bola sem teletransportes; cantos, lançamentos, livres, pontapés de baliza e penáltis executados no local correto; infrações de fora de jogo só quando o destinatário intervém; cartões, expulsões e suspensão na jornada seguinte.
 
 **Novidades v4:** meteorologia progressiva gerada por seed (vento, chuva, aguaceiros, temperatura, relvado húmido e aderência), efeitos no voo/rolamento da bola, fadiga dependente do clima, contacto com risco de lesão e recuperação por semanas. O árbitro trata a lei da vantagem, o segundo toque após reposição, o limite de oito segundos do guarda-redes e os golos diretos não permitidos após lançamentos laterais e livres indiretos. A simulação usa também um esqueleto procedural tridimensional articulado para poses de corrida, remate, mergulho e queda, projetado nas quatro câmaras 2.5D.
+
+**Melhorias de integridade v7 (outubro de 2026):** inversão física de campo ao intervalo, direção de ataque e linha de fora de jogo corretas nas duas partes; banco de até nove jogadores por equipa; até cinco substituições em três janelas, trocas ao intervalo, substituição automática de lesionados e decisões da IA adversária; limite de dez segundos para abandonar o terreno com atraso de entrada; perda por número insuficiente de jogadores; regresso após avaliação médica; contagem para lançamentos e pontapés de baliza demorados; decisões por primeiro cruzamento físico de linhas; lançamentos com trajetória a partir das mãos, cantos na bandeirola, cabeceamentos, bloqueios e infrações por contacto mão-bola; assistências, autogolos e participações de suplentes; alterações táticas durante a partida e atualização dos saves em curso.
+
+**Validação:** testes adicionais para troca de campo, substituições e janelas, regras de interrupção e reinícios, cabeceamentos, golos e migração de partidas guardadas. O desenvolvimento usa um relógio de futebol acelerado para ser jogável no navegador: 36 passos de física de 0,2 segundos por minuto mostrado no marcador. Isto **não equivale** a 60 segundos físicos completos por minuto. A reprodução integral dos 90 minutos em tempo físico real continua fora do âmbito deste motor compacto.
+
+**Limites técnicos reais:** não existe ainda física biomecânica rígida e articulada integral, protocolo VAR com revisão de vídeo verificável, suporte exaustivo de todas as Leis 1–17, nem um motor único que simule fisicamente todos os jogos das competições secundárias. O objetivo é um jogo original funcional e progressivamente mais realista, não uma certificação profissional.
 
 A cobertura de arbitragem é mais extensa, mas não é um motor certificado por todas as exceções IFAB; a biomecânica é aproximada e não utiliza um motor 3D rígido com deformações, roupa e corpos de colisão complexos. Os jogos principais continuam a ser calculados no motor 2D métrico.
 
