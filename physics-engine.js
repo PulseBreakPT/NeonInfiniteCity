@@ -447,7 +447,7 @@ function aerialContest(w){
  const shot=goalDistance<20&&(rand(w)<.38);
  const friend=teamPlayers(w,p.side).filter(q=>q.id!==p.id&&q.pos!=='GK')
   .sort((a,c)=>dist(a,p)-dist(c,p))[0];
- const target=shot?{x:34+(rand(w)-.5)*7,y:attackGoal(p.side,w)}
+ const target=shot?{x:34+(rand(w)-.5)*clamp(9+goalDistance*.32,9,18),y:attackGoal(p.side,w)}
    :friend?{x:friend.x,y:friend.y}:{x:34,y:attackGoal(p.side,w)};
  kick(w,p,target,shot?15:12,shot?1.7:1.2);
  b.z=height;b.vz=shot?1.6:1.2;p.pose='header';p.poseUntil=.85;
