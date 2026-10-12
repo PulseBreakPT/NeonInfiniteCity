@@ -313,7 +313,6 @@ function controlLooseBall(w){
    return;
   }
  }
- b.restartTouched=true;
  // Offside is an offence only upon involvement, never when the pass leaves the foot.
  if(flag&&best.side===flag.side&&best.id===flag.receiverId){
   restart(w,'offside',1-best.side,{x:best.x,y:best.y},'Posição irregular de '+best.name);
@@ -323,6 +322,7 @@ function controlLooseBall(w){
   restart(w,'indirect',1-best.side,{x:best.x,y:best.y},'Segundo toque do marcador');
   return;
  }
+ b.restartTouched=true;
  if(pass&&best.side===pass.side)w.stats[best.side].accurate++;
  if(pass&&best.side!==pass.side){
   event(w,'interception','Interceção de '+best.name+'.',w.teams[best.side].id,{player:best.name,playerId:best.sourceId});
@@ -332,9 +332,10 @@ function controlLooseBall(w){
   w.stats[best.side].saves++;
   event(w,'save','Defesa de '+best.name+'.',w.teams[best.side].id,{player:best.name,playerId:best.sourceId});
  }
+ const wasShot=!!b.shot;
  delete b.shot;delete b.intended;delete b.pendingOffside;delete b.fromThrowin;delete b.deliberateBackpass;
  b.owner=best.id;w.carrier=best.id;w.possessor=best.side;
- b.keeperHeld=best.pos==='GK'&&goalkeeperHandlingAllowed(best,b)&&!!b.shot;
+ b.keeperHeld=best.pos==='GK'&&goalkeeperHandlingAllowed(best,b)&&wasShot;
  w.referee??={};w.referee.keeperHold=0;
  b.vx=0;b.vy=0;b.vz=0;b.z=.12;b.spin=0;
  w.actionCooldown=.45;
