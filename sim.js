@@ -75,7 +75,7 @@ export function applyRound(state,{featuredResult=null}={}){
    const userLost=(fixture.home===0?result.hg<result.ag:result.ag<result.hg);
    for(const id of line){const p=getPlayer(state,id);if(!p)continue;
     p.apps=(p.apps||0)+1;p.xp=(p.xp||0)+(userWon?12:7);
-    p.fitness=clamp((p.fitness||90)-14,4,100);
+    p.fitness=clamp((p.fitness||90)-Math.max(9,featuredResult.fatigue?.[p.id]??14),4,100);
     p.morale=clamp((p.morale||80)+(userWon?4:userLost?-4:1),5,100);
     if(p.pos==='GK'&&(fixture.home===0?result.ag:result.hg)===0)p.cleanSheets=(p.cleanSheets||0)+1;
    }

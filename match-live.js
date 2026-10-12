@@ -8,6 +8,7 @@ import {createWorld,stepMatchMinute,halfTimeWorld,secondHalfWorld,finalWorld,wor
  * only at the final whistle. A serialized fixture can be resumed after a reload.
  */
 export function matchClock(session,minute=session.minute){
+ minute=Math.max(0,Math.floor(minute));
  const first=45+session.firstAdded;
  if(minute>90+session.firstAdded)return "90+"+(minute-90-session.firstAdded)+"'";
  if(minute>first)return (minute-session.firstAdded)+"'";

@@ -7,7 +7,7 @@ Substituir o cálculo estatístico prévio do **jogo do treinador** por uma simu
 ### Pipeline por partida
 
 1. `beginLiveMatch(state,{engine:'physics'})` cria uma cópia isolada do clube e instancia `createWorld()` a partir do onze, formação, táticas e adversário.
-2. `tickLiveMatch()` avança **12 passos determinísticos** de física `FIXED_DT=.2s` por minuto mostrado. O relógio tem descontos, intervalo, pausas e 90+X minutos.
+2. `tickLiveMatch()` avança **36 passos determinísticos** de física `FIXED_DT=.2s` por minuto mostrado. O relógio tem descontos, intervalo, pausas e 90+X minutos.
 3. O mundo simula diretamente `22 jogadores + bola`: âncoras táticas, forças, aceleração e inércia, posse, decisão de passe, drible, interceção, remate, guarda-redes e árbitro.
 4. A bola é independente, com componentes de velocidade `vx/vy/vz`, gravidade, amortecimento no relvado e colisões/interceções.
 5. Quando a bola sai, o árbitro decide reposição; remates só são golos se a bola cruza a linha de baliza dentro dos postes e abaixo da barra.

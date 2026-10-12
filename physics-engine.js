@@ -5,7 +5,7 @@ import {clamp,hash} from './model.js';
 import {restartPositions} from './pitch-spatial.js';
 export const FIELD={width:68,length:105,goalLeft:30.34,goalRight:37.66,boxLeft:13.84,boxRight:54.16,boxDepth:16.5};
 export const FIXED_DT=.2;
-export const STEPS_PER_MINUTE=12;
+export const STEPS_PER_MINUTE=36;
 const hypot=(dx,dy)=>Math.hypot(dx,dy);
 const dist=(a,b)=>hypot(a.x-b.x,a.y-b.y);
 const rand=w=>((w.seed=(Math.imul(w.seed,1664525)+1013904223)>>>0)/4294967296);
@@ -79,13 +79,13 @@ function targetFor(w,p){
  if(!attacker&&primary.some(q=>q.id===p.id)&&distanceToBall<36*press){
   return {x:b.x+Math.sin(w.tick*.03+p.index)*1.3,y:b.y+dir*(p.pos==='DEF'?-1:2)};
  }
- const forward=p.pos==='ATT'?13:p.pos==='MID'?6:-3;
+ const forward=p.pos==='ATT'?21:p.pos==='MID'?7:-3;
  const tX=(individual?baseX*.55+individual.x*.45:baseX)+(b.x-baseX)*(attacker?.25+.015*(press-1):.13*press)+(attacker&&(p.pos==='ATT'||p.pos==='MID')?Math.sin(w.tick*.012+p.index)*2:0);
  const tY=(individual?baseY*.55+individual.y*.45:baseY)+dir*(mind+(attacker?forward:0))+(b.y-baseY)*(attacker?.14:.09*press);
  return {x:clamp(tX,3,65),y:clamp(tY,7,98)};
 }
 function offside(w,passer,target){
- const side=passer.side,defenders=teamPlayers(w,1-side).filter(p=>p.pos!=='GK').map(p=>p.y).sort((a,b)=>side===0?a-b:b-a);
+ const side=passer.side,defenders=teamPlayers(w,1-side).map(p=>p.y).sort((a,b)=>side===0?a-b:b-a);
  if(defenders.length<2)return false;
  const line=defenders[1];
  return side===0?target.y<Math.min(line,FIELD.length/2)-.3&&target.y<passer.y:
@@ -314,7 +314,7 @@ export function stepWorld(w,dt=FIXED_DT){
  const carrier=findCarrier(w);
  for(const p of w.players){
   const target=targetFor(w,p);steer(p,target,dt,1);
-  p.stamina=clamp(p.stamina-dt*(w.teams[p.side].tactics.pressure==='alta'?.009:.004),55,100);
+  p.stamina=clamp(p.stamina-dt*(w.teams[p.side].tactics.pressure==='alta'?.027:.010),55,100);
  }
  if(w.ball.owner!==null&&carrier){w.ball.x=carrier.x;w.ball.y=carrier.y;w.ball.z=.12;}
  else ballPhysics(w,dt);

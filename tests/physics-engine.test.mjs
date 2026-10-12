@@ -17,7 +17,7 @@ const play=state=>{
 test('11 jogadores por equipa, campo métrico, guarda-redes e táticas reais',()=>{
  const {world,session}=start();
  assert.equal(FIELD.length,105);assert.equal(FIELD.width,68);
- assert.equal(FIXED_DT,.2);assert.equal(STEPS_PER_MINUTE,12);
+ assert.equal(FIXED_DT,.2);assert.equal(STEPS_PER_MINUTE,36);
  assert.equal(world.players.length,22);
  assert.equal(world.players.filter(p=>p.side===0).length,11);
  assert.equal(world.players.filter(p=>p.side===1).length,11);
