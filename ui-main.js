@@ -1,6 +1,7 @@
 
 import {FORMATIONS,POSITIONS,COLORS,FACILITY_DATA,MENTORS,rating,teamPower,standings,money,getPlayer,nextFixture,fixtureName,clamp} from './model.js';
 import {esc,short,icon,crest,pill,bar,avatar,btn,title,panel,playerItem,info,navItems} from './ui-core.js';
+import {matchClock,matchPhase,visibleEvents,liveScore,eventAtMinute} from './match-live.js';
 const val=(v,arr,label)=>'<select data-field="'+label+'">'+arr.map(x=>'<option value="'+esc(x)+'" '+(v===x?'selected':'')+'>'+esc(x)+'</option>').join('')+'</select>';
 const spell=s=>({defensiva:'Defensiva',equilibrada:'Equilibrada',ofensiva:'Ofensiva',baixa:'Baixa',media:'Média',alta:'Alta',curto:'Curto',misto:'Misto',longo:'Longo',lento:'Lento',normal:'Normal',rapido:'Rápido',zona:'À zona',individual:'Individual'}[s]||s);
 function tacticSelector(state,key,options,label){
@@ -43,7 +44,32 @@ function matchPitch(s,view){
  const opponents=positions.map(([x,y],i)=>'<div class="pitch-dot away-dot" style="left:'+x+'%;top:'+(100-y)+'%;--delay:'+i*.2+'s"><span>'+(i+1)+'</span></div>').join('');
  return '<div class="live-pitch">'+pitchLines+points+opponents+'<span id="ball" class="football" style="left:50%;top:50%">⚽</span><span class="pitch-foot">'+esc(home)+' vs '+esc(away)+'</span></div>';
 }
+function liveMatchView(s){
+ const live=s.liveMatch,r=live.result,clock=matchClock(live),scores=liveScore(live);
+ const sideEvents=visibleEvents(live).filter(e=>['goal','card','red','injury','half','tactical','save','substitution','penalties','end','chance','corner'].includes(e.kind)).slice(-9).reverse();
+ const active=live.phase==='running',isHalftime=live.phase==='halftime';
+ const phaseLabel=isHalftime?'INTERVALO':live.phase==='paused'?'EM PAUSA':matchPhase(live)==='first'?'1.ª PARTE':'2.ª PARTE';
+ const timeTotal=live.total;
+ const firstEnd=45+live.firstAdded;
+ return '<section class="live-matchday" aria-label="Partida a decorrer">'+
+ '<div class="live-matchday-header"><div><span class="live-on-air"><i></i> PARTIDA EM CURSO</span><small>LIGA NACIONAL · JORNADA '+live.round+'</small></div><span class="live-period" id="live-period">'+phaseLabel+'</span></div>'+
+ '<div class="live-matchday-score"><div class="live-matchday-team"><small>CASA</small><strong>'+esc(r.homeName)+'</strong></div>'+
+ '<div class="live-central"><span id="live-clock" class="live-clock">'+clock+'</span><strong id="live-score">'+scores.home+' : '+scores.away+'</strong><small id="live-added">'+(live.minute<=45?'45 + '+live.firstAdded+' MIN':'90 + '+live.secondAdded+' MIN')+'</small></div>'+
+ '<div class="live-matchday-team away"><small>FORA</small><strong>'+esc(r.awayName)+'</strong></div></div>'+
+ '<div class="live-matchday-content"><section class="live-pitch-panel"><div class="live-pitch-hud"><span><i></i> TRANSMISSÃO TÁTICA 2D</span><strong id="live-clock-small">'+clock+'</strong></div>'+
+ '<div class="pitch-camera-frame live-camera">'+matchPitch(s,r)+'</div>'+
+ '<div class="live-progress"><div class="live-progress-track"><span class="live-halfmark" style="left:'+(firstEnd/timeTotal*100)+'%"></span><div id="live-progress-fill" class="live-progress-fill" style="width:'+(live.minute/timeTotal*100)+'%"></div></div><div class="live-progress-labels"><span>00′</span><span>45 + '+live.firstAdded+'′</span><span>90 + '+live.secondAdded+'′</span></div></div>'+
+ '<div class="live-commentary"><span id="live-comment-minute">'+clock+'</span><p id="live-comment">A bola começa a rolar. As duas equipas procuram o primeiro ataque.</p></div>'+
+ '<div class="live-buttons">'+btn('live-pause','<span id="live-pause-label">'+(active?'PAUSAR':isHalftime?'INICIAR 2.ª PARTE':'CONTINUAR')+'</span>','subtle')+
+ btn('live-speed','<span id="live-speed-label">'+live.speed+'×</span> VELOCIDADE','subtle')+'</div></section>'+
+ '<aside class="live-report-panel"><div class="live-report-header"><h3>RELATO DO JOGO</h3><span id="live-reports-count">'+sideEvents.length+' LANCES</span></div>'+
+ '<div id="live-events" class="live-event-list" aria-live="polite">'+(sideEvents.length?sideEvents.map(e=>'<div class="live-event-row '+(e.kind==='goal'?'is-goal':'')+'"><b>'+esc(matchClock(live,eventAtMinute(live,e)))+'</b><span>'+esc(e.text)+'</span></div>').join(''):'<div class="live-event-empty">Aguardam-se os primeiros lances.</div>')+'</div>'+
+ '<div class="live-report-bottom"><strong>A PARTIDA AINDA NÃO ESTÁ DECIDIDA</strong><small>Classificação, prémios, salários e estatísticas são registados apenas após o apito final. Se saíres, o jogo pode continuar quando voltares.</small></div></aside></div>'+
+ '</section>';
+}
+
 export function matches(s){
+ if(s.liveMatch)return liveMatchView(s);
  const f=nextFixture(s),r=s.lastMatch,extra=s.league.completed?'Época terminada':f?'Liga Nacional · Jornada '+f.round:'Sem partidas';
  return title('CENTRO DE PARTIDAS','MATCHDAY',extra,s.league.completed?btn('new-season','Nova época','accent'):btn('match','Jogar jornada '+s.league.round,'accent'))+
  '<div class="broadcast-banner"><div class="broadcast-left"><span class="broadcast-beacon"><b></b> '+(r?'REPLAY DISPONÍVEL':'PRÉ-JOGO')+'</span><strong>LIGA NACIONAL</strong></div><div class="broadcast-right"><span>90 MINUTOS</span><span>● 2D TÁTICO</span><span>'+esc(r?.weather||'—')+'</span></div></div>'+

@@ -58,12 +58,12 @@ test('Primeira utilização contém informações concretas sobre o save',()=>{
  assert.ok(html.includes('id="create-form"'));
 });
 test('Impeccable é parte do repositório e do workflow de qualidade',()=>{
- const html=read('index.html'),sw=read('sw.js'),css=read('styles-v10.css');
+ const html=read('index.html'),sw=read('sw.js'),css=read('styles-v11.css');
  const product=read('PRODUCT.md'),design=read('DESIGN.md'),agent=read('.agents/skills/impeccable/SKILL.md');
  const workflow=read('.github/workflows/pages.yml'),pkg=JSON.parse(read('package.json'));
- assert.ok(html.includes('styles-v10.css'));
- assert.ok(sw.includes('styles-v10.css'));
- assert.ok(css.includes('styles-v9.css'));
+ assert.ok(html.includes('styles-v11.css'));
+ assert.ok(sw.includes('styles-v11.css'));
+ assert.ok(css.includes('styles-v10.css'));
  assert.ok(product.length>300&&design.length>300&&agent.length>300);
  assert.ok(workflow.includes('Impeccable design scan'));
  assert.ok(pkg.scripts['design:install'].includes('impeccable@4.5.2'));

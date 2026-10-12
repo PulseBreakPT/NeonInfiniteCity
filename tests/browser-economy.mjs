@@ -71,6 +71,10 @@ try{
   await page.evaluate(()=>document.querySelector('[data-nav="matches"]').click());
   await page.waitForSelector('[data-action="match"]');
   await page.locator('[data-action="match"]').first().click();
+  await page.waitForSelector('.live-matchday');
+  await page.locator('[data-action="live-speed"]').click();
+  await page.locator('[data-action="live-speed"]').click();
+  await page.waitForSelector('#match-timeline:not([disabled])',{timeout:50000});
   s=await get();
   assert.ok(s.budget>=originalBalance-20000,'The first match should not cause a severe financial loss');
   assert.equal(s.finance.debt,0);
