@@ -204,7 +204,8 @@ function shoot(w,p){
  const xg=clamp(.045+.4*Math.exp(-d/14)*quality,.025,.62);
  w.stats[side].xg+=xg;
  // The shot is a physical kick; crossing the goal line determines the goal.
- const error=(rand(w)-.5)*clamp(d*.72,3,26)/quality;
+ const pressure=teamPlayers(w,1-side).filter(q=>q.pos!=='GK'&&dist(q,p)<4.5).length;
+ const error=(rand(w)-.5)*clamp(d*.90,5,31)*(1+pressure*.22)/quality;
  target.x+=error;
  kick(w,p,target,clamp(23+d*.15,21,31),.6+rand(w)*1.2);
  w.ball.shot={team:side,playerId:p.id,xg,onTarget:target.x>=FIELD.goalLeft&&target.x<=FIELD.goalRight};
@@ -215,7 +216,7 @@ function shoot(w,p){
 function executeAction(w,p){
  const t=w.teams[p.side].tactics,goalDistance=atGoalDistance(p,p.side),defenders=teamPlayers(w,1-p.side);
  const close=defenders.filter(d=>d.pos!=='GK'&&dist(p,d)<5).length;
- if(goalDistance<34 && (goalDistance<18||rand(w)<(.38+.05*close))){
+ if(goalDistance<32 && (goalDistance<12||rand(w)<(.21+.035*close))){
   shoot(w,p);return;
  }
  const receiver=choosePass(w,p);
@@ -352,9 +353,10 @@ function ballPhysics(w,dt){
       }else{
        // Parry: the ball remains independent and can produce a real corner.
        const outward=b.x<34?-1:1,away=attacking===0?1:-1;
-       b.vx=outward*(12+rand(w)*10);
-       b.vy=away*(3+rand(w)*6);
-       b.vz=.6+rand(w)*2.8;
+       const behind=rand(w)<.43;
+       b.vx=outward*(behind?24+rand(w)*8:12+rand(w)*10);
+       b.vy=away*(behind?-(14+rand(w)*8):3+rand(w)*6);
+       b.vz=behind?2.5+rand(w)*3.5:.6+rand(w)*2.8;
        b.spin=(rand(w)-.5)*3.5;
        w.carrier=null;w.ball.owner=null;w.possessor=1-attacking;
       }
