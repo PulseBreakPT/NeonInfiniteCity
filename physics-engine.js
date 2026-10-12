@@ -182,6 +182,9 @@ function kick(w,p,target,power=15,height=0){
  w.ball.z=.12;w.ball.vz=height;
  w.ball.spin=(rand(w)-.5)*4*(p.pas/75);
  w.ball.lastTouch=p.side;delete w.ball.intended;delete w.ball.pendingOffside;
+ delete w.ball.restartKind;delete w.ball.restartSide;delete w.ball.restartTouched;
+ delete w.ball.fromThrowin;delete w.ball.deliberateBackpass;
+ p.pose='kick';p.poseUntil=.6;
 }
 function restart(w,kind,team,where,reason=''){
  // Penalties are always taken from the regulation 11 m mark.
@@ -209,7 +212,7 @@ function playerNear(w,side,where,includeKeeper=false){
 }
 function choosePass(w,p){
  const t=w.teams[p.side].tactics,dir=p.side===0?-1:1;
- const candidates=teamPlayers(w,p.side).filter(q=>q.id!==p.id&&q.pos!=='GK')
+ const candidates=teamPlayers(w,p.side).filter(q=>q.id!==p.id&&(q.pos!=='GK'||t.passing==='curto'))
  .map(q=>{
   const d=dist(p,q);
   if(d<5||d>55)return {q,score:-999,d};
@@ -217,7 +220,7 @@ function choosePass(w,p){
   const intercepted=teamPlayers(w,1-p.side).some(enemy=>dist(enemy,q)<3.5);
   const danger=offside(w,p,q)?14:0;
   const score=forward*.42+12*Math.exp(-Math.abs(d-pace)/12)+q.pas/20-d*.035-
-   (intercepted?15:0)-danger+(rand(w)-.5)*8;
+   (intercepted?15:0)-danger-(q.pos==='GK'?12:0)+(rand(w)-.5)*8;
   return {q,score,d};
  }).sort((a,b)=>b.score-a.score);
  return candidates[0]?.score>-80?candidates[0].q:null;
@@ -256,6 +259,7 @@ function executeAction(w,p){
    y:clamp(receiver.y+(miss?(rand(w)-.5)*16:receiver.vy*.33),1,104)};
   kick(w,p,target,clamp(d*.85,10,28),d>20?.35:.05);
   w.ball.intended={side:p.side,receiverId:receiver.id,passerId:p.id};
+  if(receiver.pos==='GK')w.ball.deliberateBackpass=p.side;
   if(flagged)w.ball.pendingOffside={side:p.side,receiverId:receiver.id};
   event(w,'pass',p.name+' passa para '+receiver.name+'.',w.teams[p.side].id,
     {player:p.name,playerId:p.sourceId,receiver:receiver.name,receiverId:receiver.sourceId});
@@ -293,6 +297,15 @@ function controlLooseBall(w){
  }
  if(!best||bestDistance>1.35)return;
  const b=w.ball,pass=b.intended,flag=b.pendingOffside;
+ if(best.pos==='GK'&&!goalkeeperHandlingAllowed(best,b)){
+  if(rand(w)<.3){
+   w.referee??={handballDecisions:0};
+   w.referee.handballDecisions++;
+   restart(w,'backpass',1-best.side,{x:best.x,y:best.y},'Reposição ilegal ao guarda-redes');
+   return;
+  }
+ }
+ b.restartTouched=true;
  // Offside is an offence only upon involvement, never when the pass leaves the foot.
  if(flag&&best.side===flag.side&&best.id===flag.receiverId){
   restart(w,'offside',1-best.side,{x:best.x,y:best.y},'Posição irregular de '+best.name);
@@ -306,7 +319,7 @@ function controlLooseBall(w){
   w.stats[best.side].saves++;
   event(w,'save','Defesa de '+best.name+'.',w.teams[best.side].id,{player:best.name,playerId:best.sourceId});
  }
- delete b.shot;delete b.intended;delete b.pendingOffside;
+ delete b.shot;delete b.intended;delete b.pendingOffside;delete b.fromThrowin;delete b.deliberateBackpass;
  b.owner=best.id;w.carrier=best.id;w.possessor=best.side;
  b.vx=0;b.vy=0;b.vz=0;b.z=.12;b.spin=0;
  w.actionCooldown=.45;
@@ -323,7 +336,9 @@ function ballPhysics(w,dt){
  // Horizontal air drag, Magnus curl, bounce and rolling friction in metric units.
  const lastX=b.x,lastY=b.y,lastZ=b.z;
  const spin=Number.isFinite(b.spin)?b.spin:0;
+ const wx=w.weather?.windX||0,wy=w.weather?.windY||0;
  if(b.z>.16){
+  b.vx+=(wx-b.vx)*.003*dt;b.vy+=(wy-b.vy)*.003*dt;
   const speed=hypot(b.vx,b.vy);
   const magnus=.036*spin*speed;
   const ax=-b.vy/(speed||1)*magnus,ay=b.vx/(speed||1)*magnus;
@@ -334,7 +349,7 @@ function ballPhysics(w,dt){
  if(b.z<.12){
   b.z=.12;if(b.vz<-.65)b.vz=-b.vz*.28;else b.vz=0;
  }
- const drag=b.z>.16?Math.exp(-.085*dt):Math.exp(-1.0*dt);
+ const drag=b.z>.16?Math.exp(-.085*dt):Math.exp(-rollingDrag(w.weather)*dt);
  b.vx*=drag;b.vy*=drag;b.spin=spin*Math.exp(-.28*dt);
  // Posts and crossbar are physical solid obstacles, not probabilistic misses.
  const goalEnd=b.y<0?0:b.y>FIELD.length?FIELD.length:null;
@@ -388,7 +403,7 @@ function ballPhysics(w,dt){
       }
       event(w,'save','Defesa de '+goalkeeper.name+'.',w.teams[1-attacking].id,
         {player:goalkeeper.name,playerId:goalkeeper.sourceId});
-      delete b.shot;delete b.intended;delete b.pendingOffside;
+      delete b.shot;delete b.intended;delete b.pendingOffside;delete b.fromThrowin;delete b.deliberateBackpass;
       w.actionCooldown=1.4;return;
      }
     }
@@ -399,6 +414,12 @@ function ballPhysics(w,dt){
   const end=b.y<0?0:FIELD.length,attacking=end===0?0:1;
   const legalGoal=b.x>=FIELD.goalLeft&&b.x<=FIELD.goalRight&&b.z<2.44;
   if(legalGoal){
+   const verdict=restartGoalVerdict(b.restartKind,b.restartSide,attacking,b.restartTouched);
+   if(verdict!=='goal'){
+    if(verdict==='corner'){w.stats[1-attacking].corners++;restart(w,'corner',1-attacking,{x:b.x<34?0:68,y:end});}
+    else restart(w,'goalkick',1-attacking,{x:34,y:end===0?6:99});
+    return;
+   }
    w.score[attacking]++;
    const scorer=w.players.find(p=>p.id===w.ball.shot?.playerId);
    event(w,'goal','GOLO! '+w.teams[attacking].name+(scorer?' — '+scorer.name:'' )+'.',
@@ -461,11 +482,16 @@ function restartKick(w){
   if(target){kick(w,nearest,target,16,.2);w.stats[r.team].passes++;}
   else{w.carrier=nearest.id;w.ball.owner=nearest.id;}
  }
+ w.ball.restartKind=kind;w.ball.restartSide=r.team;w.ball.restartTouched=false;
+ if(kind==='throwin')w.ball.fromThrowin=r.team;
  w.restart=null;w.phase='open';w.phaseTime=0;w.actionCooldown=1.3;
 }
 export function stepWorld(w,dt=FIXED_DT){
  if(w.phase==='final'||w.phase==='halftime')return w;
  w.tick++;
+ w.weather??=createWeather(hash('old:'+w.seed));
+ advanceWeather(w.weather,w.tick,dt);
+ for(const p of w.players)if(p.poseUntil>0&&Number.isFinite(p.poseUntil))p.poseUntil=Math.max(0,p.poseUntil-dt);
  if(w.phase==='open'&&w.ball.owner!==null)w.stats[w.possessor].possession+=dt;
  if(w.phase==='kickoff'){w.phaseTime-=dt;if(w.phaseTime<=0){
   const p=findCarrier(w);if(p){w.ball.owner=p.id;w.carrier=p.id;}w.phase='open';
@@ -485,9 +511,12 @@ export function stepWorld(w,dt=FIXED_DT){
  const carrier=findCarrier(w);
  for(const p of w.players){
   if(p.active===false)continue;
-  const target=targetFor(w,p);steer(p,target,dt,1);
+  const target=targetFor(w,p);steer(p,target,dt,1,surfaceGrip(w.weather));
   const effort=clamp(hypot(p.vx,p.vy)/6,0,1.2);
-  p.stamina=clamp(p.stamina-dt*(w.teams[p.side].tactics.pressure==='alta'?.029:.011)*(0.6+effort),55,100);
+  p.stamina=clamp(p.stamina-dt*(w.teams[p.side].tactics.pressure==='alta'?.029:.011)*(0.6+effort)*(1+Math.max(0,w.weather.temperature-26)*.03),43,100);
+  if(w.weather.wetness>.62&&effort>.9&&rand(w)<.000014*w.weather.wetness){
+   inflictInjury(w,p,'escorregadela',5+effort*2);
+  }
  }
  physicalContacts(w);
  if(w.ball.owner!==null&&carrier&&carrier.active!==false){
@@ -547,6 +576,7 @@ export function worldResult(w){
  savesHome:a.saves,savesAway:b.saves,yellowHome:a.yellow,yellowAway:b.yellow,redHome:a.red,redAway:b.red},
  fatigue:Object.fromEntries(w.players.filter(p=>w.teams[p.side].id===0).map(p=>[p.sourceId??p.id,Math.max(9,Math.round((100-p.stamina)*.55))])),
  discipline:w.players.filter(p=>p.yellows>0||p.active===false).map(p=>({playerId:p.sourceId??p.id,team:w.teams[p.side].id,yellow:p.yellows||0,red:p.active===false})),
- engine:'physics-v2',physicsRevision:3,weather:'limpo',involved:true,cup:false,friendly:false,
+ injuries:(w.injuries||[]).slice(),engine:'physics-v2',physicsRevision:4,
+ weather:w.weather?.condition||'limpo',weatherDetail:{...(w.weather||{})},involved:true,cup:false,friendly:false,
  homeTactics:w.teams[0].tactics,awayTactics:w.teams[1].tactics};
 }
