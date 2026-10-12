@@ -149,7 +149,7 @@ function shoot(w,p){
  const xg=clamp(.045+.4*Math.exp(-d/14)*quality,.025,.62);
  w.stats[side].xg+=xg;
  // The shot is a physical kick; crossing the goal line determines the goal.
- const error=(rand(w)-.5)*clamp(d*.48,2,20)/quality;
+ const error=(rand(w)-.5)*clamp(d*.72,3,26)/quality;
  target.x+=error;
  kick(w,p,target,clamp(23+d*.15,21,31),.6+rand(w)*1.2);
  w.ball.shot={team:side,playerId:p.id,xg,onTarget:target.x>=FIELD.goalLeft&&target.x<=FIELD.goalRight};
@@ -245,8 +245,8 @@ function ballPhysics(w,dt){
   if(threat){
    b.shot.attemptedSave=true;
    const goalkeeper=teamPlayers(w,1-attacking).find(p=>p.pos==='GK');
-   if(goalkeeper && Math.abs(goalkeeper.x-b.x)<6.3&&Math.abs(goalkeeper.y-b.y)<11){
-    const chance=clamp(.43+goalkeeper.gk*.002+(goalkeeper.stamina-75)*.001,.36,.73);
+   if(goalkeeper && Math.abs(goalkeeper.x-b.x)<9.4&&Math.abs(goalkeeper.y-b.y)<15){
+    const chance=clamp(.59+goalkeeper.gk*.0025+(goalkeeper.stamina-75)*.0008,.50,.87);
     if(rand(w)<chance){
      w.stats[1-attacking].saves++;
      b.owner=goalkeeper.id;w.carrier=goalkeeper.id;w.possessor=1-attacking;
