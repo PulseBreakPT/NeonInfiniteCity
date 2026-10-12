@@ -54,9 +54,11 @@ test('corner: taker at corner flag; attackers in box; defenders defend goal',()=
 test('free kick: three-player defensive wall between ball and goal',()=>{
  const s=initial(),teams=spatialTeams(s,nextFixture(s)),location={x:43,y:31};
  const players=restartPositions(teams,'freekick',teams[0].id,location);
- const wall=players.slice(11).slice(4,7);
- assert.equal(wall.length,3);
- assert.ok(wall.every(p=>p.y>location.y*.1&&p.y<location.y));
+ const defensive=players.slice(11);
+ const wallY=location.y+(5-location.y)*.30;
+ const wall=defensive.filter(p=>p.pos==='DEF'&&Math.abs(p.y-wallY)<1&&Math.abs(p.x-location.x)<7);
+ assert.equal(wall.length,3,'The wall must contain three actual defenders, never the goalkeeper');
+ assert.ok(wall.every(p=>p.y>5&&p.y<location.y));
  assert.ok(Math.max(...wall.map(p=>p.x))-Math.min(...wall.map(p=>p.x))<=9);
 });
 test('penalty: only taker and keeper inside the penalty zone',()=>{
