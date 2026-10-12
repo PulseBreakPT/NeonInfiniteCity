@@ -38,6 +38,9 @@ try{
  });
  assert.ok(surface.width>=240&&surface.height>=240&&surface.pixels>45,'Canvas tactical players not rendered '+JSON.stringify(surface));
  let s=await state(),live=s.liveMatch;
+ assert.equal(live.schema,2,'Novo jogo tem de usar a física 11v11');
+ assert.equal(live.world?.players.length,22,'O campo deve conter 22 jogadores');
+ assert.ok(live.world?.ball&&Number.isFinite(live.world.ball.vx));
  assert.ok(live,'Session should be persisted at kick-off');
  const balance=s.budget,round=s.league.round;
  assert.equal(round,1);
@@ -64,6 +67,7 @@ try{
   return s?.liveMatch?.phase==='halftime'||s?.liveMatch?.minute>45+s?.liveMatch?.firstAdded;
  },null,{timeout:30000});
  s=await state();assert.equal(s.league.round,1,'Half-time must not commit results');
+ assert.ok(s.liveMatch.world.tick>1000,'A física deve avançar ao longo da primeira parte');
  assert.equal(s.budget,balance);
  await page.screenshot({path:'.browser-qa/live-halftime-android.png'});
  await page.waitForFunction(()=>{
@@ -72,6 +76,8 @@ try{
  },null,{timeout:45000});
  s=await state();
  assert.equal(s.results.length,1);
+ assert.equal(s.lastMatch.engine,'physics-v2');
+ assert.equal(s.lastMatch.hg+s.lastMatch.ag,s.lastMatch.events.filter(e=>e.kind==='goal').length);
  assert.equal(s.league.round,2);
  assert.equal(s.week,2);
  assert.ok(s.lastMatch?.events.some(e=>e.kind==='end'));

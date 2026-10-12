@@ -10,7 +10,8 @@ Substituir o cálculo estatístico prévio do **jogo do treinador** por uma simu
 2. `tickLiveMatch()` avança **36 passos determinísticos** de física `FIXED_DT=.2s` por minuto mostrado. O relógio tem descontos, intervalo, pausas e 90+X minutos.
 3. O mundo simula diretamente `22 jogadores + bola`: âncoras táticas, forças, aceleração e inércia, posse, decisão de passe, drible, interceção, remate, guarda-redes e árbitro.
 4. A bola é independente, com componentes de velocidade `vx/vy/vz`, gravidade, amortecimento no relvado e colisões/interceções.
-5. Quando a bola sai, o árbitro decide reposição; remates só são golos se a bola cruza a linha de baliza dentro dos postes e abaixo da barra.
+5. O guarda-redes lê a trajetória real, avalia alcance e atributo de defesa, e pode agarrar o remate antes da linha de golo. A precisão do remate depende da capacidade técnica, da distância e da oposição.
+6. Quando a bola sai, o árbitro decide reposição; remates só são golos se a bola cruza a linha de baliza dentro dos postes e abaixo da barra.
 6. `worldResult(world)` traduz estado e acontecimentos reais para a interface; **não determina um resultado antes de jogar**.
 7. `finishLiveMatch()`, apenas no apito final, atribui o resultado destacado ao `applyRound()`, calcula os restantes jogos e aplica uma única transação de classificação, prémios, salários, assistência e calendário.
 

@@ -21,7 +21,7 @@ function player(p,side,index){
  return {id:p.id,number:p.number,name:p.name,side,index,pos:p.pos,
    x:p.x/100*FIELD.width,y:p.y/100*FIELD.length,
    vx:0,vy:0,pace:clamp(p.pace||55,25,99),pas:clamp(p.pas||55,20,99),
-   sho:clamp(p.sho||55,15,99),def:clamp(p.def||55,15,99),stamina:100};
+   sho:clamp(p.sho||55,15,99),def:clamp(p.def||55,15,99),gk:clamp(p.gk||55,15,99),stamina:100};
 }
 export function createWorld(session){
  const teams=session.spatial.teams;
@@ -142,7 +142,7 @@ function shoot(w,p){
  const xg=clamp(.045+.4*Math.exp(-d/14)*quality,.025,.62);
  w.stats[side].xg+=xg;
  // The shot is a physical kick; crossing the goal line determines the goal.
- const error=(rand(w)-.5)*clamp(d*.29,1,15)/(quality);
+ const error=(rand(w)-.5)*clamp(d*.48,2,20)/quality;
  target.x+=error;
  kick(w,p,target,clamp(23+d*.15,21,31),.6+rand(w)*1.2);
  w.ball.shot={team:side,playerId:p.id,xg,onTarget:target.x>=FIELD.goalLeft&&target.x<=FIELD.goalRight};
@@ -153,7 +153,7 @@ function shoot(w,p){
 function executeAction(w,p){
  const t=w.teams[p.side].tactics,goalDistance=atGoalDistance(p,p.side),defenders=teamPlayers(w,1-p.side);
  const close=defenders.filter(d=>d.pos!=='GK'&&dist(p,d)<5).length;
- if(goalDistance<29 && (goalDistance<16||rand(w)<(.23+.06*close))){
+ if(goalDistance<34 && (goalDistance<18||rand(w)<(.38+.05*close))){
   shoot(w,p);return;
  }
  const receiver=choosePass(w,p);
@@ -176,7 +176,7 @@ function executeAction(w,p){
   w.actionCooldown=clamp(t.tempo==='rapido'?.65:t.tempo==='lento'?1.5:1.05,.5,1.7);
   return;
  }
- if(close>0&&rand(w)<.11){
+ if(close>0&&rand(w)<.19){
   const opponent=defenders.sort((a,b)=>dist(a,p)-dist(b,p))[0];
   w.stats[1-p.side].fouls++;
   const penalty=Math.abs(p.y-attackGoal(p.side))<16.5&&Math.abs(p.x-34)<20;
@@ -230,6 +230,29 @@ function ballPhysics(w,dt){
   const outSide=b.x<0?0:FIELD.width;
   restart(w,'throwin',1-b.lastTouch,{x:outSide,y:clamp(b.y,2,103)});
   return;
+ }
+ // Goalkeeper reads the incoming physical shot, moves across the line and
+ // attempts a save once, before the ball has crossed the goal plane.
+ if(b.shot&&!b.shot.attemptedSave&&b.shot.onTarget&&b.y>=0&&b.y<=FIELD.length){
+  const attacking=b.shot.team,threat=attacking===0?b.y<10:b.y>95;
+  if(threat){
+   b.shot.attemptedSave=true;
+   const goalkeeper=teamPlayers(w,1-attacking).find(p=>p.pos==='GK');
+   if(goalkeeper && Math.abs(goalkeeper.x-b.x)<6.3&&Math.abs(goalkeeper.y-b.y)<11){
+    const chance=clamp(.43+goalkeeper.gk*.002+(goalkeeper.stamina-75)*.001,.36,.73);
+    if(rand(w)<chance){
+     w.stats[1-attacking].saves++;
+     b.owner=goalkeeper.id;w.carrier=goalkeeper.id;w.possessor=1-attacking;
+     goalkeeper.x=clamp(b.x,1,67);
+     b.vx=0;b.vy=0;b.vz=0;b.z=.12;
+     event(w,'save','Grande defesa de '+goalkeeper.name+'.',w.teams[1-attacking].id,
+       {player:goalkeeper.name,playerId:goalkeeper.id});
+     delete b.shot;
+     w.actionCooldown=1.4;
+     return;
+    }
+   }
+  }
  }
  if(b.y<0||b.y>FIELD.length){
   const end=b.y<0?0:FIELD.length,attacking=end===0?0:1;

@@ -174,3 +174,9 @@ Renderizador dedicado `pitch-render.js` usa Canvas 2D (até 30 FPS, DPR limitado
 
 ## Motor V2 (em testes)
 Novo motor de partidas baseado em física e IA, desenvolvido no ramo `feat/simulation-engine-v2`. Ver [`docs/MOTOR-FUTEBOL-V2.md`](docs/MOTOR-FUTEBOL-V2.md). Esta secção só é publicada na versão principal quando os testes isolados e as partidas Android estiverem aprovados.
+
+## v2.0 — Motor de futebol 11 contra 11 (beta de jogo)
+
+O jogo do treinador usa agora o motor original `physics-engine.js`: campo 105×68 m, jogadores com inércia/atributos, bola física independente, IA coletiva e individual, pressão, marcação à zona e individual, passes, desarmes, remates, defesas, fora de jogo, cantos, livres, lançamentos e penáltis. 36 passos fixos de simulação por minuto visual, renderização Canvas independente e save/retoma entre minutos. O marcador é produzido pela bola e pelo árbitro — já não é sorteado antes da partida — e só se oficializa depois do apito final, com as outras jornadas da liga calculadas em `sim.js`. O motor estatístico antigo continua apenas para as outras equipas da liga, taça, amigáveis e partidas já iniciadas na versão anterior. [Arquitetura](docs/MOTOR-FUTEBOL-V2.md).
+
+Foram executadas 1.024 partidas completas no ramo de isolamento, com testes automáticos do árbitro, estatísticas, determinismo de saves, tempo de compensação, operações financeiras e verificações Chromium Android. A simulação ainda é uma interpretação simplificada do futebol 2D: não é equivalente a um motor comercial com todas as nuances de contacto, arbitragem e controlo humano.

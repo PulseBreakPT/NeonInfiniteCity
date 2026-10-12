@@ -150,3 +150,15 @@ test('jogo antigo continua a poder terminar com replay/eventos legados',()=>{
  assert.equal(after.results.length,1);
  assert.notEqual(after.lastMatch.engine,'physics-v2');
 });
+
+test('guarda-redes tem atributos próprios para reagir a remates físicos',()=>{
+ const {world}=start();
+ for(const p of world.players.filter(p=>p.pos==='GK')){
+  assert.ok(p.gk>=15&&p.gk<=99);
+ }
+ const original=JSON.parse(JSON.stringify(world));
+ const a=JSON.parse(JSON.stringify(original));
+ const b=JSON.parse(JSON.stringify(original));
+ for(let i=0;i<60;i++){stepWorld(a);stepWorld(b);}
+ assert.deepEqual(a,b,'Guardar e continuar com a mesma seed não pode alterar as defesas');
+});
