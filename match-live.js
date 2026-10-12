@@ -1,6 +1,7 @@
 import {applyRound} from './sim.js';
 import {clamp,hash,nextFixture,autoLineup,getPlayer} from './model.js';
 import {spatialTeams} from './pitch-spatial.js';
+import {createWorld,stepMatchMinute,halfTimeWorld,secondHalfWorld,finalWorld,worldResult} from './physics-engine.js';
 
 /** The event engine runs on an isolated clone at kick-off.
  * League tables, finances, players and official results are committed atomically
@@ -20,6 +21,7 @@ export function matchPhase(session,minute=session.minute){
  return 'first';
 }
 export function eventAtMinute(session,event){
+ if(Number.isFinite(event.clock))return event.clock;
  if(event.kind==='end'||event.kind==='penalties')return session.total;
  if(event.kind==='half')return 45+session.firstAdded;
  const minute=Math.max(0,Math.min(90,Number(event.minute)||0));
@@ -36,7 +38,7 @@ export function liveScore(session,minute=session.minute){
   away:goals.filter(e=>e.team===session.result.away).length
  };
 }
-export function beginLiveMatch(state){
+export function beginLiveMatch(state,options={}){
  if(state.liveMatch)throw Error('A partida já está em curso.');
  if(state.league.completed)throw Error('A época terminou.');
  const fixture=nextFixture(state);
@@ -45,15 +47,28 @@ export function beginLiveMatch(state){
  // The user's club, save, budget and classification remain unchanged.
  const after=structuredClone(state);
  delete after.liveMatch;
- const result=applyRound(after);
+ const physics=options.engine==='physics';
+ if(physics){
+  const ids=after.lineups[after.formation]||[];
+  if(ids.length!==11||new Set(ids).size!==11||ids.some(id=>!getPlayer(after,id)||(getPlayer(after,id).injury||0)>0||(getPlayer(after,id).contract??0)<=0)){
+   after.lineups[after.formation]=autoLineup(after);
+  }
+  if(after.lineups[after.formation].some(id=>!id))throw Error('Não há 11 jogadores disponíveis para iniciar.');
+ }
+ const result=physics?null:applyRound(after);
  const seed=hash(state.club.name+':'+state.season+':'+state.week+':'+fixture.id);
  const firstAdded=1+seed%4,secondAdded=2+Math.floor(seed/7)%5;
  const session={
-  schema:1,id:state.season+':'+state.league.round+':'+fixture.id,
+  schema:physics?2:1,id:state.season+':'+state.league.round+':'+fixture.id,
   round:fixture.round,minute:0,firstAdded,secondAdded,
   total:90+firstAdded+secondAdded,phase:'running',speed:1,
-  result,after,spatial:{schema:1,teams:spatialTeams(after,fixture)}
+  result:result||{home:fixture.home,away:fixture.away,
+    homeName:fixture.home===0?state.club.name:state.league.teams.find(t=>t.id===fixture.home)?.name||'Casa',
+    awayName:fixture.away===0?state.club.name:state.league.teams.find(t=>t.id===fixture.away)?.name||'Fora',
+    hg:0,ag:0,events:[]},
+  after,spatial:{schema:1,teams:spatialTeams(after,fixture)}
  };
+ if(physics){session.world=createWorld(session);session.result=worldResult(session.world);}
  state.liveMatch=session;
  return session;
 }
@@ -61,14 +76,22 @@ export function tickLiveMatch(state){
  const session=state.liveMatch;
  if(!session)throw Error('Não há jogo em curso.');
  if(session.phase!=='running')return session;
+ if(session.schema===2)stepMatchMinute(session);
  session.minute=clamp(session.minute+1,0,session.total);
- if(session.minute>=session.total)session.phase='final';
- else if(session.minute===45+session.firstAdded)session.phase='halftime';
+ if(session.minute>=session.total){
+  session.phase='final';
+  if(session.schema===2)finalWorld(session.world);
+ }else if(session.minute===45+session.firstAdded){
+  session.phase='halftime';
+  if(session.schema===2)halfTimeWorld(session.world);
+ }
+ if(session.schema===2)session.result=worldResult(session.world);
  return session;
 }
 export function resumeLiveMatch(state){
  const session=state.liveMatch;
  if(!session)throw Error('Não há jogo em curso.');
+ if(session.phase==='halftime'&&session.schema===2)secondHalfWorld(session.world);
  if(session.phase==='paused'||session.phase==='halftime')session.phase='running';
  return session;
 }
@@ -88,6 +111,11 @@ export function finishLiveMatch(state){
  if(!fixture||fixture.round!==session.round||session.id!==state.season+':'+state.league.round+':'+fixture.id)
   throw Error('A jornada em curso já não corresponde ao calendário.');
  const committed=session.after;
+ if(session.schema===2){
+  // No match, league-table, wage or transfer operation has been applied yet.
+  // Settle the entire round in this single final-whistle transaction.
+  applyRound(committed,{featuredResult:worldResult(session.world)});
+ }
  delete committed.liveMatch;
  return committed;
 }
