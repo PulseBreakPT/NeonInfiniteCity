@@ -1,7 +1,7 @@
 import {applyRound} from './sim.js';
 import {clamp,hash,nextFixture,autoLineup,getPlayer} from './model.js';
 import {spatialTeams} from './pitch-spatial.js';
-import {createWorld,stepWorld,STEPS_PER_MINUTE,halfTimeWorld,secondHalfWorld,finalWorld,worldResult} from './physics-engine.js';
+import {createWorld,stepWorld,STEPS_PER_MINUTE,halfTimeWorld,secondHalfWorld,finalWorld,worldResult,requestSubstitution} from './physics-engine.js';
 
 /** The event engine runs on an isolated clone at kick-off.
  * League tables, finances, players and official results are committed atomically
@@ -128,6 +128,15 @@ export function resumeLiveMatch(state){
  if(session.phase==='halftime'&&session.schema===2)secondHalfWorld(session.world);
  if(session.phase==='paused'||session.phase==='halftime')session.phase='running';
  return session;
+}
+export function requestLiveSubstitution(state,outId,inId){
+ const session=state.liveMatch;
+ if(!session||session.schema!==2||session.phase==='final')throw Error('Nenhuma partida ativa.');
+ const side=session.world.teams.findIndex(t=>t.id===0);
+ if(side<0)throw Error('Clube do jogador não está nesta partida.');
+ const change=requestSubstitution(session.world,0,outId,inId);
+ session.result=worldResult(session.world);
+ return change;
 }
 export function pauseLiveMatch(state){
  const session=state.liveMatch;
