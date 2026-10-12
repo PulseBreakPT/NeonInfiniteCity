@@ -159,10 +159,14 @@ function kick(w,p,target,power=15,height=0){
  w.ball.lastTouch=p.side;delete w.ball.intended;delete w.ball.pendingOffside;
 }
 function restart(w,kind,team,where,reason=''){
+ // Penalties are always taken from the regulation 11 m mark.
+ if(kind==='penalty')where={x:FIELD.width/2,y:team===0?11:FIELD.length-11};
  w.phase='restart';w.phaseTime=2.5;
  const available=teamPlayers(w,team).filter(p=>p.pos!=='GK')
    .sort((a,b)=>Math.hypot(a.x-where.x,a.y-where.y)-Math.hypot(b.x-where.x,b.y-where.y));
- const taker=kind==='penalty'
+ const taker=kind==='goalkick'
+  ?teamPlayers(w,team).find(p=>p.pos==='GK')||available[0]
+  :kind==='penalty'
   ?teamPlayers(w,team).filter(p=>p.pos==='ATT').sort((a,b)=>b.sho-a.sho)[0]||available[0]
   :kind==='freekick'||kind==='corner'
    ?available.slice().sort((a,b)=>b.pas-a.pas)[0]||available[0]
@@ -376,11 +380,19 @@ function restartTargets(w){
  const spots=restartPositions(normalized,kind,w.teams[r.team].id,
   {x:r.x/FIELD.width*100,y:r.y/FIELD.length*100},r.takerName);
  const spotMap=new Map(spots.map(p=>[p.id,p]));
- for(const p of w.players){const spot=spotMap.get(p.id);if(spot)steer(p,{x:spot.x*.68,y:spot.y*1.05},FIXED_DT,.95);}
+ for(const p of w.players){
+  if(p.active===false)continue;
+  const spot=spotMap.get(p.id);
+  // The restart is taken from the ball's physical location, not from an
+  // approximate tactical diagram a few metres inside the field.
+  const target=p.id===r.takerId?{x:r.x,y:r.y}:spot?{x:spot.x*.68,y:spot.y*1.05}:null;
+  if(target)steer(p,target,FIXED_DT,.95);
+ }
+ physicalContacts(w);
 }
 function restartKick(w){
  const r=w.restart;if(!r)return;
- const teammates=teamPlayers(w,r.team).filter(p=>p.pos!=='GK');
+ const teammates=teamPlayers(w,r.team).filter(p=>p.pos!=='GK'||r.kind==='goalkick');
  const nearest=teammates.find(p=>p.id===r.takerId)||teammates.sort((a,b)=>dist(a,r)-dist(b,r))[0];
  if(!nearest)return;
  // Never teleport the taker: the restart stays frozen until they arrive.
