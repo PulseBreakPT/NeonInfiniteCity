@@ -185,7 +185,7 @@ function kick(w,p,target,power=15,height=0){
  w.ball.spin=(rand(w)-.5)*4*(p.pas/75);
  w.ball.lastTouch=p.side;delete w.ball.intended;delete w.ball.pendingOffside;
  delete w.ball.restartKind;delete w.ball.restartSide;delete w.ball.restartTouched;
- delete w.ball.fromThrowin;delete w.ball.deliberateBackpass;
+ delete w.ball.fromThrowin;delete w.ball.deliberateBackpass;delete w.ball.restartKicker;delete w.ball.keeperHeld;
  p.pose='kick';p.poseUntil=.6;
 }
 function restart(w,kind,team,where,reason=''){
@@ -271,8 +271,13 @@ function executeAction(w,p){
  if(close>0&&rand(w)<.19){
   const opponent=defenders.sort((a,b)=>dist(a,p)-dist(b,p))[0];
   w.stats[1-p.side].fouls++;
-  const penalty=Math.abs(p.y-attackGoal(p.side))<16.5&&Math.abs(p.x-34)<20;
-  restart(w,penalty?'penalty':'freekick',p.side,{x:p.x,y:p.y},'Falta sobre '+p.name);
+  const penalty=isPenaltyArea(p.x,p.y,1-p.side);
+  const advantage=!penalty&&goalDistance<28&&rand(w)<.28;
+  if(advantage){
+   w.referee??={};w.referee.advantage={team:p.side,where:{x:p.x,y:p.y},expires:w.tick+15,penalty:false};
+   event(w,'advantage','Lei da vantagem para '+w.teams[p.side].name+'.',w.teams[p.side].id);
+  }else restart(w,penalty?'penalty':'freekick',p.side,{x:p.x,y:p.y},'Falta sobre '+p.name);
+  if(rand(w)<.006)inflictInjury(w,p,'entrada dura',6+rand(w)*3);
   if(rand(w)<.012)bookPlayer(w,opponent,'red');
   else if(rand(w)<.18)bookPlayer(w,opponent);
   return;
@@ -313,6 +318,10 @@ function controlLooseBall(w){
   restart(w,'offside',1-best.side,{x:best.x,y:best.y},'Posição irregular de '+best.name);
   return;
  }
+ if(b.restartKicker===best.id&&!b.restartTouched){
+  restart(w,'indirect',1-best.side,{x:best.x,y:best.y},'Segundo toque do marcador');
+  return;
+ }
  if(pass&&best.side===pass.side)w.stats[best.side].accurate++;
  if(pass&&best.side!==pass.side){
   event(w,'interception','Interceção de '+best.name+'.',w.teams[best.side].id,{player:best.name,playerId:best.sourceId});
@@ -323,6 +332,8 @@ function controlLooseBall(w){
  }
  delete b.shot;delete b.intended;delete b.pendingOffside;delete b.fromThrowin;delete b.deliberateBackpass;
  b.owner=best.id;w.carrier=best.id;w.possessor=best.side;
+ b.keeperHeld=best.pos==='GK'&&goalkeeperHandlingAllowed(best,b)&&!!b.shot;
+ w.referee??={};w.referee.keeperHold=0;
  b.vx=0;b.vy=0;b.vz=0;b.z=.12;b.spin=0;
  w.actionCooldown=.45;
 }
@@ -493,16 +504,31 @@ function restartKick(w){
   else{w.carrier=nearest.id;w.ball.owner=nearest.id;}
  }
  w.ball.restartKind=kind;w.ball.restartSide=r.team;w.ball.restartTouched=false;
+ w.ball.restartKicker=nearest.id;
  if(kind==='throwin')w.ball.fromThrowin=r.team;
  w.restart=null;w.phase='open';w.phaseTime=0;w.actionCooldown=1.3;
 }
 export function stepWorld(w,dt=FIXED_DT){
  if(w.phase==='final'||w.phase==='halftime')return w;
  w.tick++;
+ w.referee??={advantage:null,keeperHold:0};
  w.weather??=createWeather(hash('old:'+w.seed));
  advanceWeather(w.weather,w.tick,dt);
  for(const p of w.players)if(p.poseUntil>0&&Number.isFinite(p.poseUntil))p.poseUntil=Math.max(0,p.poseUntil-dt);
  if(w.phase==='open'&&w.ball.owner!==null)w.stats[w.possessor].possession+=dt;
+ if(w.phase==='open'&&w.ball.owner!==null&&w.ball.keeperHeld){
+  const keeper=findCarrier(w);
+  if(keeper?.pos==='GK'){
+   w.referee.keeperHold=(w.referee.keeperHold||0)+dt;
+   if(w.referee.keeperHold>8){
+    const opponent=1-keeper.side,goalY=ownGoal(keeper.side);
+    w.stats[opponent].corners++;
+    restart(w,'corner',opponent,{x:w.ball.x<34?0:68,y:goalY},'Guarda-redes excedeu oito segundos');
+    w.referee.keeperHold=0;
+    return w;
+   }
+  }
+ }else w.referee.keeperHold=0;
  if(w.phase==='kickoff'){w.phaseTime-=dt;if(w.phaseTime<=0){
   const p=findCarrier(w);if(p){w.ball.owner=p.id;w.carrier=p.id;}w.phase='open';
  }return w;}
@@ -539,6 +565,15 @@ export function stepWorld(w,dt=FIXED_DT){
  }
  else ballPhysics(w,dt);
  if(w.phase!=='open')return w;
+ if(w.referee?.advantage){
+  const advantage=w.referee.advantage;
+  if(w.possessor!==advantage.team&&w.tick<=advantage.expires){
+   w.referee.advantage=null;
+   restart(w,advantage.penalty?'penalty':'freekick',advantage.team,advantage.where,'Sem vantagem');
+   return w;
+  }
+  if(w.tick>=advantage.expires)w.referee.advantage=null;
+ }
  w.actionCooldown-=dt;
  if(w.ball.owner!==null&&carrier&&w.actionCooldown<=0)executeAction(w,carrier);
  return w;
