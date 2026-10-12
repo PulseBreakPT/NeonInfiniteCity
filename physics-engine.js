@@ -18,50 +18,91 @@ function event(w,kind,text,team=-1,extra={}){
  return e;
 }
 function player(p,side,index){
- return {id:p.id,number:p.number,name:p.name,side,index,pos:p.pos,
+ return {id:side+':'+index,sourceId:p.id,number:p.number,name:p.name,side,index,pos:p.pos,
    x:p.x/100*FIELD.width,y:p.y/100*FIELD.length,
    vx:0,vy:0,facing:side===0?-Math.PI/2:Math.PI/2,pace:clamp(p.pace||55,25,99),pas:clamp(p.pas||55,20,99),
-   sho:clamp(p.sho||55,15,99),def:clamp(p.def||55,15,99),gk:clamp(p.gk||55,15,99),stamina:100};
+   sho:clamp(p.sho||55,15,99),def:clamp(p.def||55,15,99),gk:clamp(p.gk||55,15,99),stamina:100,yellows:0,active:true,control:0};
 }
 export function createWorld(session){
  const teams=session.spatial.teams;
  const ps=teams.flatMap((team,side)=>team.players.map((p,i)=>player(p,side,i)));
  const own=ps.filter(p=>p.side===0&&p.pos==='MID'),carrier=own[0]||ps[5];
  const w={
-  version:2,seed:hash(session.id+':physics:v2')>>>0,
+  version:3,seed:hash(session.id+':physics:v2')>>>0,
   tick:0,minute:0,phase:'kickoff',phaseTime:1.2,
   teams:teams.map((t,i)=>({id:t.id,name:session.result.home===t.id?session.result.homeName:session.result.awayName,
     side:i,formation:t.formation,tactics:t.tactics,anchors:t.players.map(p=>({x:p.x*.68,y:p.y*1.05}))})),
-  players:ps,ball:{x:FIELD.width/2,y:FIELD.length/2,vx:0,vy:0,z:0,vz:0,owner:null,lastTouch:0},
+  players:ps,ball:{x:FIELD.width/2,y:FIELD.length/2,vx:0,vy:0,z:.12,vz:0,spin:0,owner:null,lastTouch:0},
   carrier:carrier.id,possessor:0,restart:null,score:[0,0],events:[],
   stats:[0,1].map(()=>({shots:0,onTarget:0,xg:0,passes:0,accurate:0,possession:0,fouls:0,corners:0,saves:0,yellow:0,red:0})),
   actionCooldown:1.3,lastAction:'kickoff'
  };
  return w;
 }
-function teamPlayers(w,side){return w.players.filter(p=>p.side===side);}
+function teamPlayers(w,side){return w.players.filter(p=>p.side===side&&p.active!==false);}
 function findCarrier(w){return w.players.find(p=>p.id===w.carrier)||null;}
 function strengths(w,p,tag){return clamp((p[tag]||55)/65,.65,1.5)*clamp(p.stamina/90,.68,1.08);}
 function ownGoal(side){return side===0?FIELD.length:0;}
 function attackGoal(side){return side===0?0:FIELD.length;}
 function atGoalDistance(p,side){return Math.abs(p.y-attackGoal(side));}
 function steer(p,target,dt,boost=1){
- const dx=target.x-p.x,dy=target.y-p.y;
- const d=Math.max(.001,hypot(dx,dy));
- const maxSpeed=clamp(3.8+p.pace*.036,4.6,7.4)*boost*(.6+.4*p.stamina/100);
- const wanted=d<2?maxSpeed*d/2:maxSpeed;
- const vx=dx/d*wanted,vy=dy/d*wanted;
- // Footwork and torso have inertia. A player cannot rotate 180 degrees
- // between two 0.2-second steps, even if the tactical target changes.
- if(wanted>.12){
-  const desired=Math.atan2(vy,vx);
-  let turn=(desired-(p.facing??desired)+Math.PI*3)%(Math.PI*2)-Math.PI;
-  p.facing=(p.facing??desired)+clamp(turn,-dt*3.6,dt*3.6);
+ const dx=target.x-p.x,dy=target.y-p.y,d=Math.max(.001,hypot(dx,dy));
+ const speed=hypot(p.vx,p.vy);
+ const targetSpeed=clamp(3.8+p.pace*.036,4.6,7.4)*boost*(.6+.4*p.stamina/100);
+ const desiredSpeed=Math.min(targetSpeed,Math.sqrt(2*7.5*d));
+ const desiredAngle=Math.atan2(dy,dx);
+ const desiredVx=Math.cos(desiredAngle)*desiredSpeed,desiredVy=Math.sin(desiredAngle)*desiredSpeed;
+ // Bounded thrust/braking: inertia remains even when the target reverses.
+ const ax=desiredVx-p.vx,ay=desiredVy-p.vy,a=hypot(ax,ay);
+ const braking=(desiredVx*p.vx+desiredVy*p.vy)<0;
+ const maxChange=(braking?7.8:5.3)*dt;
+ const fraction=a>maxChange?maxChange/a:1;
+ p.vx+=ax*fraction;p.vy+=ay*fraction;
+ const actualAngle=Math.atan2(p.vy,p.vx);
+ if(speed>.08||hypot(p.vx,p.vy)>.08){
+  let turn=(actualAngle-(p.facing??actualAngle)+Math.PI*3)%(Math.PI*2)-Math.PI;
+  p.facing=(p.facing??actualAngle)+clamp(turn,-dt*4.1,dt*4.1);
  }
- const smooth=Math.min(1,dt*2.9);
- p.vx+=(vx-p.vx)*smooth;p.vy+=(vy-p.vy)*smooth;
- p.x+=p.vx*dt;p.y+=p.vy*dt;clampPos(p);
+ p.x+=p.vx*dt;p.y+=p.vy*dt;
+ if(p.x<.2||p.x>FIELD.width-.2)p.vx=0;
+ if(p.y<.2||p.y>FIELD.length-.2)p.vy=0;
+ clampPos(p);
 }
+function physicalContacts(w){
+ // Body collision capsules prevent overlapping footballers in a live match.
+ const ps=w.players;
+ for(let i=0;i<ps.length;i++){
+  const a=ps[i];if(a.active===false)continue;
+  for(let j=i+1;j<ps.length;j++){
+   const b=ps[j];if(b.active===false)continue;
+   const dx=b.x-a.x,dy=b.y-a.y,ds=dx*dx+dy*dy;
+   if(ds>=.64||ds<1e-9)continue;
+   const d=Math.sqrt(ds),overlap=(.8-d)*.5,nx=dx/d,ny=dy/d;
+   a.x-=nx*overlap;a.y-=ny*overlap;
+   b.x+=nx*overlap;b.y+=ny*overlap;
+   // Dampen velocity pointing into the other body.
+   const approaching=(a.vx-b.vx)*nx+(a.vy-b.vy)*ny;
+   if(approaching>0){
+    a.vx-=approaching*nx*.38;a.vy-=approaching*ny*.38;
+    b.vx+=approaching*nx*.38;b.vy+=approaching*ny*.38;
+   }
+   clampPos(a);clampPos(b);
+  }
+ }
+}
+function bookPlayer(w,p,kind='yellow'){
+ if(!p||p.active===false)return;
+ if(kind==='red'||++p.yellows>=2){
+  p.active=false;
+  w.stats[p.side].red++;
+  event(w,'card','Cartão vermelho para '+p.name+'.',w.teams[p.side].id,{player:p.name,playerId:p.sourceId,color:'red'});
+  if(w.ball.owner===p.id){w.ball.owner=null;w.carrier=null;}
+ }else{
+  w.stats[p.side].yellow++;
+  event(w,'card','Cartão amarelo para '+p.name+'.',w.teams[p.side].id,{player:p.name,playerId:p.sourceId,color:'yellow'});
+ }
+}
+
 function targetFor(w,p){
  const b=w.ball,side=p.side,t=w.teams[side].tactics;
  const attacker=w.possessor===side,dir=side===0?-1:1;
@@ -70,10 +111,19 @@ function targetFor(w,p){
  const baseX=(p.index<11? w.teams[side].anchors?.[p.index]?.x :null)??p.x;
  const baseY=(p.index<11? w.teams[side].anchors?.[p.index]?.y :null)??p.y;
  if(p.pos==='GK'){
-  return {x:clamp(FIELD.width/2+(b.x-FIELD.width/2)*.13,26,42),
-   y:clamp(ownGoal(side)+dir*(4+(Math.abs(b.y-ownGoal(side))<25?5:0)),2,103)};
+  const threatening=b.shot?.team===1-side && Math.abs(b.y-ownGoal(side))<28;
+  const projectedX=threatening?clamp(b.x+b.vx*Math.min(.45,Math.abs(b.y-ownGoal(side))/Math.max(9,Math.abs(b.vy))),30,38):
+   FIELD.width/2+(b.x-FIELD.width/2)*.16;
+  return {x:clamp(projectedX,28,40),
+   y:clamp(ownGoal(side)+dir*(threatening?1.9:4+(Math.abs(b.y-ownGoal(side))<25?2:0)),1.4,103.6)};
  }
  const carrier=findCarrier(w);
+ if(w.ball.owner===null&&w.phase==='open'&&w.ball.z<1.9){
+  const chasers=teamPlayers(w,side).filter(q=>q.pos!=='GK').sort((a,c)=>dist(a,b)-dist(c,b));
+  if(chasers[0]?.id===p.id && dist(p,b)<25){
+   return {x:clamp(b.x+b.vx*.16,1,67),y:clamp(b.y+b.vy*.16,1,104)};
+  }
+ }
  if(carrier===p&&w.ball.owner!==null){
   return {x:clamp(p.x+(b.x-p.x)*.2+Math.sin(w.tick*.032+p.id)*.72,4,64),
    y:clamp(p.y+dir*(8+(t.tempo==='rapido'?4:0)),7,98)};
@@ -95,8 +145,8 @@ function offside(w,passer,target){
  const side=passer.side,defenders=teamPlayers(w,1-side).map(p=>p.y).sort((a,b)=>side===0?a-b:b-a);
  if(defenders.length<2)return false;
  const line=defenders[1];
- return side===0?target.y<Math.min(line,FIELD.length/2)-.3&&target.y<passer.y:
- target.y>Math.max(line,FIELD.length/2)+.3&&target.y>passer.y;
+ return side===0?target.y<Math.min(line,FIELD.length/2,w.ball.y)-.3:
+ target.y>Math.max(line,FIELD.length/2,w.ball.y)+.3;
 }
 function kick(w,p,target,power=15,height=0){
  const d=Math.max(.1,dist(p,target));
@@ -105,7 +155,8 @@ function kick(w,p,target,power=15,height=0){
  w.ball.vx=(target.x-p.x)/d*power;
  w.ball.vy=(target.y-p.y)/d*power;
  w.ball.z=.12;w.ball.vz=height;
- w.ball.lastTouch=p.side;
+ w.ball.spin=(rand(w)-.5)*4*(p.pas/75);
+ w.ball.lastTouch=p.side;delete w.ball.intended;delete w.ball.pendingOffside;
 }
 function restart(w,kind,team,where,reason=''){
  w.phase='restart';w.phaseTime=2.5;
@@ -135,7 +186,7 @@ function choosePass(w,p){
   if(d<5||d>55)return {q,score:-999,d};
   const forward=(q.y-p.y)*dir,pace=t.passing==='longo'?25:13;
   const intercepted=teamPlayers(w,1-p.side).some(enemy=>dist(enemy,q)<3.5);
-  const danger=offside(w,p,q)?40:0;
+  const danger=offside(w,p,q)?14:0;
   const score=forward*.42+12*Math.exp(-Math.abs(d-pace)/12)+q.pas/20-d*.035-
    (intercepted?15:0)-danger+(rand(w)-.5)*8;
   return {q,score,d};
@@ -154,7 +205,7 @@ function shoot(w,p){
  kick(w,p,target,clamp(23+d*.15,21,31),.6+rand(w)*1.2);
  w.ball.shot={team:side,playerId:p.id,xg,onTarget:target.x>=FIELD.goalLeft&&target.x<=FIELD.goalRight};
  if(w.ball.shot.onTarget)w.stats[side].onTarget++;
- event(w,'shot','Remate de '+p.name+'.',w.teams[side].id,{player:p.name,playerId:p.id,xg:+xg.toFixed(3)});
+ event(w,'shot','Remate de '+p.name+'.',w.teams[side].id,{player:p.name,playerId:p.sourceId,xg:+xg.toFixed(3)});
  w.actionCooldown=.65;
 }
 function executeAction(w,p){
@@ -167,19 +218,17 @@ function executeAction(w,p){
  const passChance=t.passing==='curto'?.79:t.passing==='longo'?.57:.7;
  if(receiver&&rand(w)<passChance){
   const d=dist(p,receiver);
-  if(offside(w,p,receiver)){
-   restart(w,'offside',1-p.side,{x:receiver.x,y:receiver.y},'Posição irregular');
-   return;
-  }
+  const flagged=offside(w,p,receiver);
   w.stats[p.side].passes++;
   const precision=clamp(.55+(p.pas-50)*.006-close*.055+(t.passing==='curto'?.08:0),.36,.91);
   const miss=rand(w)>precision;
   const target={x:clamp(receiver.x+(miss?(rand(w)-.5)*18:receiver.vx*.33),1,67),
    y:clamp(receiver.y+(miss?(rand(w)-.5)*16:receiver.vy*.33),1,104)};
   kick(w,p,target,clamp(d*.85,10,28),d>20?.35:.05);
-  if(!miss)w.stats[p.side].accurate++;
+  w.ball.intended={side:p.side,receiverId:receiver.id,passerId:p.id};
+  if(flagged)w.ball.pendingOffside={side:p.side,receiverId:receiver.id};
   event(w,'pass',p.name+' passa para '+receiver.name+'.',w.teams[p.side].id,
-    {player:p.name,playerId:p.id,receiver:receiver.name,receiverId:receiver.id});
+    {player:p.name,playerId:p.sourceId,receiver:receiver.name,receiverId:receiver.sourceId});
   w.actionCooldown=clamp(t.tempo==='rapido'?.65:t.tempo==='lento'?1.5:1.05,.5,1.7);
   return;
  }
@@ -188,7 +237,7 @@ function executeAction(w,p){
   w.stats[1-p.side].fouls++;
   const penalty=Math.abs(p.y-attackGoal(p.side))<16.5&&Math.abs(p.x-34)<20;
   restart(w,penalty?'penalty':'freekick',p.side,{x:p.x,y:p.y},'Falta sobre '+p.name);
-  if(rand(w)<.18){w.stats[1-p.side].yellow++;event(w,'card','Cartão amarelo para '+opponent.name+'.',w.teams[1-p.side].id,{player:opponent.name});}
+  if(rand(w)<.18)bookPlayer(w,opponent);
   return;
  }
  // Dribble is an actual possession movement, not a camera animation.
@@ -198,7 +247,7 @@ function executeAction(w,p){
   const d=defendersAhead[0],win=rand(w)<clamp(.24+(d.def-p.pas)*.009,.1,.72);
   if(win){
    w.carrier=d.id;w.possessor=d.side;w.ball.owner=d.id;
-   event(w,'interception','Corte de '+d.name+'.',w.teams[d.side].id,{player:d.name});
+   event(w,'interception','Corte de '+d.name+'.',w.teams[d.side].id,{player:d.name,playerId:d.sourceId});
   }
  }
  w.actionCooldown=.8;
@@ -206,20 +255,32 @@ function executeAction(w,p){
 function controlLooseBall(w){
  let best=null,bestDistance=Infinity;
  for(const p of w.players){
+  if(p.active===false)continue;
   const d=dist(p,w.ball);
-  if(d<bestDistance && (w.ball.z<1.6||p.pos==='GK')){best=p;bestDistance=d;}
+  const heightLimit=p.pos==='GK'?2.6:1.7;
+  if(d<bestDistance&&w.ball.z<heightLimit){best=p;bestDistance=d;}
  }
- if(best&&bestDistance<1.6&&w.ball.z<1.8){
-  if(w.ball.shot&&best.pos==='GK'&&best.side!==w.ball.shot.team){
-   w.stats[best.side].saves++;
-   event(w,'save','Defesa de '+best.name+'.',w.teams[best.side].id,{player:best.name});
-   delete w.ball.shot;
-  }
-  w.ball.owner=best.id;w.carrier=best.id;w.possessor=best.side;
-  w.ball.vx=0;w.ball.vy=0;w.ball.vz=0;w.ball.z=.12;
-  w.actionCooldown=.45;
+ if(!best||bestDistance>1.35)return;
+ const b=w.ball,pass=b.intended,flag=b.pendingOffside;
+ // Offside is an offence only upon involvement, never when the pass leaves the foot.
+ if(flag&&best.side===flag.side&&best.id===flag.receiverId){
+  restart(w,'offside',1-best.side,{x:best.x,y:best.y},'Posição irregular de '+best.name);
+  return;
  }
+ if(pass&&best.side===pass.side)w.stats[best.side].accurate++;
+ if(pass&&best.side!==pass.side){
+  event(w,'interception','Interceção de '+best.name+'.',w.teams[best.side].id,{player:best.name,playerId:best.sourceId});
+ }
+ if(b.shot&&best.pos==='GK'&&best.side!==b.shot.team){
+  w.stats[best.side].saves++;
+  event(w,'save','Defesa de '+best.name+'.',w.teams[best.side].id,{player:best.name,playerId:best.sourceId});
+ }
+ delete b.shot;delete b.intended;delete b.pendingOffside;
+ b.owner=best.id;w.carrier=best.id;w.possessor=best.side;
+ b.vx=0;b.vy=0;b.vz=0;b.z=.12;b.spin=0;
+ w.actionCooldown=.45;
 }
+
 function ballPhysics(w,dt){
  const b=w.ball;
  if(b.owner!==null){
@@ -228,35 +289,60 @@ function ballPhysics(w,dt){
   else b.owner=null;
   return;
  }
+ // Horizontal air drag, Magnus curl, bounce and rolling friction in metric units.
+ const lastX=b.x,lastY=b.y,lastZ=b.z;
+ const spin=Number.isFinite(b.spin)?b.spin:0;
+ if(b.z>.16){
+  const speed=hypot(b.vx,b.vy);
+  const magnus=.036*spin*speed;
+  const ax=-b.vy/(speed||1)*magnus,ay=b.vx/(speed||1)*magnus;
+  b.vx+=ax*dt;b.vy+=ay*dt;
+ }
  b.x+=b.vx*dt;b.y+=b.vy*dt;
  b.z+=b.vz*dt;b.vz-=9.81*dt;
- if(b.z<.12){b.z=.12;if(b.vz<0)b.vz=-b.vz*.23;}
- const drag=b.z>.15?.993:.96;
- b.vx*=Math.pow(drag,dt*5);b.vy*=Math.pow(drag,dt*5);
+ if(b.z<.12){
+  b.z=.12;if(b.vz<-.65)b.vz=-b.vz*.28;else b.vz=0;
+ }
+ const drag=b.z>.16?Math.exp(-.085*dt):Math.exp(-1.0*dt);
+ b.vx*=drag;b.vy*=drag;b.spin=spin*Math.exp(-.28*dt);
+ // Posts and crossbar are physical solid obstacles, not probabilistic misses.
+ const goalEnd=b.y<0?0:b.y>FIELD.length?FIELD.length:null;
+ if(goalEnd!==null){
+  const crossing=lastY===b.y?1:clamp((goalEnd-lastY)/(b.y-lastY),0,1);
+  const contactX=lastX+(b.x-lastX)*crossing;
+  const contactZ=lastZ+(b.z-lastZ)*crossing;
+  const hitPost=contactZ<2.55&&(Math.abs(contactX-FIELD.goalLeft)<.15||Math.abs(contactX-FIELD.goalRight)<.15);
+  const hitBar=contactX>FIELD.goalLeft&&contactX<FIELD.goalRight&&Math.abs(contactZ-2.44)<.16;
+  if(hitPost||hitBar){
+   b.y=goalEnd===0?.16:FIELD.length-.16;b.x=clamp(contactX,0,FIELD.width);
+   b.vy=-b.vy*.62;b.vx+=(rand(w)-.5)*1.5;
+   if(hitBar)b.vz=-Math.max(1.1,Math.abs(b.vz)*.4);
+   delete b.shot;
+   event(w,'woodwork',hitBar?'A bola bate na barra!':'A bola bate no poste!',w.teams[b.lastTouch]?.id??-1);
+   return;
+  }
+ }
  if(b.x<0||b.x>FIELD.width){
   const outSide=b.x<0?0:FIELD.width;
   restart(w,'throwin',1-b.lastTouch,{x:outSide,y:clamp(b.y,2,103)});
   return;
  }
- // Goalkeeper reads the incoming physical shot, moves across the line and
- // attempts a save once, before the ball has crossed the goal plane.
+ // The goalkeeper must physically reach the ball; no goalkeeper teleport.
  if(b.shot&&!b.shot.attemptedSave&&b.shot.onTarget&&b.y>=0&&b.y<=FIELD.length){
-  const attacking=b.shot.team,threat=attacking===0?b.y<10:b.y>95;
+  const attacking=b.shot.team,threat=attacking===0?b.y<13:b.y>92;
   if(threat){
-   b.shot.attemptedSave=true;
    const goalkeeper=teamPlayers(w,1-attacking).find(p=>p.pos==='GK');
-   if(goalkeeper && Math.abs(goalkeeper.x-b.x)<9.4&&Math.abs(goalkeeper.y-b.y)<15){
-    const chance=clamp(.59+goalkeeper.gk*.0025+(goalkeeper.stamina-75)*.0008,.50,.87);
+   if(goalkeeper&&dist(goalkeeper,b)<2.2&&b.z<2.65){
+    b.shot.attemptedSave=true;
+    const chance=clamp(.39+goalkeeper.gk*.005, .42,.91);
     if(rand(w)<chance){
      w.stats[1-attacking].saves++;
      b.owner=goalkeeper.id;w.carrier=goalkeeper.id;w.possessor=1-attacking;
-     goalkeeper.x=clamp(b.x,1,67);
      b.vx=0;b.vy=0;b.vz=0;b.z=.12;
      event(w,'save','Grande defesa de '+goalkeeper.name+'.',w.teams[1-attacking].id,
-       {player:goalkeeper.name,playerId:goalkeeper.id});
-     delete b.shot;
-     w.actionCooldown=1.4;
-     return;
+       {player:goalkeeper.name,playerId:goalkeeper.sourceId});
+     delete b.shot;delete b.intended;delete b.pendingOffside;
+     w.actionCooldown=1.4;return;
     }
    }
   }
@@ -268,7 +354,7 @@ function ballPhysics(w,dt){
    w.score[attacking]++;
    const scorer=w.players.find(p=>p.id===w.ball.shot?.playerId);
    event(w,'goal','GOLO! '+w.teams[attacking].name+(scorer?' — '+scorer.name:'' )+'.',
-    w.teams[attacking].id,{player:scorer?.name||null,playerId:scorer?.id||null});
+    w.teams[attacking].id,{player:scorer?.name||null,playerId:scorer?.sourceId??null});
    restart(w,'kickoff',1-attacking,{x:34,y:52.5});
   }else if(b.lastTouch===1-attacking){
    w.stats[attacking].corners++;
@@ -298,7 +384,7 @@ function restartKick(w){
  const nearest=teammates.find(p=>p.id===r.takerId)||teammates.sort((a,b)=>dist(a,r)-dist(b,r))[0];
  if(!nearest)return;
  // Never teleport the taker: the restart stays frozen until they arrive.
- if(dist(nearest,r)>1.7)return;
+ if(dist(nearest,r)>.85)return;
  nearest.x=clamp(r.x,1,67);nearest.y=clamp(r.y,1,104);
  const kind=r.kind,goal={x:34,y:attackGoal(r.team)};
  if(kind==='penalty'){
@@ -306,7 +392,7 @@ function restartKick(w){
   w.stats[r.team].xg+=.76;
   kick(w,nearest,{x:34+(rand(w)-.5)*7,y:goal.y},26,.5);
   w.ball.shot={team:r.team,playerId:nearest.id,xg:.76,onTarget:true};
-  event(w,'shot','Grande penalidade batida por '+nearest.name+'.',w.teams[r.team].id,{player:nearest.name});
+  event(w,'shot','Grande penalidade batida por '+nearest.name+'.',w.teams[r.team].id,{player:nearest.name,playerId:nearest.sourceId,xg:.76});
  }else if(kind==='corner'||kind==='freekick'){
   const target=kind==='corner'?{x:29+rand(w)*10,y:goal.y+(r.team===0?8:-8)}:
    {x:34+(rand(w)-.5)*8,y:goal.y};
@@ -324,8 +410,7 @@ function restartKick(w){
 export function stepWorld(w,dt=FIXED_DT){
  if(w.phase==='final'||w.phase==='halftime')return w;
  w.tick++;
- const side=w.possessor;
- w.stats[side].possession+=dt;
+ if(w.phase==='open'&&w.ball.owner!==null)w.stats[w.possessor].possession+=dt;
  if(w.phase==='kickoff'){w.phaseTime-=dt;if(w.phaseTime<=0){
   const p=findCarrier(w);if(p){w.ball.owner=p.id;w.carrier=p.id;}w.phase='open';
  }return w;}
@@ -343,10 +428,20 @@ export function stepWorld(w,dt=FIXED_DT){
  }
  const carrier=findCarrier(w);
  for(const p of w.players){
+  if(p.active===false)continue;
   const target=targetFor(w,p);steer(p,target,dt,1);
-  p.stamina=clamp(p.stamina-dt*(w.teams[p.side].tactics.pressure==='alta'?.027:.010),55,100);
+  const effort=clamp(hypot(p.vx,p.vy)/6,0,1.2);
+  p.stamina=clamp(p.stamina-dt*(w.teams[p.side].tactics.pressure==='alta'?.029:.011)*(0.6+effort),55,100);
  }
- if(w.ball.owner!==null&&carrier){w.ball.x=carrier.x;w.ball.y=carrier.y;w.ball.z=.12;}
+ physicalContacts(w);
+ if(w.ball.owner!==null&&carrier&&carrier.active!==false){
+  // A foot contact is ahead of the body's centre and follows the runner's stride.
+  const stride=Math.sin(w.tick*.83+carrier.index)*.13;
+  const forward=carrier.side===0?-1:1;
+  w.ball.x=clamp(carrier.x+Math.cos(carrier.facing)*(.55+stride),.03,67.97);
+  w.ball.y=clamp(carrier.y+Math.sin(carrier.facing)*(.55+stride)+forward*.15,.03,104.97);
+  w.ball.z=.12;w.ball.vx=carrier.vx;w.ball.vy=carrier.vy;
+ }
  else ballPhysics(w,dt);
  if(w.phase!=='open')return w;
  w.actionCooldown-=dt;
@@ -377,7 +472,7 @@ export function secondHalfWorld(w){
  const newSide=1;w.possessor=newSide;
  const p=teamPlayers(w,newSide).filter(p=>p.pos==='MID')[0]||teamPlayers(w,newSide)[1];
  p.x=34;p.y=52.5;w.carrier=p.id;
- w.ball={x:34,y:52.5,z:.12,vx:0,vy:0,vz:0,owner:p.id,lastTouch:newSide};
+ w.ball={x:34,y:52.5,z:.12,vx:0,vy:0,vz:0,spin:0,owner:p.id,lastTouch:newSide};
  event(w,'kickoff','Começa a segunda parte.',w.teams[newSide].id);
 }
 export function finalWorld(w){
@@ -394,6 +489,6 @@ export function worldResult(w){
  accurateHome:a.accurate,accurateAway:b.accurate,completedPasses:a.accurate+b.accurate,
  foulsHome:a.fouls,foulsAway:b.fouls,cornersHome:a.corners,cornersAway:b.corners,
  savesHome:a.saves,savesAway:b.saves,yellowHome:a.yellow,yellowAway:b.yellow,redHome:a.red,redAway:b.red},
- engine:'physics-v2',weather:'limpo',involved:true,cup:false,friendly:false,
+ engine:'physics-v2',physicsRevision:3,weather:'limpo',involved:true,cup:false,friendly:false,
  homeTactics:w.teams[0].tactics,awayTactics:w.teams[1].tactics};
 }
