@@ -67,7 +67,7 @@ export function restartPositions(teams,kind,teamId,location,takerName=null){
  const takerIndex=identified>=0?identified:fallback;
  // The goalkeepers remain on their goal lines for all restarts.
  const keeperIndex=theirs.findIndex(p=>p.pos==='GK');
- const settleKeeper=()=>{if(keeperIndex>=0)theirs[keeperIndex]={...theirs[keeperIndex],...atGoal(50,0)};};
+ const settleKeeper=()=>{if(keeperIndex>=0)theirs[keeperIndex]={...theirs[keeperIndex],x:50,y:own.side===0?.2:99.8};};
  if(kind==='corner'){
   const near=sideX===3?10:90;
   ours[takerIndex]={...ours[takerIndex],...clampPoint({x:sideX,y:goalY+behind*1})};
