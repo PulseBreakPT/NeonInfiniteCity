@@ -49,7 +49,8 @@ export function createWorld(session){
 }
 function teamPlayers(w,side){return w.players.filter(p=>p.side===side&&p.active!==false);}
 export function requestSubstitution(w,team,outId,inId,{automatic=false}={}){
- const side=w.teams.findIndex(t=>t.id===team||t.side===team);
+ let side=w.teams.findIndex(t=>t.id===team);
+ if(side<0)side=w.teams.findIndex(t=>t.side===team);
  if(side<0)throw Error('Equipa desconhecida.');
  if(w.phase==='final')throw Error('A partida terminou.');
  const outgoing=teamPlayers(w,side).find(p=>String(p.id)===String(outId)||String(p.sourceId)===String(outId));
@@ -68,7 +69,7 @@ function applySubstitutionQueue(w){
  const requests=w.pendingSubstitutions.slice();w.pendingSubstitutions=[];
  const usedWindow=new Set();
  for(const q of requests){
-  const side=q.side,old=teamPlayers(w,side).find(p=>p.id===q.outId);
+  const side=q.side,old=w.players.find(p=>p.side===side&&p.id===q.outId&&!p.replaced);
   const bench=w.bench[side],idx=bench.findIndex(p=>String(p.id)===String(q.inId));
   if(!old||idx<0||w.substitutions[side].length>=5)continue;
   const halftime=w.phase==='halftime',newWindow=!usedWindow.has(side)&&!halftime;
@@ -89,6 +90,24 @@ function applySubstitutionQueue(w){
   w.substitutions[side].push({outId:old.sourceId??old.id,inId:incoming.id,at:w.minute,delayed:lateExit});
   event(w,'substitution',old.name+' sai, entra '+incoming.name+'.',w.teams[side].id,
     {player:incoming.name,playerId:incoming.id,out:old.name});
+ }
+}
+function manageBench(w){
+ if(!w.bench||!w.substitutions||!w.pendingSubstitutions)return;
+ for(let side=0;side<2;side++){
+  if(w.substitutions[side].length>=5||w.pendingSubstitutions.some(q=>q.side===side))continue;
+  const bench=w.bench[side];if(!bench?.length)continue;
+  const all=w.players.filter(p=>p.side===side&&!p.replaced);
+  const injured=all.find(p=>p.injury>0&&p.active===false);
+  const tacticalAI=w.teams[side].id!==0;
+  const tired=tacticalAI&&w.minute>=60&&w.subWindows[side]<3
+   ?teamPlayers(w,side).filter(p=>p.pos!=='GK'&&p.stamina<77).sort((a,b)=>a.stamina-b.stamina)[0]
+   :null;
+  const exiting=injured||tired;
+  if(!exiting)continue;
+  const substitute=bench.find(p=>p.pos===exiting.pos)||bench.find(p=>p.pos!=='GK');
+  if(!substitute)continue;
+  w.pendingSubstitutions.push({side,outId:exiting.id,inId:substitute.id,requestedAt:w.tick,automatic:true});
  }
 }
 function updateDelayedEntries(w){
@@ -260,7 +279,7 @@ function restart(w,kind,team,where,reason=''){
  w.ball.x=w.restart.x;w.ball.y=w.restart.y;w.ball.z=.12;
  const words={corner:'Canto',throwin:'Lançamento lateral',freekick:'Livre',penalty:'Grande penalidade',goalkick:'Pontapé de baliza',kickoff:'Pontapé de saída',offside:'Fora de jogo'};
  event(w,kind,words[kind]+(reason?' — '+reason:''),w.teams[team].id);
- applySubstitutionQueue(w);updateDelayedEntries(w);
+ manageBench(w);applySubstitutionQueue(w);updateDelayedEntries(w);
 }
 function playerNear(w,side,where,includeKeeper=false){
  return teamPlayers(w,side).filter(p=>includeKeeper||p.pos!=='GK')
@@ -657,7 +676,7 @@ export function stepMatchMinute(session){
 }
 export function halfTimeWorld(w){
  w.phase='halftime';w.ball.owner=null;w.ball.vx=0;w.ball.vy=0;
- applySubstitutionQueue(w);updateDelayedEntries(w);
+ manageBench(w);applySubstitutionQueue(w);updateDelayedEntries(w);
  event(w,'half','Intervalo.',-1);
 }
 export function secondHalfWorld(w){
