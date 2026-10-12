@@ -125,7 +125,7 @@ function targetFor(w,p){
   }
  }
  if(carrier===p&&w.ball.owner!==null){
-  return {x:clamp(p.x+(b.x-p.x)*.2+Math.sin(w.tick*.032+p.id)*.72,4,64),
+  return {x:clamp(p.x+(b.x-p.x)*.2+Math.sin(w.tick*.032+p.index+p.side*11)*.72,4,64),
    y:clamp(p.y+dir*(8+(t.tempo==='rapido'?4:0)),7,98)};
  }
  const distanceToBall=dist(p,b);
