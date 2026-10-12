@@ -11,7 +11,7 @@ const smooth=t=>t*t*(3-2*t);
 export function interpolateWorld(world,progress=1){
  const t=smooth(clamp(progress,0,1));
  const previous=new Map((world.previous?.players||[]).map(p=>[p.id,p]));
- const players=world.players.filter(p=>p.active!==false).map(p=>{
+ const players=world.players.filter(p=>p.active!==false||(p.pose==='injured'&&world.tick-(p.injuryTick??0)<22)).map(p=>{
   const a=previous.get(p.id)||p;
   return {...p,x:mix(a.x,p.x,t),y:mix(a.y,p.y,t),
    speed:Math.hypot(p.vx||0,p.vy||0),
