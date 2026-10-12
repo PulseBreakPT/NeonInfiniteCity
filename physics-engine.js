@@ -100,7 +100,7 @@ function manageBench(w){
   if(w.substitutions[side].length>=5||w.pendingSubstitutions.some(q=>q.side===side))continue;
   const bench=w.bench[side];
   const goalkeeper=teamPlayers(w,side).find(p=>p.pos==='GK');
-  const injuredKeeper=w.players.find(p=>p.side===side&&p.pos==='GK'&&p.injury>0&&!p.replaced);
+  const injuredKeeper=w.players.find(p=>p.side===side&&p.pos==='GK'&&(p.injury>0||p.temporaryExitUntilTick!==undefined)&&!p.replaced);
   if(!goalkeeper&&!injuredKeeper){
    // A goalkeeper sent off cannot be replaced; an outfielder must take the role.
    const deputy=teamPlayers(w,side).sort((a,b)=>b.gk-a.gk)[0];
