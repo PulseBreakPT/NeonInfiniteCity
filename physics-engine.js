@@ -84,8 +84,10 @@ function applySubstitutionQueue(w){
   if(w.ball.owner===old.id){w.ball.owner=footballer.id;w.carrier=footballer.id;}
   if(w.restart?.takerId===old.id)w.restart.takerId=footballer.id;
   w.players.push(footballer);
-  const lateExit=!q.automatic&&hypot(old.x-34,old.y-52.5)>55;
-  if(lateExit){footballer.active=false;footballer.entryTick=w.tick+300;footballer.pose='idle';}
+  const exitDistance=Math.min(old.x,FIELD.width-old.x,old.y,FIELD.length-old.y);
+  // The 2026/27 ten-second exit limit is estimated using a walking pace.
+  const lateExit=!q.automatic&&exitDistance/2.4>10;
+  if(lateExit){footballer.active=false;footballer.entryTick=w.tick+STEPS_PER_MINUTE;footballer.pose='idle';}
   if(newWindow){w.subWindows[side]++;usedWindow.add(side);}
   w.substitutions[side].push({side,team:w.teams[side].id,outId:old.sourceId??old.id,inId:incoming.id,at:w.minute,delayed:lateExit});
   event(w,'substitution',old.name+' sai, entra '+incoming.name+'.',w.teams[side].id,
