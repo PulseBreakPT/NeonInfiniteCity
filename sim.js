@@ -81,6 +81,16 @@ export function applyRound(state,{featuredResult=null}={}){
    }
    for(const e of result.events||[]){if(e.kind==='goal'&&e.team===0&&e.playerId){const p=getPlayer(state,e.playerId);if(p)p.goals=(p.goals||0)+1;}}
    // Match officials affect the next round: reds suspend the club player.
+   // Persist physical injuries by player identity; weekly recovery below consumes
+   // one week immediately, so retain the intended full recovery horizon.
+   for(const injury of featuredResult.injuries||[]){
+    if(injury.team!==0)continue;
+    const athlete=getPlayer(state,injury.playerId);
+    if(!athlete)continue;
+    athlete.injury=Math.max(athlete.injury||0,(injury.weeks||1)+1);
+    athlete.fitness=clamp((athlete.fitness||80)-8,4,100);
+    log(state,'Boletim clínico',athlete.name+': '+injury.reason+' ('+injury.weeks+' semanas).');
+   }
    for(const d of featuredResult.discipline||[]){
     if(d.team!==0)continue;
     const p=getPlayer(state,d.playerId);if(!p)continue;
