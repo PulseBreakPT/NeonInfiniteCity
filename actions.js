@@ -1,5 +1,5 @@
 
-import {FORMATIONS,FACILITY_DATA,MENTORS,clamp,rng,hash,rating,autoLineup,getPlayer,generatePlayer,makeMarket,log,teamPower,money} from './model.js';
+import {FORMATIONS,FACILITY_DATA,MENTORS,clamp,rng,hash,rating,autoLineup,getPlayer,generatePlayer,makeMarket,log,teamPower,money,transferValue} from './model.js';
 import {simulateMatch,applyRound,advanceSeason} from './sim.js';
 function requireFunds(s,cost){if(!Number.isFinite(cost)||cost<0)throw Error('Custo inválido.');if(s.budget<cost)throw Error('Saldo insuficiente.');}
 function spend(s,cost,label){requireFunds(s,cost);s.budget-=cost;s.finance.expenses+=cost;s.finance.ledger.unshift({day:s.day,label,amount:-cost});}
@@ -73,8 +73,15 @@ export function execute(state,action,data={}){
   s.players.forEach(x=>x.morale=clamp(x.morale+15,0,100));message='Moral de equipa reforçada.';break;
  }
  case 'renew':{
-  if(!p)throw Error('Jogador desconhecido.');const cost=Math.round((p.salary||5000)*3);
-  spend(s,cost,'Renovação de '+p.name);p.contract+=2;message='Contrato de '+p.name+' renovado por 2 épocas.';break;
+  if(!p)throw Error('Jogador desconhecido.');
+  if(p.lastRenewedSeason===s.season)throw Error('O contrato já foi renovado nesta época.');
+  if((p.contract||0)>=5)throw Error('O jogador já tem contrato de longa duração.');
+  const previous=Math.max(0,Number(p.contract)||0);
+  p.contract=Math.min(5,previous+3);
+  p.salary=Math.ceil((Number(p.salary)||5000)*1.02/100)*100;
+  p.lastRenewedSeason=s.season;
+  message='Contrato de '+p.name+' prolongado até '+p.contract+' épocas, sem prémio de assinatura. Salário ajustado em 2%.';
+  break;
  }
  case 'position':{
   if(!p||!FORMATIONS['4-3-3'].includes(data.pos))throw Error('Posição inválida.');
@@ -92,18 +99,23 @@ export function execute(state,action,data={}){
   const offer=s.market.find(x=>x.id===Number(data.id));if(!offer)throw Error('Oferta já não disponível.');
   if(s.players.length>=35)throw Error('Plantel completo: limite de 35 atletas.');
   const bid=Math.round(offer.ask*(1+(offer.bids||0)*.08));
-  requireFunds(s,bid);const won=random()>(.12+Math.min(.24,(offer.bids||0)*.04));
+  requireFunds(s,bid);
+  const direct=!!offer.freeAgent||bid<=100000;
+  const won=direct||random()>(.15+Math.min(.24,(offer.bids||0)*.04));
   if(!won){offer.bids++;message='Licitação superada por outro clube. Sem custos.';break;}
-  spend(s,bid,'Transferência: '+offer.name);
-  const signed={...offer,contract:3,injury:0,goals:0,assists:0,apps:0,saleLockUntilWeek:s.week+2};delete signed.ask;delete signed.expires;delete signed.bids;
+  if(bid>0)spend(s,bid,'Transferência: '+offer.name);
+  const signed={...offer,contract:3,injury:0,goals:0,assists:0,apps:0,
+   saleLockUntilWeek:s.week+(offer.freeAgent?8:2)};
+  delete signed.ask;delete signed.expires;delete signed.bids;
   s.players.push(signed);s.market=s.market.filter(x=>x.id!==offer.id);
-  s.nextId=Math.max(s.nextId,signed.id+1);message=signed.name+' contratado por '+money(bid)+'.';
+  s.nextId=Math.max(s.nextId,signed.id+1);
+  message=signed.name+(bid>0?' contratado por '+money(bid):' contratado sem taxa de transferência')+'.';
   log(s,'Reforço confirmado',message);break;
  }
  case 'sell':{
   if(!p||s.players.length<=16)throw Error('Precisas de pelo menos 16 jogadores.');
   if((p.saleLockUntilWeek||0)>s.week)throw Error('O jogador deve permanecer no clube durante a integração.');
-  const price=Math.round((rating(p)**3*2+60000)/1000)*1000;
+  const price=Math.round(transferValue(p)*.65/1000)*1000;
   income(s,price,'Venda: '+p.name);s.players=s.players.filter(x=>x.id!==p.id);
   for(const f of Object.keys(s.lineups))s.lineups[f]=autoLineup(s,f);
   message=p.name+' vendido por '+money(price)+'.';log(s,'Transferência de saída',message);break;

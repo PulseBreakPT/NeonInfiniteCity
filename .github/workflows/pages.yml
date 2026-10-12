@@ -49,6 +49,8 @@ jobs:
         run: node tests/browser-smoke.mjs
       - name: Verify tactical XI changes in Android and desktop Chromium
         run: node tests/browser-lineup.mjs
+      - name: Validate saved-club economic recovery in Android Chromium
+        run: node tests/browser-economy.mjs
       - name: Measure clipped text in all game screens
         run: node tests/clipping-audit.mjs
       - name: Archive game screenshots

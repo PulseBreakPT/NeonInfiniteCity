@@ -1,0 +1,45 @@
+@import url('./styles-v9.css');
+
+/* Sustainable economy: let costs and contract decisions read like a game,
+   with the same visual hierarchy in the manager office and transfer market. */
+.elite-shell .market-free-label{
+ display:flex;align-items:center;gap:7px;padding:6px 9px;
+ background:#27583d;border:1px solid #709d67;border-radius:4px;
+ color:#e1ffc5;font-size:10px;font-weight:900;letter-spacing:.03em
+}
+.elite-shell .market-card{min-width:0}
+.elite-shell .market-card .market-details{min-width:0}
+.elite-shell .market-card .btn{white-space:normal;line-height:1.2;min-height:47px}
+.elite-shell .market-card .btn:disabled{color:#b1c5b2;background:#2d433b;border-color:#506959;opacity:.76}
+.elite-shell .finance-forecast{
+ border:1px solid #466c5d;border-radius:5px;overflow:hidden;
+ background:#112b2c;margin:12px 0
+}
+.elite-shell .finance-forecast .ledger-line{
+ display:flex;justify-content:space-between;align-items:center;gap:10px;
+ padding:12px 14px;margin:0;border-bottom:1px solid #365447;
+ min-width:0
+}
+.elite-shell .finance-forecast .ledger-line div{min-width:0}
+.elite-shell .finance-forecast .ledger-line b{font-size:12px;color:#edf9e5}
+.elite-shell .finance-forecast .ledger-line small{color:#b1d0b8}
+.elite-shell .finance-forecast .ledger-line strong{font-variant-numeric:tabular-nums;white-space:nowrap}
+.elite-shell .finance-forecast-total{
+ background:#23513c;display:flex;justify-content:space-between;
+ align-items:center;gap:10px;padding:13px 14px
+}
+.elite-shell .finance-forecast-total span{
+ font-size:11px;font-weight:900;color:#d6e9d4;letter-spacing:.04em
+}
+.elite-shell .finance-forecast-total strong{
+ font:900 27px/1 var(--font);font-variant-numeric:tabular-nums
+}
+.elite-shell .finance-forecast-total .neg{color:#ffc2b0}
+.elite-shell .finance-forecast-total .pos{color:#e0ffa9}
+.elite-shell .market-card .market-free-label{margin:12px 0}
+.elite-shell .market-card .info-row{overflow-wrap:break-word}
+@media(max-width:420px){
+ .elite-shell .finance-forecast .ledger-line{padding:11px 9px}
+ .elite-shell .finance-forecast-total{padding:12px 10px}
+ .elite-shell .finance-forecast-total strong{font-size:23px}
+}

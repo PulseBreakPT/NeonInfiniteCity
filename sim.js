@@ -1,5 +1,5 @@
 
-import {rng,hash,clamp,teamPower,getPlayer,fixtureName,standings,makeCup,makeLeague,autoLineup,makeMarket,makeRivals,rivalTick,generatePlayer,rating,log} from './model.js';
+import {rng,hash,clamp,teamPower,getPlayer,fixtureName,standings,makeCup,makeLeague,autoLineup,makeMarket,makeRivals,rivalTick,generatePlayer,rating,log,weeklyWageBill,televisionIncome,sponsorIncome,campusMaintenance} from './model.js';
 import {runMatch,tacticalModifiers} from './match-engine.js';
 const pick=(random,arr)=>arr[Math.floor(random()*arr.length)];
 const poisson=(random,lambda)=>{let k=0,p=1,L=Math.exp(-lambda);while(p>L&&k<10){p*=random();k++;}return k-1;};
@@ -36,12 +36,11 @@ function awardMatch(state,result,fixture){
   const attendance=Math.min(state.club.capacity,Math.round(state.fans*1.1*demand));
   addLedger(state,'Bilheteira · '+attendance+' adeptos',Math.floor(attendance*price));
  }
- const wages=Math.ceil(state.players.reduce((n,p)=>n+(p.salary||0),0)/4);
- addLedger(state,'Salários da jornada (quota semanal)',-wages);
- const sponsorName=state.club.sponsor||'Atlântico Energia';
- const sponsorBase=sponsorName==='Horizonte Global'?43000:sponsorName==='Norte Digital'?29000:16500;
- addLedger(state,'Patrocínio '+sponsorName+' e televisão',sponsorBase+state.facilities.commercial*5000);
- addLedger(state,'Manutenção do campus',-(state.facilities.stadium*4000+state.facilities.academy*1800+state.facilities.training*1300));
+ const wages=weeklyWageBill(state);
+ addLedger(state,'Direitos televisivos da jornada',televisionIncome(state));
+ addLedger(state,'Patrocínio · '+(state.club.sponsor||'Atlântico Energia'),sponsorIncome(state));
+ addLedger(state,'Salários mensais rateados por jornada',-wages);
+ addLedger(state,'Manutenção do campus',-campusMaintenance(state));
  if(state.finance.debt>0){
   state.finance.boardConfidence=clamp((state.finance.boardConfidence??75)-5,0,100);
   state.players.forEach(p=>p.morale=clamp(p.morale-2,0,100));
@@ -115,7 +114,19 @@ export function advanceSeason(state){
  state.history.unshift({season:previous,position:pos,champion:fixtureName(state,state.league.champion),cup:state.cup.winner===0,record:state.coach.wins+'/'+state.coach.draws+'/'+state.coach.losses});
  if(pos<=2)state.division=Math.max(1,state.division-1);else if(pos>=14)state.division=Math.min(8,state.division+1);
  state.season++;state.week=1;state.day++;state.trainingCount=0;
- state.players.forEach(p=>{p.age++;p.contract=Math.max(0,(p.contract||1)-1);p.fitness=95;p.injury=0;p.cards=0;p.goals=0;p.assists=0;p.apps=0;p.cleanSheets=0;});
+ let autoRenewed=0;
+ state.players.forEach(p=>{
+  p.age++;
+  p.contract=Math.max(0,(Number(p.contract)||0)-1);
+  if(p.contract===0){
+   // Standard one-season club option: preserves a usable team and costs
+   // a modest 2.5% wage rise, not an impossible signing fee.
+   p.contract=1;p.salary=Math.ceil((Number(p.salary)||5000)*1.025/100)*100;
+   autoRenewed++;
+  }
+  p.fitness=95;p.injury=0;p.cards=0;p.goals=0;p.assists=0;p.apps=0;p.cleanSheets=0;
+ });
+ if(autoRenewed)log(state,'Continuidade do plantel',autoRenewed+' contratos prolongados automaticamente por uma época.');
  state.league=makeLeague(state.club.name,state.season,hash(state.club.name),state.division);
  state.rivals=makeRivals(state);
  state.cup=makeCup(state);state.market=makeMarket(state,hash(state.club.name)+state.season*977);

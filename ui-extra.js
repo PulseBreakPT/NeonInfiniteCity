@@ -1,5 +1,5 @@
 
-import {FORMATIONS,POSITIONS,COLORS,FACILITY_DATA,MENTORS,rating,teamPower,standings,money,getPlayer,nextFixture,fixtureName,clamp} from './model.js';
+import {FORMATIONS,POSITIONS,COLORS,FACILITY_DATA,MENTORS,rating,teamPower,standings,money,getPlayer,nextFixture,fixtureName,clamp,weeklyWageBill,televisionIncome,sponsorIncome,campusMaintenance} from './model.js';
 import {esc,icon,crest,pill,bar,avatar,btn,title,panel,playerItem,info,navItems} from './ui-core.js';
 function team(s,id){return esc(fixtureName(s,id));}
 export function league(s){
@@ -14,10 +14,17 @@ export function league(s){
  panel('Palmarés e histórico',s.coach.achievements.map(x=>'<div class="history-item">'+icon('trophy',14)+' '+esc(x)+'</div>').join('')+s.history.map(x=>'<div class="history-item">Época '+x.season+' · '+x.position+'º classificado · '+esc(x.champion)+'</div>').join('')||'<div class="empty-state">Sem épocas concluídas.</div>')+'</div>';
 }
 export function market(s){
- return title('GESTÃO DE TALENTO','MERCADO DE TRANSFERÊNCIAS','Jogadores disponíveis nesta jornada. As licitações concorrem com a IA.',btn('scout','Novo relatório de olheiros · 18 000 €','accent'))+
- '<div class="market-head">'+pill('SALDO '+money(s.budget),'good')+pill(s.players.length+'/35 NO PLANTEL')+pill('LEILÕES COM RIVAIS IA')+'</div>'+
- '<div class="cards-grid">'+s.market.map(p=>'<div class="market-card"><div class="row">'+avatar(p)+'<div class="grow"><b>'+esc(p.name)+'</b><small>'+esc(p.nation)+' · '+p.age+' anos · '+POSITIONS[p.pos]+'</small></div><span class="ovr">'+rating(p)+'</span></div><div class="market-details">'+info('Potencial',p.potential)+info('Oferta mínima',money(Math.round(p.ask*(1+(p.bids||0)*.08))))+info('Interesse rival',p.bids?'Elevado':'Normal')+info('Contrato','3 épocas')+'</div>'+btn('bid','Licitar e contratar '+icon('arrow'),'accent full','data-id="'+p.id+'"')+'</div>').join('')+'</div>'+
- '<p class="note muted">Mercado contra concorrentes simulados. A concorrência pode superar as licitações sem retirar saldo. As ofertas mudam depois da jornada.</p>';
+ const affordable=s.market.filter(p=>s.budget>=Math.round(p.ask*(1+(p.bids||0)*.08))).length;
+ return title('GESTÃO DE TALENTO','MERCADO DE TRANSFERÊNCIAS','Reforços livres e jogadores disponíveis em cada jornada.',btn('scout','Novo relatório de olheiros · 18 000 €','subtle'))+
+ '<div class="market-head">'+pill('SALDO '+money(s.budget),'good')+pill(s.players.length+'/35 NO PLANTEL')+pill(affordable+' OFERTAS ACESSÍVEIS','good')+'</div>'+
+ '<div class="cards-grid">'+s.market.map(p=>{
+  const cost=Math.round(p.ask*(1+(p.bids||0)*.08)),free=!!p.freeAgent||cost===0,canPay=s.budget>=cost,full=s.players.length>=35;
+  return '<div class="market-card"><div class="row">'+avatar(p)+'<div class="grow"><b>'+esc(p.name)+'</b><small>'+esc(p.nation)+' · '+p.age+' anos · '+POSITIONS[p.pos]+'</small></div><span class="ovr">'+rating(p)+'</span></div>'+
+   (free?'<div class="market-free-label">'+icon('check',16)+' JOGADOR LIVRE</div>':'')+
+   '<div class="market-details">'+info('Potencial',p.potential)+info('Taxa de transferência',free?'GRÁTIS':money(cost))+info('Salário por jornada',money(Math.ceil((p.salary||0)/4)))+info('Contrato','3 épocas')+'</div>'+
+   btn('bid',full?'Plantel completo':free?'CONTRATAR GRÁTIS':canPay?'CONTRATAR '+icon('arrow'):'SALDO INSUFICIENTE',free?'accent full':'subtle full','data-id="'+p.id+'" '+(full||!canPay?'disabled':''))+'</div>';
+ }).join('')+'</div>'+
+ '<p class="note muted">Os jogadores livres não exigem pagamento de transferência, mas os salários contam para as despesas. As ofertas renovam-se após cada jornada. Jogadores contratados por transferência podem ter concorrência de IA.</p>';
 }
 export function training(s){
  const workouts=[['technical','pitch','Técnica','Passe e remate','12 000 €'],['physical','bolt','Físico','Velocidade e resistência','15 000 €'],['defense','shield','Defesa','Marcação e robustez','13 500 €'],['teamwork','users','Coletivo','Equilíbrio e sincronização','11 000 €'],['recovery','heart','Recuperação','Condição e moral','7 500 €']];
@@ -44,11 +51,25 @@ export function campus(s){
  }).join('')+'</div>';
 }
 export function finance(s){
- const f=s.finance,net=f.income-f.expenses;
- return title('DIREÇÃO FINANCEIRA','FINANÇAS','Receitas, despesas e contratos da época.')+
- '<div class="kpi-grid"><div class="kpi"><small>SALDO ATUAL</small><strong class="currency">'+money(s.budget)+'</strong></div><div class="kpi"><small>RECEITAS ACUMULADAS</small><strong class="currency pos">'+money(f.income)+'</strong></div><div class="kpi"><small>DESPESAS ACUMULADAS</small><strong class="currency neg">'+money(f.expenses)+'</strong></div><div class="kpi"><small>RESULTADO ACUMULADO</small><strong class="currency '+(net<0?'neg':'pos')+'">'+money(net)+'</strong></div></div>'+
- '<div class="headline-stats">'+pill('DÍVIDA '+money(s.finance.debt||0),(s.finance.debt||0)>0?'danger':'good')+pill('CONFIANÇA DA DIREÇÃO '+(s.finance.boardConfidence??75)+'%')+pill('SALÁRIOS EM ATRASO '+money(s.finance.unpaidWages||0))+'</div><div class="content-two">'+panel('Exploração do clube','<form id="finance-form"><label class="control-field"><span>Preço de bilhete (8 € – 70 €)</span><input type="number" min="8" max="70" name="tickets" value="'+f.stadiumTickets+'" required></label><label class="control-field"><span>Patrocinador</span><select name="sponsor">'+[['Atlântico Energia','regular'],['Norte Digital','premium'],['Horizonte Global','elite']].map(([n,id])=>'<option value="'+id+'" '+(s.club.sponsor===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label><div class="form-actions"><button type="submit" class="btn accent full">Guardar contratos e bilhetes</button></div></form>'+info('Capacidade do estádio',s.club.capacity.toLocaleString('pt-PT'))+info('Patrocinador atual',esc(s.club.sponsor))+'<p class="note muted">Negociar um patrocínio premium tem custo inicial. A receita dos jogos em casa cresce com o estádio e preço dos bilhetes.</p>')+
- panel('Livro de movimentos','<div class="ledger">'+f.ledger.slice(0,16).map(e=>'<div class="ledger-line"><div><b>'+esc(e.label)+'</b><small>Dia '+e.day+'</small></div><strong class="'+(e.amount>=0?'pos':'neg')+'">'+(e.amount>0?'+':'')+money(e.amount)+'</strong></div>').join('')+'</div>'||'<div class="empty-state">Os movimentos financeiros aparecem quando realizares operações.</div>')+'</div>';
+ const f=s.finance,net=f.income-f.expenses,television=televisionIncome(s),sponsors=sponsorIncome(s),
+ wages=weeklyWageBill(s),maintenance=campusMaintenance(s),recurring=television+sponsors-wages-maintenance;
+ const expiring=s.players.filter(p=>(p.contract||0)<=1).length;
+ return title('DIREÇÃO FINANCEIRA','FINANÇAS','Contas por jornada e contratos do clube.')+
+ '<div class="kpi-grid"><div class="kpi"><small>SALDO ATUAL</small><strong class="currency">'+money(s.budget)+'</strong></div><div class="kpi"><small>RECEITAS DA ÉPOCA</small><strong class="currency pos">'+money(f.income)+'</strong></div><div class="kpi"><small>DESPESAS DA ÉPOCA</small><strong class="currency neg">'+money(f.expenses)+'</strong></div><div class="kpi"><small>RESULTADO ACUMULADO</small><strong class="currency '+(net<0?'neg':'pos')+'">'+money(net)+'</strong></div></div>'+
+ '<div class="headline-stats">'+pill('DÍVIDA '+money(f.debt||0),(f.debt||0)>0?'danger':'good')+pill('CONFIANÇA DA DIREÇÃO '+(f.boardConfidence??75)+'%')+pill('CONTRATOS A 1 ÉPOCA '+expiring)+'</div>'+
+ '<div class="content-two">'+
+ panel('Previsão da próxima jornada',
+  '<div class="finance-forecast">'+
+  '<div class="ledger-line"><div><b>Direitos televisivos</b><small>Garantidos por jornada</small></div><strong class="pos">+'+money(television)+'</strong></div>'+
+  '<div class="ledger-line"><div><b>Patrocínio</b><small>'+esc(s.club.sponsor)+'</small></div><strong class="pos">+'+money(sponsors)+'</strong></div>'+
+  '<div class="ledger-line"><div><b>Salários</b><small>Quota semanal do plantel</small></div><strong class="neg">-'+money(wages)+'</strong></div>'+
+  '<div class="ledger-line"><div><b>Manutenção</b><small>Instalações do clube</small></div><strong class="neg">-'+money(maintenance)+'</strong></div>'+
+  '<div class="finance-forecast-total"><span>SALDO RECORRENTE</span><strong class="'+(recurring<0?'neg':'pos')+'">'+(recurring>=0?'+':'')+money(recurring)+'</strong></div></div>'+
+  '<p class="note muted">Previsão sem bilheteira, prémios de jogo, treinos ou transferências. Jogar em casa acrescenta receita de bilhetes. Se o saldo recorrente for negativo, reduz despesas ou renegocia o patrocínio.</p>')+
+ panel('Bilhetes e patrocínios',
+  '<form id="finance-form"><label class="control-field"><span>Preço de bilhete (8 € – 70 €)</span><input type="number" min="8" max="70" name="tickets" value="'+f.stadiumTickets+'" required></label><label class="control-field"><span>Patrocinador</span><select name="sponsor">'+[['Atlântico Energia','regular'],['Norte Digital','premium'],['Horizonte Global','elite']].map(([n,id])=>'<option value="'+id+'" '+(s.club.sponsor===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label><div class="form-actions"><button type="submit" class="btn accent full">Guardar bilhetes e patrocínio</button></div></form>'+info('Capacidade do estádio',s.club.capacity.toLocaleString('pt-PT'))+info('Patrocinador atual',esc(s.club.sponsor))+
+ '<p class="note muted">O patrocinador premium implica um custo de negociação único. Os salários são pagos por jornada; o contrato de um jogador pode ser prolongado sem prémio de assinatura.</p>')+'</div>'+
+ panel('Livro de movimentos','<div class="ledger">'+(f.ledger.length?f.ledger.slice(0,20).map(e=>'<div class="ledger-line"><div><b>'+esc(e.label)+'</b><small>Dia '+e.day+'</small></div><strong class="'+(e.amount>=0?'pos':'neg')+'">'+(e.amount>0?'+':'')+money(e.amount)+'</strong></div>').join(''):'<div class="empty-state">Os movimentos aparecem após as operações.</div>')+'</div>');
 }
 export function mentors(s){
  return title('EQUIPA TÉCNICA','MENTORES','Cada treinador oferece um bónus diferente ao onze.')+

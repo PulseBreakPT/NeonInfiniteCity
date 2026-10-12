@@ -33,6 +33,32 @@ export const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 export function rng(seed){let x=(seed>>>0)||892714;return function(){x=(1664525*x+1013904223)>>>0;return x/4294967296;};}
 export function hash(text){let h=2166136261;for(let i=0;i<String(text).length;i++){h^=String(text).charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 export function rating(p){if(!p)return 0;const r=p.pos==='GK' ? p.gk*.67+p.def*.13+p.phy*.12+p.pas*.08:p.pos==='DEF'?p.def*.39+p.phy*.23+p.pac*.17+p.pas*.16+p.sho*.05:p.pos==='MID'?p.pas*.36+p.pac*.19+p.phy*.19+p.def*.13+p.sho*.13:p.sho*.42+p.pac*.25+p.pas*.16+p.phy*.12+p.def*.05;return clamp(Math.round(r),1,99);}
+export const weeklyWageBill=state=>Math.ceil((state.players||[]).reduce((sum,p)=>sum+Math.max(0,Number(p.salary)||0),0)/4);
+export const transferValue=p=>Math.round(Math.max(35000,(rating(p)-43)**2*460+Math.max(0,(p.potential||65)-65)*1600)/5000)*5000;
+export const televisionIncome=state=>85000+Math.max(0,(state.facilities?.commercial||1)-1)*5000;
+export const sponsorIncome=state=>({'Atlântico Energia':25000,'Norte Digital':38000,'Horizonte Global':52000}[state.club?.sponsor]||25000);
+export const campusMaintenance=state=>(state.facilities?.stadium||1)*4000+(state.facilities?.academy||1)*1800+(state.facilities?.training||1)*1300;
+export function regularizeEconomy(state){
+ const f=state.finance||(state.finance={income:0,expenses:0,ledger:[],debt:0,unpaidWages:0,boardConfidence:75});
+ if((f.economyRevision||0)>=4)return state;
+ let recovered=0;
+ for(const p of state.players||[]){
+  if(!Number.isFinite(p.contract)||p.contract<=0){p.contract=2+((Number(p.id)||0)%2);recovered++;}
+ }
+ const forgiven=Math.max(0,Number(f.debt)||0);f.debt=0;f.unpaidWages=0;
+ const cash=Math.max(0,Number(state.budget)||0);
+ const distressed=recovered>0||forgiven>0||cash<50000;
+ const grant=distressed?Math.max(0,450000-cash):0;
+ state.budget=cash+grant;
+ if(grant){f.income=(f.income||0)+grant;f.ledger.unshift({day:state.day||1,label:'Capital de recuperação do clube (único)',amount:grant});}
+ if(forgiven){f.debtRelief=(f.debtRelief||0)+forgiven;f.ledger.unshift({day:state.day||1,label:'Regularização extraordinária de dívida (única)',amount:0});}
+ f.boardConfidence=Math.max(60,Number(f.boardConfidence)||0);
+ f.economyRevision=4;
+ if((recovered||forgiven||grant)&&Array.isArray(state.activity)){
+  state.activity.unshift({title:'Plano de recuperação financeira',detail:'Contratos regularizados: '+recovered+' · dívida regularizada: '+Math.round(forgiven)+' € · capital de apoio: '+Math.round(grant)+' €.',day:state.day||1});
+ }
+ return state;
+}
 export const money=n=>new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n||0);
 export function generatePlayer(id,pos,random,quality=65){
  const name=FIRST[Math.floor(random()*FIRST.length)]+' '+LAST[Math.floor(random()*LAST.length)];
@@ -147,8 +173,10 @@ export function makeMarket(state,seed){
  const idBase=state.nextId;state.nextId+=count;
  return Array.from({length:count},(_,i)=>{
   const positions=['GK','DEF','DEF','MID','MID','ATT','ATT'];
-  const p=generatePlayer(idBase+i,positions[i%positions.length],random,60+random()*26);
-  p.ask=Math.round((rating(p)**3*3+100000)/10000)*10000;
+  const freePosition=['GK','DEF','MID','ATT'][(i+Math.max(0,state.week||1))%4];
+  const p=generatePlayer(idBase+i,i<2?freePosition:positions[i%positions.length],random,i<2?50+random()*11:56+random()*22);
+  if(i<2){p.freeAgent=true;p.ask=0;p.contract=2;}
+  else p.ask=i===2?Math.min(95000,transferValue(p)):transferValue(p);
   p.expires=state.day+2+Math.ceil(random()*3);
   p.bids=0;
   return p;
@@ -186,6 +214,7 @@ export function makeState(name='Atlético Aurora',city='Lisboa',color=COLORS[0])
  state.cup=makeCup(state);
  state.market=makeMarket(state,hash(name)+552);
  state.academy=Array.from({length:4},(_,i)=>{const p=generatePlayer(5000+i,['GK','DEF','MID','ATT'][i],random,43+random()*10);p.age=i===0?17:15+Math.floor(random()*4);p.potential=clamp(p.potential+10,65,99);return p;});
+ state.finance.economyRevision=4;
  state.events={daily:[{id:'train',text:'Realizar um treino',target:1,progress:0,reward:7000,claimed:false},{id:'match',text:'Disputar uma partida',target:1,progress:0,reward:10000,claimed:false}],weekly:[{id:'win',text:'Vencer 2 partidas',target:2,progress:0,reward:1,kind:'token',claimed:false}],lastRefresh:1};
  return state;
 }
@@ -194,6 +223,7 @@ export function migrate(saved){
  if(saved.version===2){
   const base=makeState(saved.club.name,saved.club.city,saved.club.color);
   const state={...base,...saved,club:{...base.club,...saved.club},tactics:{...base.tactics,...saved.tactics},facilities:{...base.facilities,...saved.facilities},coach:{...base.coach,...saved.coach},finance:{...base.finance,...saved.finance},inventory:{...base.inventory,...saved.inventory},events:{...base.events,...saved.events}};
+  state.finance.economyRevision=Number(saved.finance?.economyRevision)||0;
   state.rivals=(saved.rivals&&Object.keys(saved.rivals).length)?saved.rivals:makeRivals(state);
   state.engineVersion=3;
   const seen=new Set(state.players.map(p=>p.id));
@@ -208,6 +238,8 @@ export function migrate(saved){
   if(!state.league?.rounds?.length)state.league=makeLeague(state.club.name,state.season);
   if(!state.cup?.participants)state.cup=makeCup(state);
   if(!Array.isArray(state.market))state.market=[];
+  if((state.finance?.economyRevision||0)<4)state.market=makeMarket(state,hash(state.club.name)+state.week*923+state.season*322);
+  regularizeEconomy(state);
   return state;
  }
  if(saved.version===1){
@@ -223,6 +255,8 @@ export function migrate(saved){
   base.trainingCount=saved.trainingCount||0;base.activity=[...saved.activity||[],...base.activity].slice(0,65);
   base.club={...base.club,...saved.club};base.club.baseColor ||= base.club.color;
   log(base,'Progresso importado','Os jogadores, dias, treinos e orçamento foram preservados da versão anterior.');
+  base.finance.economyRevision=0;
+  regularizeEconomy(base);
   return base;
  }
  return null;
