@@ -87,7 +87,7 @@ function applySubstitutionQueue(w){
   const lateExit=!q.automatic&&hypot(old.x-34,old.y-52.5)>55;
   if(lateExit){footballer.active=false;footballer.entryTick=w.tick+300;footballer.pose='idle';}
   if(newWindow){w.subWindows[side]++;usedWindow.add(side);}
-  w.substitutions[side].push({outId:old.sourceId??old.id,inId:incoming.id,at:w.minute,delayed:lateExit});
+  w.substitutions[side].push({side,team:w.teams[side].id,outId:old.sourceId??old.id,inId:incoming.id,at:w.minute,delayed:lateExit});
   event(w,'substitution',old.name+' sai, entra '+incoming.name+'.',w.teams[side].id,
     {player:incoming.name,playerId:incoming.id,out:old.name});
  }
