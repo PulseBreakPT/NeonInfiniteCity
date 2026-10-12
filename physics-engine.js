@@ -93,14 +93,14 @@ function physicalContacts(w){
 }
 function bookPlayer(w,p,kind='yellow'){
  if(!p||p.active===false)return;
- if(kind==='red'||++p.yellows>=2){
+ if(kind==='red'||(p.yellows=(p.yellows||0)+1)>=2){
   p.active=false;
   w.stats[p.side].red++;
-  event(w,'card','Cartão vermelho para '+p.name+'.',w.teams[p.side].id,{player:p.name,playerId:p.sourceId,color:'red'});
+  event(w,'card','Cartão vermelho para '+p.name+'.',w.teams[p.side].id,{player:p.name,playerId:p.sourceId??p.id,color:'red'});
   if(w.ball.owner===p.id){w.ball.owner=null;w.carrier=null;}
  }else{
   w.stats[p.side].yellow++;
-  event(w,'card','Cartão amarelo para '+p.name+'.',w.teams[p.side].id,{player:p.name,playerId:p.sourceId,color:'yellow'});
+  event(w,'card','Cartão amarelo para '+p.name+'.',w.teams[p.side].id,{player:p.name,playerId:p.sourceId??p.id,color:'yellow'});
  }
 }
 
@@ -378,7 +378,7 @@ function ballPhysics(w,dt){
    w.score[attacking]++;
    const scorer=w.players.find(p=>p.id===w.ball.shot?.playerId);
    event(w,'goal','GOLO! '+w.teams[attacking].name+(scorer?' — '+scorer.name:'' )+'.',
-    w.teams[attacking].id,{player:scorer?.name||null,playerId:scorer?.sourceId??null});
+    w.teams[attacking].id,{player:scorer?.name||null,playerId:scorer?.sourceId??scorer?.id??null});
    restart(w,'kickoff',1-attacking,{x:34,y:52.5});
   }else if(b.lastTouch===1-attacking){
    w.stats[attacking].corners++;
@@ -399,10 +399,10 @@ function restartTargets(w){
  }));
  const spots=restartPositions(normalized,kind,w.teams[r.team].id,
   {x:r.x/FIELD.width*100,y:r.y/FIELD.length*100},r.takerName);
- const spotMap=new Map(spots.map(p=>[p.id,p]));
+ const spotMap=new Map(spots.map(p=>[p.side+':'+p.index,p]));
  for(const p of w.players){
   if(p.active===false)continue;
-  const spot=spotMap.get(p.id);
+  const spot=spotMap.get(p.side+':'+p.index);
   // The restart is taken from the ball's physical location, not from an
   // approximate tactical diagram a few metres inside the field.
   const target=p.id===r.takerId?{x:r.x,y:r.y}:spot?{x:spot.x*.68,y:spot.y*1.05}:null;
@@ -521,8 +521,8 @@ export function worldResult(w){
  accurateHome:a.accurate,accurateAway:b.accurate,completedPasses:a.accurate+b.accurate,
  foulsHome:a.fouls,foulsAway:b.fouls,cornersHome:a.corners,cornersAway:b.corners,
  savesHome:a.saves,savesAway:b.saves,yellowHome:a.yellow,yellowAway:b.yellow,redHome:a.red,redAway:b.red},
- fatigue:Object.fromEntries(w.players.filter(p=>w.teams[p.side].id===0).map(p=>[p.sourceId,Math.max(9,Math.round((100-p.stamina)*.55))])),
- discipline:w.players.filter(p=>p.yellows>0||p.active===false).map(p=>({playerId:p.sourceId,team:w.teams[p.side].id,yellow:p.yellows||0,red:p.active===false})),
+ fatigue:Object.fromEntries(w.players.filter(p=>w.teams[p.side].id===0).map(p=>[p.sourceId??p.id,Math.max(9,Math.round((100-p.stamina)*.55))])),
+ discipline:w.players.filter(p=>p.yellows>0||p.active===false).map(p=>({playerId:p.sourceId??p.id,team:w.teams[p.side].id,yellow:p.yellows||0,red:p.active===false})),
  engine:'physics-v2',physicsRevision:3,weather:'limpo',involved:true,cup:false,friendly:false,
  homeTactics:w.teams[0].tactics,awayTactics:w.teams[1].tactics};
 }
