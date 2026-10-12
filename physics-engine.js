@@ -281,7 +281,7 @@ function kick(w,p,target,power=15,height=0){
 }
 function restart(w,kind,team,where,reason=''){
  // Penalties are always taken from the regulation 11 m mark.
- if(kind==='penalty')where={x:FIELD.width/2,y:team===0?11:FIELD.length-11};
+ if(kind==='penalty')where={x:FIELD.width/2,y:attackGoal(team,w)===0?11:FIELD.length-11};
  w.phase='restart';w.phaseTime=2.5;
  const available=teamPlayers(w,team).filter(p=>p.pos!=='GK')
    .sort((a,b)=>Math.hypot(a.x-where.x,a.y-where.y)-Math.hypot(b.x-where.x,b.y-where.y));
@@ -528,7 +528,7 @@ function ballPhysics(w,dt){
  // Anticipation and diving reach follow the actual goalkeeper position.
  // An outstretched dive extends the save envelope; the body never teleports.
  if(b.shot&&!b.shot.attemptedSave&&b.shot.onTarget&&b.y>=0&&b.y<=FIELD.length){
-  const attacking=b.shot.team,threat=attacking===0?b.y<14:b.y>91;
+  const attacking=b.shot.team,threat=attackGoal(attacking,w)===0?b.y<14:b.y>91;
   if(threat){
    const goalkeeper=teamPlayers(w,1-attacking).find(p=>p.pos==='GK');
    if(goalkeeper){
@@ -546,7 +546,7 @@ function ballPhysics(w,dt){
        b.vx=0;b.vy=0;b.vz=0;b.z=.12;b.spin=0;
       }else{
        // Parry: the ball remains independent and can produce a real corner.
-       const outward=b.x<34?-1:1,away=attacking===0?1:-1;
+       const outward=b.x<34?-1:1,away=-direction(w,attacking);
        const behind=rand(w)<.43;
        b.vx=outward*(behind?24+rand(w)*8:12+rand(w)*10);
        b.vy=away*(behind?-(14+rand(w)*8):3+rand(w)*6);
