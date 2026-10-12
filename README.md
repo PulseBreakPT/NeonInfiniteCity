@@ -4,6 +4,15 @@ Jogo original de gestão de futebol, em português europeu, single-player, publi
 
 **Jogar:** https://pulsebreakpt.github.io/NeonInfiniteCity/
 
+## Motor de futebol físico v3
+
+A partida principal utiliza um mundo métrico de **105 × 68 m**, com **22 jogadores independentes**, bola tridimensional e passos físicos determinísticos de **0,2 s**. O marcador e as estatísticas nascem de eventos simulados durante o jogo; a jornada só é confirmada ao apito final. A exibição visual interpola os mesmos estados do motor, sem gerar movimentos fictícios da bola.
+
+**Melhorias v3:** identidades únicas de atletas no campo; aceleração, travagem, fadiga e colisões corporais; deslocação sem bola em função de formação, posse, marcação e pressão; passe e remate com erros de execução; rotação, gravidade, atrito, ressalto e colisões com postes e barra; guarda-redes que antecipam, mergulham, agarram ou desviam a bola sem teletransportes; cantos, lançamentos, livres, pontapés de baliza e penáltis executados no local correto; infrações de fora de jogo só quando o destinatário intervém; cartões, expulsões e suspensão na jornada seguinte.
+
+A física mantém os saves antigos e as quatro câmaras da transmissão. Os testes automáticos verificam os reinícios, o contacto, os ressaltos, a reprodutibilidade e a conclusão das partidas. Ainda é um **simulador estilizado 2.5D**, não uma reprodução biomecânica completa, VAR ou a implementação exaustiva de todas as exceções das Leis do Jogo.
+
+
 ## Sistemas da versão 0.3 — inteligência e integridade
 
 1. Motor de partidas: simulação de 90 minutos assente em posses, passes, interceções, remates, defesas, faltas, cartões, lesões e golos (não são pré-definidos); meteorologia, adaptação tática rival ao intervalo e replay animado 2D.
@@ -27,7 +36,7 @@ Jogo original de gestão de futebol, em português europeu, single-player, publi
 
 **Funciona totalmente offline após a primeira visita**, sujeito à compatibilidade e armazenamento do navegador. O progresso reside no dispositivo, não na nuvem. Saves antigos v1 são importados para o novo modelo mantendo clube, atletas, orçamento, dia e treinos.
 
-**Ainda não são funcionalidades reais**: contas e amigos online, confederações globais, sincronização entre aparelhos, torneios com pessoas, 3D verdadeiro, clubes/licenças oficiais ou pagamentos. Esses sistemas exigem backend, autenticação, infraestrutura de rede e/ou conteúdo adicional. O replay 2D apresenta os acontecimentos simulados; não é uma simulação espacial 3D/física contínua. As táticas devem ser escolhidas antes da partida, pois o replay não permite alterar um resultado já gerado.
+**Ainda não são funcionalidades reais**: contas e amigos online, confederações globais, sincronização entre aparelhos, torneios com pessoas, 3D verdadeiro, clubes/licenças oficiais ou pagamentos. Esses sistemas exigem backend, autenticação, infraestrutura de rede e/ou conteúdo adicional. O jogo principal dispõe de simulação espacial 2D com física da bola, mas não tem corpos 3D articulados ou biomecânica completa; os modos legados continuam baseados em eventos. As táticas devem ser escolhidas antes da partida, pois o replay não permite alterar um resultado já gerado.
 
 Os rivais, mentores, atletas e logótipos são fictícios e originais. O CLUB DYNASTY não é afiliado à Nordeus ou ao Top Eleven.
 
