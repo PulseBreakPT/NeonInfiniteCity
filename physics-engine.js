@@ -243,7 +243,8 @@ function executeAction(w,p){
   w.stats[1-p.side].fouls++;
   const penalty=Math.abs(p.y-attackGoal(p.side))<16.5&&Math.abs(p.x-34)<20;
   restart(w,penalty?'penalty':'freekick',p.side,{x:p.x,y:p.y},'Falta sobre '+p.name);
-  if(rand(w)<.18)bookPlayer(w,opponent);
+  if(rand(w)<.012)bookPlayer(w,opponent,'red');
+  else if(rand(w)<.18)bookPlayer(w,opponent);
   return;
  }
  // Dribble is an actual possession movement, not a camera animation.
@@ -394,7 +395,7 @@ function restartTargets(w){
  if(!w.restart)return;
  const r=w.restart,kind=r.kind==='offside'?'freekick':r.kind==='goalkick'?'freekick':r.kind==='kickoff'?'freekick':r.kind;
  const normalized=w.teams.map(t=>({
-  ...t,players:teamPlayers(w,t.side).map(p=>({...p,x:p.x/FIELD.width*100,y:p.y/FIELD.length*100}))
+  ...t,players:w.players.filter(p=>p.side===t.side).map(p=>({...p,x:p.x/FIELD.width*100,y:p.y/FIELD.length*100}))
  }));
  const spots=restartPositions(normalized,kind,w.teams[r.team].id,
   {x:r.x/FIELD.width*100,y:r.y/FIELD.length*100},r.takerName);
@@ -520,6 +521,8 @@ export function worldResult(w){
  accurateHome:a.accurate,accurateAway:b.accurate,completedPasses:a.accurate+b.accurate,
  foulsHome:a.fouls,foulsAway:b.fouls,cornersHome:a.corners,cornersAway:b.corners,
  savesHome:a.saves,savesAway:b.saves,yellowHome:a.yellow,yellowAway:b.yellow,redHome:a.red,redAway:b.red},
+ fatigue:Object.fromEntries(w.players.filter(p=>w.teams[p.side].id===0).map(p=>[p.sourceId,Math.max(9,Math.round((100-p.stamina)*.55))])),
+ discipline:w.players.filter(p=>p.yellows>0||p.active===false).map(p=>({playerId:p.sourceId,team:w.teams[p.side].id,yellow:p.yellows||0,red:p.active===false})),
  engine:'physics-v2',physicsRevision:3,weather:'limpo',involved:true,cup:false,friendly:false,
  homeTactics:w.teams[0].tactics,awayTactics:w.teams[1].tactics};
 }
