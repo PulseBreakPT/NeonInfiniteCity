@@ -31,6 +31,7 @@ function teamProfile(state,id,side){
   id:names[i]?.id??i,name:names[i]?.name||'Jogador '+(i+1),
   number:names[i]?.number??i+1,pos:names[i]?.pos||DEFAULT[i],
   pace:names[i]?.pac||55,def:names[i]?.def||55,pas:names[i]?.pas||55,
+  sho:names[i]?.sho||55,gk:names[i]?.gk||55,phy:names[i]?.phy||55,fitness:names[i]?.fitness||90,
   x:side===0?x:100-x,y:side===0?y:100-y
  }))};
 }
