@@ -217,6 +217,34 @@ export function createBroadcastRenderer(canvas,session){
   c.fillStyle='#f9fffb';c.fill();c.strokeStyle='#17302d';c.lineWidth=.8;c.stroke();
   polygon(c,[[point.x,y-1.8],[point.x+1.6,y-.1],[point.x+1.2,y+1.7],[point.x-1.1,y+1.7],[point.x-1.7,y-.1]],'#28343d');
  }
+ function weatherLayer(world,foreground=false){
+  const weather=world.weather;if(!weather)return;
+  const rain=weather.rainfall||0,wet=weather.wetness||0;
+  if(!foreground&&wet>.07){
+   ctx.fillStyle='rgba(142,192,220,'+Math.min(.10,wet*.13)+')';
+   ctx.fillRect(0,0,width,height);
+  }
+  if(foreground&&rain>.055){
+   const amount=Math.min(110,Math.ceil(rain*76)),drift=(weather.windX||0)*1.3;
+   ctx.strokeStyle='rgba(203,236,255,'+Math.min(.44,rain*.45)+')';
+   ctx.lineWidth=1;ctx.beginPath();
+   for(let i=0;i<amount;i++){
+    const x=(i*73.7+(renderCount*1.4)+37)%width;
+    const y=(i*137.3+renderCount*3.7)%height;
+    ctx.moveTo(x,y);ctx.lineTo(x+drift+3,y+8+rain*7);
+   }
+   ctx.stroke();
+  }
+  if(foreground){
+   const title={limpo:'☀ CÉU LIMPO',nublado:'☁ NUBLADO',chuva:'☂ CHUVA',aguaceiros:'☂ AGUACEIROS',vento:'➤ VENTO'}[weather.condition]||'TEMPO';
+   const speed=Math.round(weather.windSpeed||0);
+   const message=title+'  ·  VENTO '+speed+' m/s  ·  '+Math.round(weather.temperature||19)+'°C';
+   ctx.save();ctx.font='800 10px sans-serif';ctx.textBaseline='middle';
+   const tw=ctx.measureText(message).width;
+   ctx.fillStyle='rgba(5,26,23,.85)';ctx.fillRect(7,height-32,tw+24,24);
+   ctx.fillStyle='#d9ffce';ctx.fillText(message,18,height-20);ctx.restore();
+  }
+ }
  function draw(_,blend=1){
   if(disposed||!ensureSize())return;
   const frame=interpolateWorld(session.world,blend);
@@ -227,10 +255,12 @@ export function createBroadcastRenderer(canvas,session){
   const focus={x:frame.ball.x,y:frame.ball.y};
   camera=broadcastProject(mode,width,height,focus,camera?.focus);
   pitch(camera,mode);
+  weatherLayer(session.world,false);
   // Render players by depth; the scene has arms, head, legs, kits and numbers.
   frame.players.slice().sort((a,b)=>camera.project(a.x,a.y).y-camera.project(b.x,b.y).y)
    .forEach(p=>footballer(p,camera,frame));
   ballAt(frame.ball,camera);
+  weatherLayer(session.world,true);
   // Minimal broadcast on-pitch telemetry.
   if(frame.restart){
    const tags={corner:'CANTO',freekick:'LIVRE',penalty:'PENÁLTI',throwin:'LANÇAMENTO',goalkick:'PONTAPÉ DE BALIZA',offside:'FORA DE JOGO'};
