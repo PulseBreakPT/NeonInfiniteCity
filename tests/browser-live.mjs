@@ -43,6 +43,19 @@ try{
  assert.equal(live.schema,2,'Novo jogo tem de usar a física 11v11');
  assert.equal(live.world?.players.length,22,'O campo deve conter 22 jogadores');
  assert.ok(live.world?.ball&&Number.isFinite(live.world.ball.vx));
+ // The live manager must be able to set pressing and queue a real substitution.
+ assert.ok(await page.locator('#live-sub-out').count(),'Missing starter selector');
+ assert.ok(await page.locator('#live-sub-in').count(),'Missing bench selector');
+ assert.ok(await page.locator('[data-live-tactic="mentality"]').count(),'Missing live tactical controls');
+ await page.locator('[data-live-tactic="mentality"]').selectOption('ofensiva');
+ let managed=await state(),ownSide=managed.liveMatch.world.teams.findIndex(t=>t.id===0);
+ assert.equal(managed.liveMatch.world.teams[ownSide].tactics.mentality,'ofensiva');
+ await page.locator('[data-action="live-substitute"]').click();
+ managed=await state();
+ assert.ok(managed.liveMatch.world.pendingSubstitutions.length+
+  managed.liveMatch.world.substitutions[ownSide].length>=1,
+  'Substitution must be physically queued or executed and persisted');
+
  // All four camera modes must paint the same live game without resetting it.
  const cameraControl=page.locator('[data-action="live-camera"]');
  assert.equal(await cameraControl.count(),1);
