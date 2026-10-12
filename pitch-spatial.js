@@ -62,30 +62,31 @@ export function restartPositions(teams,kind,teamId,location){
  let players=[...tacticalBase(own,location,true),...tacticalBase(other,location,false)];
  const ours=players.slice(0,11),theirs=players.slice(11);
  // The goalkeepers remain on their goal lines for all restarts.
- const keeper=theirs.find(p=>p.pos==='GK');
+ const keeperIndex=theirs.findIndex(p=>p.pos==='GK');
+ const settleKeeper=()=>{if(keeperIndex>=0)theirs[keeperIndex]={...theirs[keeperIndex],...atGoal(50,0)};};
  if(kind==='corner'){
   const near=sideX===3?10:90;
   ours[1]={...ours[1],...clampPoint({x:sideX,y:goalY+behind*1})};
   const target=[28,41,53,65,76];
   [8,9,10,5,6].forEach((i,j)=>ours[i]={...ours[i],...atGoal(target[j],j%2?11:6)});
-  [1,2,3,4,5,6].forEach((i,j)=>theirs[i]={...theirs[i],...atGoal(25+j*9,7+(j%2)*6)});
+  theirs.map((p,i)=>i).filter(i=>i!==keeperIndex).slice(0,6).forEach((i,j)=>theirs[i]={...theirs[i],...atGoal(25+j*9,7+(j%2)*6)});
   ours[4]={...ours[4],x:near,y:goalY+behind*30};
-  if(keeper)Object.assign(keeper,atGoal(50,0));
+  settleKeeper();
  }else if(kind==='freekick'){
   const ball=clampPoint(location);
   ours[9]={...ours[9],x:ball.x,y:ball.y};
   [7,8,10].forEach((i,j)=>ours[i]={...ours[i],...atGoal(27+j*23,10)});
   // An actual 3-player defensive wall sits between kicker and target goal.
   const wallY=ball.y+(goalY-ball.y)*.30;
-  [4,5,6].forEach((i,j)=>theirs[i]={...theirs[i],x:clamp(ball.x+(j-1)*4,6,94),y:clamp(wallY,8,92)});
-  if(keeper)Object.assign(keeper,atGoal(50,2));
+  theirs.map((p,i)=>i).filter(i=>i!==keeperIndex&&theirs[i].pos==='DEF').slice(0,3).forEach((i,j)=>theirs[i]={...theirs[i],x:clamp(ball.x+(j-1)*4,6,94),y:clamp(wallY,8,92)});
+  settleKeeper();
  }else if(kind==='penalty'){
   const penaltySpot=atGoal(50,12);
   ours[9]={...ours[9],...penaltySpot};
   // Everyone but the taker and goalkeeper stays outside the penalty area.
   for(let i=1;i<11;i++)if(i!==9)ours[i]={...ours[i],...atGoal(20+(i%5)*15,23+(i%2)*3)};
-  for(let i=1;i<11;i++)theirs[i]={...theirs[i],...atGoal(21+(i%5)*15,26+(i%2)*3)};
-  if(keeper)Object.assign(keeper,atGoal(50,2));
+  for(let i=0;i<11;i++)if(i!==keeperIndex)theirs[i]={...theirs[i],...atGoal(21+(i%5)*15,26+(i%2)*3)};
+  settleKeeper();
  }else if(kind==='throwin'){
   const boundary=sideX;
   ours[4]={...ours[4],x:boundary,y:clamp(location.y,6,94)};
