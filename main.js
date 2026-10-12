@@ -96,6 +96,12 @@ function paintLive(){
  const el=id=>document.getElementById(id);
  if(el('live-clock'))el('live-clock').textContent=clock;
  if(el('live-clock-small'))el('live-clock-small').textContent=clock;
+ const weather=live.world?.weather,weatherNode=el('live-weather');
+ if(weather&&weatherNode){
+  const condition={limpo:'LIMPO',nublado:'NUBLADO',chuva:'CHUVA',aguaceiros:'AGUACEIROS',vento:'VENTO'}[weather.condition]||'TEMPO';
+  const value=condition+' · '+Math.round(weather.windSpeed||0)+' m/s';
+  if(weatherNode.textContent!==value)weatherNode.textContent=value;
+ }
  if(el('live-comment-minute'))el('live-comment-minute').textContent=clock;
  if(el('live-score'))el('live-score').textContent=scores.home+' : '+scores.away;
  if(el('live-period'))el('live-period').textContent=live.phase==='halftime'?'INTERVALO':live.phase==='paused'?'EM PAUSA':matchPhase(live)==='first'?'1.ª PARTE':'2.ª PARTE';
