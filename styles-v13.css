@@ -81,3 +81,32 @@
 @media(prefers-reduced-motion:reduce){
  .elite-shell .live-camera .broadcast-ready .live-spatial-canvas{transition:none}
 }
+
+/* Matchday control dock: always legible on touch devices. */
+.elite-shell .live-tactics-controls,.elite-shell .live-bench-controls{
+ display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:11px 12px;
+ margin-top:9px;border:1px solid #618a7966;border-radius:12px;
+ background:linear-gradient(130deg,#0a2a28,#163c37);color:#e9ffdf;
+}
+.elite-shell .live-tactics-controls>strong,.elite-shell .live-bench-title strong{
+ font-size:10px;letter-spacing:.085em;color:#c9ffa5;
+}
+.elite-shell .live-tactics-controls label{
+ display:flex;align-items:center;gap:6px;font-size:10px;font-weight:800;
+}
+.elite-shell .live-bench-controls{flex-direction:column;align-items:stretch}
+.elite-shell .live-bench-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.elite-shell .live-bench-title small{color:#b9dbcd;font-size:10px}
+.elite-shell .live-bench-inputs{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.elite-shell .live-bench-inputs select,.elite-shell .live-tactics-controls select{
+ min-height:38px;min-width:0;flex:1 1 125px;max-width:100%;padding:8px 9px;
+ background:#123b37;color:#edffdf;border:1px solid #85ad93;
+ border-radius:8px;font-size:11px;font-weight:700;
+}
+.elite-shell .live-bench-inputs button{min-height:38px;flex:0 0 auto}
+@media(max-width:620px){
+ .elite-shell .live-bench-inputs{display:grid;grid-template-columns:1fr 1fr}
+ .elite-shell .live-bench-inputs button{grid-column:1/-1}
+ .elite-shell .live-tactics-controls{flex-direction:column;align-items:stretch}
+ .elite-shell .live-tactics-controls label{justify-content:space-between}
+}
