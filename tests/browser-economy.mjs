@@ -19,7 +19,7 @@ try{
  await mkdir('.browser-qa',{recursive:true});
  for(const [width,height] of [[390,844],[1440,900]]){
   const context=await browser.newContext({viewport:{width,height},hasTouch:width<600});
-  const page=await context.newPage(),errors=[];
+  let page=await context.newPage();const errors=[];
   page.on('dialog',dialog=>dialog.accept());
   page.on('pageerror',error=>errors.push(error.message));
   const url='http://127.0.0.1:'+server.address().port+'/';
@@ -35,7 +35,12 @@ try{
    localStorage.setItem(key,JSON.stringify(s));
    return {name,number};
   });
-  await page.reload({waitUntil:'domcontentloaded'});
+  // A second tab reads the legacy save as a genuine cold start; reloading the
+  // original tab would trigger its beforeunload handler and overwrite the fixture.
+  page=await context.newPage();
+  page.on('dialog',dialog=>dialog.accept());
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.goto(url,{waitUntil:'domcontentloaded'});
   await page.waitForSelector('.career-hq');
   const get=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('club-dynasty-v2')));
   let s=await get();
