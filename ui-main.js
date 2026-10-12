@@ -51,6 +51,14 @@ function liveMatchView(s){
  const phaseLabel=isHalftime?'INTERVALO':live.phase==='paused'?'EM PAUSA':matchPhase(live)==='first'?'1.ª PARTE':'2.ª PARTE';
  const timeTotal=live.total;
  const firstEnd=45+live.firstAdded;
+ const userSide=live.world?.teams.findIndex(t=>t.id===0)??-1;
+ const activePlayers=userSide<0?[]:live.world.players.filter(p=>p.side===userSide&&p.active!==false);
+ const substituteBench=userSide<0?[]:live.world.bench?.[userSide]||[];
+ const usedSubs=userSide<0?0:live.world.substitutions?.[userSide]?.length||0;
+ const selector=(id,entries)=>'<select id="'+id+'" aria-label="'+(id==='live-sub-out'?'Jogador a substituir':'Suplente a entrar')+'">'+entries.map(p=>'<option value="'+esc(String(p.id))+'">'+esc(p.name||'Jogador')+' · '+esc(p.pos||'')+'</option>').join('')+'</select>';
+ const benchControls=live.schema===2?'<div class="live-bench-controls"><div class="live-bench-title"><strong>GESTÃO DO BANCO</strong><small>'+usedSubs+'/5 substituições</small></div>'+
+ '<div class="live-bench-inputs">'+selector('live-sub-out',activePlayers.map(p=>({...p,id:p.sourceId??p.id})))+selector('live-sub-in',substituteBench)+
+ btn('live-substitute','SUBSTITUIR','subtle',substituteBench.length&&usedSubs<5?'':'disabled')+'</div></div>':'';
  return '<section class="live-matchday" aria-label="Partida a decorrer">'+
  '<div class="live-matchday-header"><div><span class="live-on-air"><i></i> PARTIDA EM CURSO</span><small>LIGA NACIONAL · JORNADA '+live.round+'</small></div><span class="live-period" id="live-period">'+phaseLabel+'</span></div>'+
  '<div class="live-matchday-score"><div class="live-matchday-team"><small>CASA</small><strong>'+esc(r.homeName)+'</strong></div>'+
@@ -62,7 +70,7 @@ function liveMatchView(s){
  '<div class="live-commentary"><span id="live-comment-minute">'+clock+'</span><p id="live-comment">A bola começa a rolar. As duas equipas procuram o primeiro ataque.</p></div>'+
  '<div class="live-camera-menu"><span class="camera-live-indicator">● LIVE</span>'+btn('live-camera','<span id="live-camera-label">'+({tv:'TV',balanced:'EQUILIBRADA',sideline:'LATERAL',aerial:'TÁTICA'}[live.camera||'tv']||'TV')+'</span> · CÂMARA','subtle')+'</div>'+ 
  '<div class="live-buttons">'+btn('live-pause','<span id="live-pause-label">'+(active?'PAUSAR':isHalftime?'INICIAR 2.ª PARTE':'CONTINUAR')+'</span>','subtle')+
- btn('live-speed','<span id="live-speed-label">'+live.speed+'×</span> VELOCIDADE','subtle')+'</div></section>'+
+ btn('live-speed','<span id="live-speed-label">'+live.speed+'×</span> VELOCIDADE','subtle')+'</div>'+benchControls+'</section>'+
  '<aside class="live-report-panel"><div class="live-report-header"><h3>RELATO DO JOGO</h3><span id="live-reports-count">'+sideEvents.length+' LANCES</span></div>'+
  '<div id="live-events" class="live-event-list" aria-live="polite">'+(sideEvents.length?sideEvents.map(e=>'<div class="live-event-row '+(e.kind==='goal'?'is-goal':'')+'"><b>'+esc(matchClock(live,eventAtMinute(live,e)))+'</b><span>'+esc(e.text)+'</span></div>').join(''):'<div class="live-event-empty">Aguardam-se os primeiros lances.</div>')+'</div>'+
  '<div class="live-report-bottom"><strong>A PARTIDA AINDA NÃO ESTÁ DECIDIDA</strong><small>Classificação, prémios, salários e estatísticas são registados apenas após o apito final. Se saíres, o jogo pode continuar quando voltares.</small></div></aside></div>'+
