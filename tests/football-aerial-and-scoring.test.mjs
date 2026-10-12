@@ -7,7 +7,7 @@ import {stepWorld,worldResult} from '../physics-engine.js';
 const make=()=>beginLiveMatch(makeState('Futebol Aéreo FC','Porto'),{engine:'physics'}).world;
 test('a genuinely airborne ball can be headed by a physical player',()=>{
  const w=make();w.phase='open';w.ball.owner=null;w.carrier=null;
- const p=w.players.find(p=>p.side===0&&p.pos==='MID');
+ const p=w.players.find(p=>p.side===0&&p.pos==='MID');p.phy=99;
  Object.assign(w.ball,{x:p.x,y:p.y,z:2.11,vx:0,vy:0,vz:-.4,spin:0,lastTouch:1});
  stepWorld(w);
  assert.ok(w.events.some(e=>e.kind==='header'),'A contestable 2-metre ball must allow a header');
