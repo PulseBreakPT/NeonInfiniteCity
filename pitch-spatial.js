@@ -33,6 +33,11 @@ function teamProfile(state,id,side){
   pace:names[i]?.pac||55,def:names[i]?.def||55,pas:names[i]?.pas||55,
   sho:names[i]?.sho||55,gk:names[i]?.gk||55,phy:names[i]?.phy||55,fitness:names[i]?.fitness||90,
   x:side===0?x:100-x,y:side===0?y:100-y
+ })),
+ bench:all.filter(p=>!ids.includes(p.id)&&!(p.injury>0)&&!(p.contract<=0)&&!(p.suspendedUntilWeek>=state.week)).slice(0,9).map(p=>({
+  id:p.id,name:p.name,number:p.number||0,pos:p.pos||'MID',
+  pace:p.pac||55,def:p.def||55,pas:p.pas||55,
+  sho:p.sho||55,gk:p.gk||55,phy:p.phy||55,fitness:p.fitness||90
  }))};
 }
 export function spatialTeams(state,fixture=nextFixture(state)){
