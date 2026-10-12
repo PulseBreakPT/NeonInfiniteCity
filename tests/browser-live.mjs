@@ -18,6 +18,7 @@ try{
  browser=await chromium.launch({executablePath:executable,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  await mkdir('.browser-qa',{recursive:true});
  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true});
+ await context.addInitScript(() => {window.__CLUB_MATCH_TEST_RATE__=60;});
  let page=await context.newPage(),errors=[];
  const attach=()=>page.on('pageerror',e=>errors.push(e.message));
  const state=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('club-dynasty-v2')));
@@ -43,6 +44,21 @@ try{
  assert.ok(live.world?.ball&&Number.isFinite(live.world.ball.vx));
  assert.ok(live,'Session should be persisted at kick-off');
  const balance=s.budget,round=s.league.round;
+ // In real 1× playback, 36 fixed simulation steps MUST NOT complete in 320 ms.
+ await page.evaluate(()=>window.__CLUB_MATCH_TEST_RATE__=1);
+ const ticksBefore=await page.evaluate(()=>JSON.parse(localStorage.getItem('club-dynasty-v2')).liveMatch.world.tick);
+ await page.waitForTimeout(650);
+ const pacing=await page.evaluate(()=>{
+  // State is written periodically, so inspect the animated browser's visible clock
+  // and canvas; save-state timing is verified by the pause below.
+  const canvas=document.querySelector('#live-spatial-canvas');
+  return {rendered:canvas?.width>0&&canvas?.height>0,
+   clock:document.querySelector('#live-clock')?.textContent};
+ });
+ assert.ok(pacing.rendered,'A animação contínua tem de estar disponível em velocidade 1×');
+ assert.equal(pacing.clock,"00'",'O motor não pode acelerar um minuto inteiro em 650 ms no modo 1×');
+ await page.evaluate(()=>window.__CLUB_MATCH_TEST_RATE__=60);
+
  assert.equal(round,1);
  assert.equal(s.results.length,0);
  assert.equal(s.players[0].apps,0);

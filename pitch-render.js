@@ -10,7 +10,7 @@ export function createPitchRenderer(canvas,session){
  const timeline=buildSpatialTimeline(session);
  host.classList.add('spatial-ready');
  let lastWidth=0,lastHeight=0,lastRatio=0,disposed=false;
- function draw(minute){
+ function draw(minute,blend=1){
   if(disposed)return;
   const width=canvas.clientWidth,height=canvas.clientHeight;
   if(width<80||height<80)return;
@@ -24,7 +24,9 @@ export function createPitchRenderer(canvas,session){
   let frame;
   if(session.schema===2&&session.world){
    const w=session.world;
-   const progress=Math.max(0,Math.min(.95,minute-Math.floor(minute)));
+   const progress=Math.max(0,Math.min(1,blend));
+   // A visual frame blends exactly ONE 0.2-second physics step.
+   // It never interpolates across a whole minute or predicts a future action.
    const ease=progress*progress*(3-2*progress);
    const prev=w.previous||{};
    const prevPlayers=new Map((prev.players||[]).map(p=>[p.id,p]));

@@ -22,6 +22,7 @@ const fatal=[];
 try{
  browser=await chromium.launch({executablePath:executable,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  const context=await browser.newContext({viewport:{width:1440,height:900},deviceScaleFactor:1});
+ await context.addInitScript(() => {window.__CLUB_MATCH_TEST_RATE__=60;});
  const page=await context.newPage();
  page.on('pageerror',e=>fatal.push('JS: '+e.message));
  const url='http://127.0.0.1:'+server.address().port+'/';

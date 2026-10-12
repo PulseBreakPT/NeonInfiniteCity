@@ -1,12 +1,13 @@
 import {applyRound} from './sim.js';
 import {clamp,hash,nextFixture,autoLineup,getPlayer} from './model.js';
 import {spatialTeams} from './pitch-spatial.js';
-import {createWorld,stepMatchMinute,halfTimeWorld,secondHalfWorld,finalWorld,worldResult} from './physics-engine.js';
+import {createWorld,stepWorld,STEPS_PER_MINUTE,halfTimeWorld,secondHalfWorld,finalWorld,worldResult} from './physics-engine.js';
 
 /** The event engine runs on an isolated clone at kick-off.
  * League tables, finances, players and official results are committed atomically
  * only at the final whistle. A serialized fixture can be resumed after a reload.
  */
+export const PHYSICS_FRAME_MS=200; // 1× playback matches the fixed 0.2 s physics step.
 export function matchClock(session,minute=session.minute){
  minute=Math.max(0,Math.floor(minute));
  const first=45+session.firstAdded;
@@ -30,9 +31,11 @@ export function eventAtMinute(session,event){
  return minute;
 }
 export function visibleEvents(session,minute=session.minute){
+ if(session.schema===2&&session.world)return session.world.events.slice();
  return session.result.events.filter(e=>eventAtMinute(session,e)<=minute);
 }
 export function liveScore(session,minute=session.minute){
+ if(session.schema===2&&session.world)return {home:session.world.score[0],away:session.world.score[1]};
  const goals=visibleEvents(session,minute).filter(e=>e.kind==='goal');
  return {
   home:goals.filter(e=>e.team===session.result.home).length,
@@ -61,7 +64,7 @@ export function beginLiveMatch(state,options={}){
  const firstAdded=1+seed%4,secondAdded=2+Math.floor(seed/7)%5;
  const session={
   schema:physics?2:1,id:state.season+':'+state.league.round+':'+fixture.id,
-  round:fixture.round,minute:0,firstAdded,secondAdded,
+  round:fixture.round,minute:0,substep:0,firstAdded,secondAdded,
   total:90+firstAdded+secondAdded,phase:'running',speed:1,
   result:result||{home:fixture.home,away:fixture.away,
     homeName:fixture.home===0?state.club.name:state.league.teams.find(t=>t.id===fixture.home)?.name||'Casa',
@@ -73,20 +76,50 @@ export function beginLiveMatch(state,options={}){
  state.liveMatch=session;
  return session;
 }
+/** Advances one fixed physical step. The UI calls this for each animation frame;
+ * neither the whole minute nor its end-state is precomputed.
+ * Substeps are saved, so a reloaded match continues at the exact instant.
+ */
+export function tickLiveMatchStep(state){
+ const session=state.liveMatch;
+ if(!session)throw Error('Não há jogo em curso.');
+ if(session.phase!=='running'||session.schema!==2)return session;
+ const world=session.world;
+ const substep=session.substep||0;
+ world.previous={
+  players:world.players.map(p=>({id:p.id,x:p.x,y:p.y})),
+  ball:{x:world.ball.x,y:world.ball.y,z:world.ball.z}
+ };
+ world.minute=session.minute+substep/STEPS_PER_MINUTE;
+ stepWorld(world);
+ session.substep=substep+1;
+ if(session.substep===STEPS_PER_MINUTE){
+  session.substep=0;
+  session.minute=clamp(session.minute+1,0,session.total);
+  world.minute=session.minute;
+  if(session.minute>=session.total){
+   session.phase='final';
+   finalWorld(world);
+  }else if(session.minute===45+session.firstAdded){
+   session.phase='halftime';
+   halfTimeWorld(world);
+  }
+  session.result=worldResult(world);
+ }
+ return session;
+}
 export function tickLiveMatch(state){
  const session=state.liveMatch;
  if(!session)throw Error('Não há jogo em curso.');
  if(session.phase!=='running')return session;
- if(session.schema===2)stepMatchMinute(session);
- session.minute=clamp(session.minute+1,0,session.total);
- if(session.minute>=session.total){
-  session.phase='final';
-  if(session.schema===2)finalWorld(session.world);
- }else if(session.minute===45+session.firstAdded){
-  session.phase='halftime';
-  if(session.schema===2)halfTimeWorld(session.world);
+ if(session.schema===2){
+  const remaining=STEPS_PER_MINUTE-(session.substep||0);
+  for(let i=0;i<remaining&&session.phase==='running';i++)tickLiveMatchStep(state);
+  return session;
  }
- if(session.schema===2)session.result=worldResult(session.world);
+ session.minute=clamp(session.minute+1,0,session.total);
+ if(session.minute>=session.total)session.phase='final';
+ else if(session.minute===45+session.firstAdded)session.phase='halftime';
  return session;
 }
 export function resumeLiveMatch(state){

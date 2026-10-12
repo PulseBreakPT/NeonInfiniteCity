@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {performance} from 'node:perf_hooks';
 import {makeState,migrate,standings} from '../model.js';
-import {beginLiveMatch,tickLiveMatch,resumeLiveMatch,pauseLiveMatch,finishLiveMatch,liveScore} from '../match-live.js';
+import {beginLiveMatch,tickLiveMatch,tickLiveMatchStep,PHYSICS_FRAME_MS,resumeLiveMatch,pauseLiveMatch,finishLiveMatch,liveScore} from '../match-live.js';
 import {createWorld,stepWorld,stepMatchMinute,worldResult,FIELD,FIXED_DT,STEPS_PER_MINUTE} from '../physics-engine.js';
 
 const create=()=>makeState('Mecânica Futebol Clube','Coimbra');
@@ -161,4 +161,48 @@ test('guarda-redes tem atributos próprios para reagir a remates físicos',()=>{
  const b=JSON.parse(JSON.stringify(original));
  for(let i=0;i<60;i++){stepWorld(a);stepWorld(b);}
  assert.deepEqual(a,b,'Guardar e continuar com a mesma seed não pode alterar as defesas');
+});
+
+test('1× é movimento passo a passo, nunca 36 simulações instantâneas',()=>{
+ const {state,session,world}=start();
+ assert.equal(PHYSICS_FRAME_MS,200);
+ assert.equal(session.minute,0);
+ assert.equal(session.substep,0);
+ const before=world.players.map(p=>({x:p.x,y:p.y}));
+ tickLiveMatchStep(state);
+ assert.equal(world.tick,1);
+ assert.equal(session.minute,0);
+ assert.equal(session.substep,1);
+ const distances=world.players.map((p,i)=>Math.hypot(p.x-before[i].x,p.y-before[i].y));
+ assert.ok(distances.every(d=>d<2.5),'Um jogador não pode deslocar-se vários metros num só fotograma');
+ for(let i=1;i<STEPS_PER_MINUTE;i++)tickLiveMatchStep(state);
+ assert.equal(session.minute,1);
+ assert.equal(session.substep,0);
+ assert.equal(world.tick,STEPS_PER_MINUTE);
+});
+test('pausa e reentrada conservam o passo intermédio exato e a seed da simulação',()=>{
+ const {state,world}=start();
+ for(let i=0;i<23;i++)tickLiveMatchStep(state);
+ assert.equal(state.liveMatch.minute,0);
+ assert.equal(state.liveMatch.substep,23);
+ const saved=migrate(JSON.parse(JSON.stringify(state)));
+ assert.equal(saved.liveMatch.substep,23);
+ assert.equal(saved.liveMatch.world.tick,23);
+ pauseLiveMatch(saved);
+ tickLiveMatchStep(saved);
+ assert.equal(saved.liveMatch.world.tick,23);
+ resumeLiveMatch(saved);
+ for(let i=0;i<13;i++){tickLiveMatchStep(saved);tickLiveMatchStep(state);}
+ assert.equal(saved.liveMatch.minute,1);
+ assert.equal(state.liveMatch.minute,1);
+ assert.deepEqual(saved.liveMatch.world,state.liveMatch.world);
+});
+test('misturar passos individuais e minutos completos nunca altera o resultado',()=>{
+ const a=start().state,b=migrate(JSON.parse(JSON.stringify(a)));
+ // First a partial simulated minute, then the rest in a bulk headless tick.
+ for(let i=0;i<8;i++){tickLiveMatchStep(a);tickLiveMatchStep(b);}
+ tickLiveMatch(a);
+ for(let i=0;i<STEPS_PER_MINUTE-8;i++)tickLiveMatchStep(b);
+ assert.equal(a.liveMatch.minute,1);assert.equal(b.liveMatch.minute,1);
+ assert.deepEqual(a.liveMatch.world,b.liveMatch.world);
 });

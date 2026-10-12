@@ -33,3 +33,7 @@ Substituir o cálculo estatístico prévio do **jogo do treinador** por uma simu
 Testes de `physics-engine.test.mjs` executam partidas sem interface e verificam posição dos jogadores, fidelidade dos eventos, colisão com baliza, exclusão de golos fora dos postes, determinismo de saves, recuperação após interrupção, influência das táticas e aplicação única do resultado no final.
 
 **Limitações:** este é um motor original de futebol simplificado. Não resolve VAR, vantagem, mão na bola, todos os tipos de falta, impedimento milimétrico com braços, desgaste fisiológico, árbitro físico individual ou jogadores controlados manualmente. O objetivo primeiro é consistência, previsibilidade, manutenção do jogo e taxas de quadros estáveis.
+
+### Cadência de apresentação v2.1
+
+O antigo processamento em lote continua disponível para simulação sem gráficos e testes: `tickLiveMatch()` completa 36 passos determinísticos por minuto. A interface, porém, utiliza `tickLiveMatchStep()`, um único passo por evento de temporização (`PHYSICS_FRAME_MS=200` em 1×). As velocidades 2×/4× alteram somente a duração real entre passos. `substep` faz parte da sessão e é recuperado no save; `world.previous` guarda as coordenadas do passo anterior. O Canvas interpola apenas o passo de 0,2 segundo entre essas duas posições a cada fotograma, sem antecipar ações nem alterar as estatísticas. Um limite de 12 passos por fotograma impede trabalho excessivo quando o browser regressa do segundo plano.

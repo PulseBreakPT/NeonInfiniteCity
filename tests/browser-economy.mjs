@@ -19,7 +19,8 @@ try{
  await mkdir('.browser-qa',{recursive:true});
  for(const [width,height] of [[390,844],[1440,900]]){
   const context=await browser.newContext({viewport:{width,height},hasTouch:width<600});
-  let page=await context.newPage();const errors=[];
+  await context.addInitScript(() => {window.__CLUB_MATCH_TEST_RATE__=60;});
+ let page=await context.newPage();const errors=[];
   page.on('dialog',dialog=>dialog.accept());
   page.on('pageerror',error=>errors.push(error.message));
   const url='http://127.0.0.1:'+server.address().port+'/';
