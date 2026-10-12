@@ -133,6 +133,21 @@ export function resumeLiveMatch(state){
  if(session.phase==='paused'||session.phase==='halftime')session.phase='running';
  return session;
 }
+export function setLiveTactic(state,key,value){
+ const allowed={mentality:['defensiva','equilibrada','ofensiva'],
+  pressure:['baixa','media','alta'],passing:['curto','misto','longo'],
+  tempo:['lento','normal','rapido'],marking:['zona','individual']};
+ if(!allowed[key]?.includes(value))throw Error('Instrução tática inválida.');
+ const session=state.liveMatch;
+ if(!session||session.schema!==2||session.phase==='final')throw Error('Não há jogo em curso.');
+ const side=session.world.teams.findIndex(t=>t.id===0);
+ if(side<0)throw Error('Clube não encontrado.');
+ session.world.teams[side].tactics[key]=value;
+ if(session.after?.tactics)session.after.tactics[key]=value;
+ session.world.events.push({minute:Math.max(1,Math.floor(session.world.minute)),clock:session.world.minute,
+  x:50,y:50,kind:'tactical',team:0,text:'Alteração tática: '+key+' → '+value+'.'});
+ return session.world.teams[side].tactics;
+}
 export function requestLiveSubstitution(state,outId,inId){
  const session=state.liveMatch;
  if(!session||session.schema!==2||session.phase==='final')throw Error('Nenhuma partida ativa.');
