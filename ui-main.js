@@ -104,18 +104,26 @@ export function tactics(s,ui={}){
   return rating(b)-rating(a);
  });
  const pickerHeading=selecting?'Jogador para '+POSITIONS[role]:'Escolher jogador';
- const pickerText=selecting?'Escolhe um suplente ou outro titular para trocar de posição.':candidate?'Toca numa posição do relvado para colocar '+esc(candidate.name)+'.':'Escolhe um jogador desta lista ou toca primeiro numa posição do relvado.';
+ const pickerText=selecting?'Escolhe um suplente ou outro titular para trocar de posição.':candidate?'Toca numa posição no relvado ou na grelha para colocar '+esc(candidate.name)+'.':'Escolhe um jogador desta lista ou toca primeiro numa posição do relvado.';
  const selectedLabel=selecting?'<div class="lineup-selection"><span><small>POSIÇÃO SELECIONADA</small><strong>'+esc(POSITIONS[role])+' · '+(slot+1)+'</strong><small>'+esc(chosen?.name||'Posição vaga')+'</small></span><div class="lineup-selection-actions">'+
  (chosen?btn('unassign-slot','RETIRAR DO ONZE','subtle'):'<span class="lineup-empty-label">VAGA</span>')+
  btn('cancel-slot','CANCELAR','quiet')+'</div></div>':
  (candidate?'<div class="lineup-selection"><span><small>JOGADOR ESCOLHIDO</small><strong>'+esc(candidate.name)+'</strong><small>Toca numa posição no relvado</small></span>'+btn('cancel-slot','CANCELAR','quiet')+'</div>':'');
  const playerList=players.map(p=>playerSelectRow(p,s,role,ids,ui)).join('');
+ const slotGrid='<div class="lineup-positions"><span class="lineup-positions-title">POSIÇÕES DO ONZE</span><div class="lineup-slot-grid">'+
+ FORMATIONS[s.formation].map((role,i)=>{
+  const footballer=getPlayer(s,ids[i]),active=slot===i;
+  return '<button type="button" data-action="select-slot" data-slot="'+i+'" aria-pressed="'+active+'" '+
+   'class="lineup-slot '+(active?'active':'')+' '+(footballer?'':'empty')+'" aria-label="Selecionar '+esc(role)+': '+esc(footballer?.name||'vaga')+'">'+
+   '<span class="slot-role">'+role+'</span><strong>'+esc(footballer?short(footballer.name):'VAGA')+'</strong><small>'+(i+1)+'</small></button>';
+ }).join('')+'</div></div>';
+
  return title('Táticas','QUADRO TÁTICO','Escolhe uma posição e atribui-lhe um jogador.',btn('best-eleven','Otimizar onze','accent'))+
  '<div class="lineup-toolbar"><span><b>'+count+'/11</b> TITULARES</span><small>'+(count===11?'Onze completo':(11-count)+' posição'+(11-count===1?'':'ões')+' por preencher. Serão completadas automaticamente antes do jogo.')+'</small></div>'+
  '<div class="content-two wider lineup-workspace"><section class="panel lineup-field-panel"><div class="panel-heading"><h3>Onze inicial</h3><label class="inline-select">Formação <select data-action="formation">'+Object.keys(FORMATIONS).map(f=>'<option '+(s.formation===f?'selected':'')+'>'+f+'</option>').join('')+'</select></label></div>'+
  positionalLayout(s,ui)+'<div class="panel-foot">'+pill('FORÇA '+lineScore(s)+' OVR','good')+pill('FORMAÇÃO '+s.formation)+'</div></section>'+
  '<section class="panel lineup-bench-panel" id="lineup-picker"><div class="panel-heading"><h3>'+pickerHeading+'</h3><span class="lineup-bench-counter">'+s.players.length+' atletas</span></div>'+
- '<div class="lineup-picker-guide">'+pickerText+'</div>'+selectedLabel+
+ '<div class="lineup-picker-guide">'+pickerText+'</div>'+selectedLabel+slotGrid+
  '<div class="lineup-list" aria-label="Jogadores do plantel">'+playerList+'</div></section></div>'+
  panel('Ordens de equipa','<div class="tactics-grid">'+tacticSelector(s,'mentality',['defensiva','equilibrada','ofensiva'],'Mentalidade')+tacticSelector(s,'pressure',['baixa','media','alta'],'Pressão')+tacticSelector(s,'passing',['curto','misto','longo'],'Tipos de passe')+tacticSelector(s,'tempo',['lento','normal','rapido'],'Ritmo')+tacticSelector(s,'marking',['zona','individual'],'Marcação')+tacticSelector(s,'halftimePlan',['auto','agressivo','proteger','manter'],'Plano de intervalo')+'</div><p class="note muted">Estas escolhas influenciam ataque, defesa, controlo do meio-campo e fadiga no motor de partidas.</p>');
 }

@@ -133,3 +133,46 @@
  touch-action:manipulation;cursor:pointer
 }
 .elite-shell #starting-pitch .formation-player>*{pointer-events:none}
+
+/* XI position selector mirrors the field and remains operable when
+   a pitch marker is obscured by a small mobile viewport. */
+.elite-shell .lineup-positions{
+ padding:12px;margin:0 0 13px;border:1px solid #456e5f;
+ border-radius:5px;background:#102d2b;
+}
+.elite-shell .lineup-positions-title{
+ display:block;margin:0 0 8px;font:850 10px 'DM Sans',sans-serif;
+ letter-spacing:.07em;color:#d1e6d0
+}
+.elite-shell .lineup-slot-grid{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px
+}
+.elite-shell .lineup-slot{
+ display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+ gap:3px;min-width:0;min-height:56px;padding:8px 9px;
+ border:1px solid #567b6a;background:#1a4037;border-radius:4px;
+ color:#f2fbea;text-align:left;cursor:pointer;
+}
+.elite-shell .lineup-slot:hover,.elite-shell .lineup-slot:focus-visible{
+ border-color:#dbffa4;background:#2d5643
+}
+.elite-shell .lineup-slot.active{
+ border-color:#efffae;background:#3b5f43;box-shadow:inset 3px 0 #d9ff9e
+}
+.elite-shell .lineup-slot.empty{border-style:dashed;border-color:#c9b28d}
+.elite-shell .lineup-slot .slot-role{color:#d0edbc;font:900 10px 'DM Sans',sans-serif}
+.elite-shell .lineup-slot strong{
+ font:900 16px/1.06 var(--font);
+ white-space:normal;overflow-wrap:anywhere;max-width:100%
+}
+.elite-shell .lineup-slot small{font:750 9px 'DM Sans',sans-serif;color:#a8c2b0}
+@media(max-width:550px){
+ .elite-shell .lineup-positions{padding:9px}
+ .elite-shell .lineup-slot-grid{gap:5px}
+ .elite-shell .lineup-slot{min-height:58px;padding:8px 7px}
+ .elite-shell .lineup-slot strong{font-size:15px}
+}
+@media(max-width:360px){
+ .elite-shell .lineup-slot strong{font-size:14px}
+ .elite-shell .lineup-slot{min-height:60px}
+}

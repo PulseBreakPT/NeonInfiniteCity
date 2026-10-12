@@ -32,6 +32,7 @@ try{
   await go('tactics');
   assert.equal(await page.locator('#starting-pitch .formation-player').count(),11);
   assert.equal(await page.locator('#lineup-picker .lineup-player').count(),26);
+  assert.equal(await page.locator('.lineup-slot-grid [data-action="select-slot"]').count(),11);
   const initial=await saved(),formation=initial.formation;
   const bench=initial.players.find(p=>!initial.lineups[formation].includes(p.id)&&p.injury===0);
   assert.ok(bench,'Need a fit substitute');
@@ -43,7 +44,12 @@ try{
     hit:at.slice(0,5).map(x=>x.tagName.toLowerCase()+(x.className?.baseVal||x.className||''))};
   });
   console.log('XI pitch touch test '+width+': '+JSON.stringify(geometry));
-  await page.locator('#starting-pitch .formation-player[data-slot="5"]').click();
+  if(width===390){
+   await page.touchscreen.tap(geometry.center[0],geometry.center[1]);
+  }else{
+   await page.mouse.click(geometry.center[0],geometry.center[1]);
+  }
+  await page.waitForSelector('#lineup-picker [data-action="unassign-slot"]',{timeout:9000});
   await page.waitForSelector('[data-action="unassign-slot"]');
   await page.locator('[data-action="unassign-slot"]').click();
   let state=await saved();
@@ -59,7 +65,7 @@ try{
   assert.ok((await page.locator('.lineup-toolbar').innerText()).includes('11/11'));
   // Swap two starters directly via the same player list.
   const original5=state.lineups[formation][5],starter8=state.lineups[formation][8];
-  await page.locator('#starting-pitch [data-slot="5"]').click();
+  await page.locator('.lineup-slot-grid [data-slot="5"]').click();
   await page.locator('#lineup-picker [data-action="swap-slot"][data-id="'+starter8+'"]').click();
   state=await saved();
   assert.equal(state.lineups[formation][5],starter8);
@@ -69,7 +75,7 @@ try{
   const spare=state.players.find(p=>!state.lineups[formation].includes(p.id)&&p.injury===0);
   await page.locator('#lineup-picker [data-action="pick-player"][data-id="'+spare.id+'"]').click();
   assert.ok((await page.locator('.lineup-selection').innerText()).includes(spare.name));
-  await page.locator('#starting-pitch [data-slot="6"]').click();
+  await page.locator('.lineup-slot-grid [data-slot="6"]').click();
   state=await saved();
   assert.equal(state.lineups[formation][6],spare.id,'Bench-first pick did not place player');
   await page.screenshot({path:'.browser-qa/lineup-active-'+width+'.png'});

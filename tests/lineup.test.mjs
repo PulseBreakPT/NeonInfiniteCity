@@ -8,7 +8,8 @@ const state=()=>makeState('União Futura','Faro');
 
 test('all eleven pitch positions are real accessible buttons',()=>{
  const s=state(),html=tactics(s,{slot:null,candidate:null});
- assert.equal((html.match(/data-action="select-slot"/g)||[]).length,11);
+ assert.equal((html.match(/data-action="select-slot"/g)||[]).length,22);
+ assert.equal((html.match(/class="lineup-slot /g)||[]).length,11);
  assert.equal((html.match(/class="lineup-player /g)||[]).length,s.players.length);
  assert.ok(html.includes('id="lineup-picker"'));
  assert.ok(html.includes('id="starting-pitch"'));
@@ -100,4 +101,14 @@ test('player detail includes a direct route to tactical XI selection',()=>{
  const s=state(),html=playerDetail(s,s.players[1].id);
  assert.ok(html.includes('data-action="lineup-from-card"'));
  assert.ok(html.includes('ESCOLHER PARA O ONZE'));
+});
+
+test('a grelha de onze posições mostra as vagas e a seleção sem depender do mapa',()=>{
+ const s=state();
+ execute(s,'unassign-slot',{slot:6});
+ const html=tactics(s,{slot:6,candidate:null});
+ assert.ok(html.includes('lineup-slot-grid'));
+ assert.ok(html.includes('data-slot="6" aria-pressed="true"'));
+ assert.ok(html.includes('VAGA'));
+ assert.ok(html.includes('data-action="unassign-slot"')===false);
 });
