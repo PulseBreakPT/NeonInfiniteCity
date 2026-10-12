@@ -80,6 +80,13 @@ export function applyRound(state,{featuredResult=null}={}){
     if(p.pos==='GK'&&(fixture.home===0?result.ag:result.hg)===0)p.cleanSheets=(p.cleanSheets||0)+1;
    }
    for(const e of result.events||[]){if(e.kind==='goal'&&e.team===0&&e.playerId){const p=getPlayer(state,e.playerId);if(p)p.goals=(p.goals||0)+1;}}
+   // Match officials affect the next round: reds suspend the club player.
+   for(const d of featuredResult.discipline||[]){
+    if(d.team!==0)continue;
+    const p=getPlayer(state,d.playerId);if(!p)continue;
+    p.cards=(p.cards||0)+(d.yellow||0);
+    if(d.red)p.suspendedUntilWeek=Math.max(p.suspendedUntilWeek||0,state.week+1);
+   }
   }
   fixture.hg=result.hg;fixture.ag=result.ag;fixture.played=true;
   if(fixture===playerFixture){
