@@ -292,7 +292,7 @@ function kick(w,p,target,power=15,height=0){
  w.ball.vy=(target.y-p.y)/d*power;
  w.ball.z=.12;w.ball.vz=height;
  w.ball.spin=(rand(w)-.5)*4*(p.pas/75);
- w.ball.lastTouch=p.side;delete w.ball.intended;delete w.ball.pendingOffside;
+ w.ball.lastTouch=p.side;w.ball.lastPlayerId=p.id;delete w.ball.intended;delete w.ball.pendingOffside;
  delete w.ball.restartKind;delete w.ball.restartSide;delete w.ball.restartTouched;
  delete w.ball.fromThrowin;delete w.ball.deliberateBackpass;delete w.ball.restartKicker;delete w.ball.keeperHeld;
  p.pose='kick';p.poseUntil=.6;
@@ -483,7 +483,7 @@ function blockShot(w,fromX=w.ball.x,fromY=w.ball.y,fromZ=w.ball.z){
  // rather than at the end of a 0.2 s frame (prevents tunnelling).
  b.x=hit.x;b.y=hit.y;b.z=Math.max(.12,hit.z);
  b.vx=-b.vx*(.25+rand(w)*.25);b.vy=-b.vy*(.4+rand(w)*.3);
- b.vz=1.1+rand(w)*2;b.lastTouch=p.side;b.spin*=-.6;
+ b.vz=1.1+rand(w)*2;b.lastTouch=p.side;b.lastPlayerId=p.id;b.spin*=-.6;
  delete b.shot;delete b.pendingOffside;delete b.intended;
  w.stats[p.side].blocks=(w.stats[p.side].blocks||0)+1;
  p.pose='block';p.poseUntil=.6;
@@ -533,7 +533,7 @@ function controlLooseBall(w){
  }
  const wasShot=!!b.shot;
  delete b.shot;delete b.intended;delete b.pendingOffside;delete b.fromThrowin;delete b.deliberateBackpass;
- b.owner=best.id;w.carrier=best.id;w.possessor=best.side;
+ b.owner=best.id;b.lastPlayerId=best.id;w.carrier=best.id;w.possessor=best.side;
  b.keeperHeld=best.pos==='GK'&&goalkeeperHandlingAllowed(best,b,w.half||1)&&wasShot;
  w.referee??={};w.referee.keeperHold=0;
  b.vx=0;b.vy=0;b.vz=0;b.z=.12;b.spin=0;
@@ -650,7 +650,7 @@ function ballPhysics(w,dt){
     return;
    }
    w.score[attacking]++;
-   const scorer=w.players.find(p=>p.id===w.ball.shot?.playerId);
+   const scorer=w.players.find(p=>p.id===(w.ball.shot?.playerId??w.ball.lastPlayerId)&&p.side===attacking);
    const ownGoal=b.lastTouch!==attacking,assister=!ownGoal?w.players.find(p=>p.id===w.ball.shot?.assistId):null;
    event(w,'goal','GOLO! '+w.teams[attacking].name+(scorer?' — '+scorer.name:'' )+'.',
     w.teams[attacking].id,{player:ownGoal?null:scorer?.name||null,playerId:ownGoal?null:scorer?.sourceId??scorer?.id??null,
@@ -724,12 +724,26 @@ function restartKick(w){
   w.stats[r.team].passes++;
   event(w,'throwin','Lançamento executado por '+nearest.name+'.',w.teams[r.team].id,{player:nearest.name,playerId:nearest.sourceId});
  }else if(kind==='corner'||kind==='freekick'){
-  const target=kind==='corner'?{x:29+rand(w)*10,y:goal.y-direction(w,r.team)*8}:
-   {x:34+(rand(w)-.5)*8,y:goal.y};
-  w.stats[r.team].passes++;
-  kick(w,nearest,target,kind==='corner'?22:24,kind==='corner'?8.5:6.4);
-  if(kind==='corner'){w.ball.x=r.x;w.ball.y=r.y;}
-  event(w,'cross',nearest.name+' cobra '+(kind==='corner'?'o canto':'o livre')+'.',w.teams[r.team].id,{player:nearest.name});
+  const range=hypot(r.x-goal.x,r.y-goal.y);
+  const direct=kind==='freekick'&&range<31&&rand(w)<.45;
+  if(direct){
+   const xg=clamp(.18-(range-15)*.008,.035,.20);
+   const target={x:34+(rand(w)-.5)*17,y:goal.y},onTarget=target.x>=FIELD.goalLeft&&target.x<=FIELD.goalRight;
+   w.stats[r.team].shots++;w.stats[r.team].xg+=xg;
+   if(onTarget)w.stats[r.team].onTarget++;
+   kick(w,nearest,target,clamp(range*.91,17,30),4.3);
+   w.ball.shot={team:r.team,playerId:nearest.id,xg,onTarget};
+   nearest.pose='shot';nearest.poseUntil=.8;
+   event(w,'shot','Livre direto de '+nearest.name+'.',w.teams[r.team].id,
+    {player:nearest.name,playerId:nearest.sourceId??nearest.id,xg:+xg.toFixed(3)});
+  }else{
+   const target={x:21+rand(w)*26,y:goal.y-direction(w,r.team)*(kind==='corner'?8:12)};
+   w.stats[r.team].passes++;
+   kick(w,nearest,target,kind==='corner'?22:24,kind==='corner'?8.5:5.1);
+   if(kind==='corner'){w.ball.x=r.x;w.ball.y=r.y;}
+   event(w,'cross',nearest.name+' cobra '+(kind==='corner'?'o canto':'o livre')+'.',
+    w.teams[r.team].id,{player:nearest.name,playerId:nearest.sourceId??nearest.id});
+  }
  }else{
   const target=teamPlayers(w,r.team).filter(p=>p.id!==nearest.id&&p.pos!=='GK')
    .sort((a,b)=>dist(a,nearest)-dist(b,nearest))[0];
