@@ -55,4 +55,4 @@ assert.ok(scores.size>=3,'Variety of outcomes');
 assert.ok(out.goals/sample<9,'No excessive scoreline inflation');
 assert.ok(out.passes/sample>=4,'Insufficient pass gameplay');
 assert.ok(out.shots/sample>=1,'Not enough physical shot attempts');
-console.log('PASS: fixed-step simulation is repeatable, uses the referee and settles 1024 full games without errors.');
+console.log('PASS: fixed-step simulation is repeatable, uses the referee and settles '+sample+' full games without errors.');
