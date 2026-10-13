@@ -58,6 +58,7 @@ function liveMatchView(s){
  const selector=(id,entries)=>'<select id="'+id+'" aria-label="'+(id==='live-sub-out'?'Jogador a substituir':'Suplente a entrar')+'">'+entries.map(p=>'<option value="'+esc(String(p.id))+'">'+esc(p.name||'Jogador')+' · '+esc(p.pos||'')+'</option>').join('')+'</select>';
  const tacticControls=live.schema===2&&userSide>=0?
  '<div class="live-tactics-controls"><strong>INSTRUÇÕES EM JOGO</strong>'+
+ '<label>FORMAÇÃO <select data-live-formation="1">'+['4-3-3','4-4-2','4-2-3-1','3-5-2','5-3-2'].map(v=>'<option value="'+v+'" '+(live.world.teams[userSide].formation===v?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
  '<label>MENTALIDADE <select data-live-tactic="mentality">'+['defensiva','equilibrada','ofensiva'].map(v=>'<option value="'+v+'" '+(live.world.teams[userSide].tactics.mentality===v?'selected':'')+'>'+spell(v)+'</option>').join('')+'</select></label>'+
  '<label>PRESSÃO <select data-live-tactic="pressure">'+['baixa','media','alta'].map(v=>'<option value="'+v+'" '+(live.world.teams[userSide].tactics.pressure===v?'selected':'')+'>'+spell(v)+'</option>').join('')+'</select></label>'+
  '</div>':'';
