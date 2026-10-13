@@ -196,7 +196,7 @@ export function makeState(name='Atlético Aurora',city='Lisboa',color=COLORS[0])
  const random=rng(hash(name+' / '+city));
  const pool=['GK','GK','GK',...Array(8).fill('DEF'),...Array(9).fill('MID'),...Array(6).fill('ATT')];
  const players=pool.map((pos,i)=>generatePlayer(i+1,pos,random,54+random()*18));
- const state={version:2,engineVersion:7,club:{name,city,color,baseColor:color,stadium:'Arena '+city,capacity:12500,kitAway:'#f5f6fa',sponsor:'Atlântico Energia',stadiumName:'Arena '+city},
+ const state={version:2,engineVersion:9,club:{name,city,color,baseColor:color,stadium:'Arena '+city,capacity:12500,kitAway:'#f5f6fa',sponsor:'Atlântico Energia',stadiumName:'Arena '+city},
  players,formation:'4-3-3',lineups:{},tactics:{mentality:'equilibrada',pressure:'media',passing:'misto',tempo:'normal',marking:'zona',halftimePlan:'auto'},
  budget:1850000,tokens:22,rest:3,moraleBoosts:2,medical:2,fans:8420,day:1,week:1,season:1,division:1,trainingCount:0,trainingTotal:0,
  league:null,cup:null,market:[],nextId:1000,history:[],results:[],lastMatch:null,fixtureCamera:'2d',
