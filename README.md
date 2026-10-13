@@ -4,7 +4,7 @@ Jogo original de gestão de futebol, em português europeu, single-player, publi
 
 **Jogar:** https://pulsebreakpt.github.io/NeonInfiniteCity/
 
-## Motor de futebol físico v7
+## Motor de futebol físico v8
 
 A partida principal utiliza um mundo métrico de **105 × 68 m**, com **22 jogadores independentes**, bola tridimensional e passos físicos determinísticos de **0,2 s**. O marcador e as estatísticas nascem de eventos simulados durante o jogo; a jornada só é confirmada ao apito final. A exibição visual interpola os mesmos estados do motor, sem gerar movimentos fictícios da bola.
 
@@ -13,6 +13,17 @@ A partida principal utiliza um mundo métrico de **105 × 68 m**, com **22 jogad
 **Novidades v4:** meteorologia progressiva gerada por seed (vento, chuva, aguaceiros, temperatura, relvado húmido e aderência), efeitos no voo/rolamento da bola, fadiga dependente do clima, contacto com risco de lesão e recuperação por semanas. O árbitro trata a lei da vantagem, o segundo toque após reposição, o limite de oito segundos do guarda-redes e os golos diretos não permitidos após lançamentos laterais e livres indiretos. A simulação usa também um esqueleto procedural tridimensional articulado para poses de corrida, remate, mergulho e queda, projetado nas quatro câmaras 2.5D.
 
 **Melhorias de integridade v7 (outubro de 2026):** inversão física de campo ao intervalo, direção de ataque e linha de fora de jogo corretas nas duas partes; banco de até nove jogadores por equipa; até cinco substituições em três janelas, trocas ao intervalo, substituição automática de lesionados e decisões da IA adversária; limite de dez segundos para abandonar o terreno com atraso de entrada; perda por número insuficiente de jogadores; regresso após avaliação médica; contagem para lançamentos e pontapés de baliza demorados; decisões por primeiro cruzamento físico de linhas; lançamentos com trajetória a partir das mãos, cantos na bandeirola, cabeceamentos, bloqueios e infrações por contacto mão-bola; assistências, autogolos e participações de suplentes; alterações táticas durante a partida, descontos calculados a partir das interrupções e atualização dos saves em curso.
+
+**Novidades v8 (13 de outubro de 2026):**
+- Arbitragem após a troca de campo: área de penálti, mãos do guarda-redes e livres indiretos orientados corretamente.
+- Fim das expulsões falsas: substituições, lesões e ausências médicas já não se transformam em cartões vermelhos no relatório e nas suspensões.
+- Treinador com mudança de formação em direto (4-3-3, 4-4-2, 4-2-3-1, 3-5-2, 5-3-2), mantendo intacto o onze inicial oficial para o registo da carreira.
+- Taça com dois períodos de 15 minutos de prolongamento, remates individuais em séries de cinco penáltis, eliminação antecipada e morte súbita. O replay da Taça permite navegar até aos 120 minutos.
+- Bloqueios físicos calculados através de toda a trajetória da bola entre passos da simulação; cabeceamentos e lançamentos com poses corporais sincronizadas.
+- Livres diretos distinguidos de cruzamentos: elimina a lógica anterior em que praticamente todos eram enviados ao centro da baliza; autoria de golos por último toque, contagem para guarda-redes e testes de situações excecionais.
+- Módulos adicionais de testes de regras, arbitragem, Taça, biomecânica, reconstrução de saves, colisões contínuas e execução de um jogo até à atualização financeira.
+
+**Regras de referência:** [IFAB — Leis do Jogo 2026/27](https://theifab.com/law-changes/latest/) e [Law 3 — The Players](https://theifab.com/laws/latest/the-players/). Estas são referências externas; o jogo continua a ser uma interpretação estilizada, não um motor oficialmente certificado.
 
 **Validação:** testes adicionais para troca de campo, substituições e janelas, regras de interrupção e reinícios, cabeceamentos, golos e migração de partidas guardadas. O desenvolvimento usa um relógio de futebol acelerado para ser jogável no navegador: 36 passos de física de 0,2 segundos por minuto mostrado no marcador. Isto **não equivale** a 60 segundos físicos completos por minuto. A reprodução integral dos 90 minutos em tempo físico real continua fora do âmbito deste motor compacto.
 
