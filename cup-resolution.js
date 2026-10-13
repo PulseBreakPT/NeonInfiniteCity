@@ -34,6 +34,11 @@ export function resolveCupTie({teams,score,statistics,random,clamp,at,emit}){
  }
  at(120,0);
  if(score[0]!==score[1])return {penaltyWinner:null,shootout:null,extraTime:{periods,goals:[score[0]-initial[0],score[1]-initial[1]]}};
+ const penalties=resolvePenalties({teams,random,clamp,at,emit});
+ return {...penalties,extraTime:{periods,goals:[score[0]-initial[0],score[1]-initial[1]]}};
+}
+
+export function resolvePenalties({teams,random,clamp,at,emit}){
  const kicks=[0,0],goals=[0,0],details=[];
  const ordered=teams.map(team=>team.starters.filter(p=>!team.sentOff.has(p.id))
   .sort((a,b)=>(b.sho||55)-(a.sho||55)));
@@ -60,6 +65,5 @@ export function resolveCupTie({teams,score,statistics,random,clamp,at,emit}){
  const winner=goals[0]>goals[1]?teams[0].id:teams[1].id;
  emit('penalties',winner===teams[0].id?0:1,
   'Desempate por penáltis: '+teams[winner===teams[0].id?0:1].name+' vence '+goals[0]+'–'+goals[1]+'.');
- return {penaltyWinner:winner,shootout:{home:goals[0],away:goals[1],kicks,details},
-  extraTime:{periods,goals:[score[0]-initial[0],score[1]-initial[1]]}};
+ return {penaltyWinner:winner,shootout:{home:goals[0],away:goals[1],kicks,details}};
 }
