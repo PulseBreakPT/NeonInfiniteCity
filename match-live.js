@@ -1,6 +1,6 @@
 import {applyRound} from './sim.js';
 import {clamp,hash,nextFixture,autoLineup,getPlayer} from './model.js';
-import {spatialTeams} from './pitch-spatial.js';
+import {spatialTeams,formationAnchors} from './pitch-spatial.js';
 import {createWorld,stepWorld,STEPS_PER_MINUTE,halfTimeWorld,secondHalfWorld,finalWorld,worldResult,requestSubstitution} from './physics-engine.js';
 
 /** The event engine runs on an isolated clone at kick-off.
@@ -150,6 +150,21 @@ export function resumeLiveMatch(state){
  if(session.phase==='halftime'&&session.schema===2)secondHalfWorld(session.world);
  if(session.phase==='paused'||session.phase==='halftime')session.phase='running';
  return session;
+}
+export function setLiveFormation(state,formation){
+ const options=['4-3-3','4-4-2','4-2-3-1','3-5-2','5-3-2'];
+ if(!options.includes(formation))throw Error('Formação inválida.');
+ const session=state.liveMatch;
+ if(!session||session.schema!==2||session.phase==='final')throw Error('Não há partida ativa.');
+ const side=session.world.teams.findIndex(t=>t.id===0);
+ if(side<0)throw Error('Clube não encontrado.');
+ const team=session.world.teams[side];
+ team.anchors=formationAnchors(formation,side,session.world.half||1);
+ team.formation=formation;
+ if(session.after)session.after.formation=formation;
+ session.world.events.push({minute:Math.max(1,Math.floor(session.world.minute)),
+  clock:session.world.minute,x:50,y:50,kind:'tactical',team:0,text:'Mudança de sistema tático: '+formation+'.'});
+ return formation;
 }
 export function setLiveTactic(state,key,value){
  const allowed={mentality:['defensiva','equilibrada','ofensiva'],
