@@ -50,6 +50,11 @@ try{
  await page.locator('[data-live-tactic="mentality"]').selectOption('ofensiva');
  let managed=await state(),ownSide=managed.liveMatch.world.teams.findIndex(t=>t.id===0);
  assert.equal(managed.liveMatch.world.teams[ownSide].tactics.mentality,'ofensiva');
+ await page.locator('[data-live-formation]').selectOption('4-4-2');
+ managed=await state();
+ assert.equal(managed.liveMatch.world.teams[ownSide].formation,'4-4-2',
+  'Coach must be able to switch systems during the match');
+ assert.equal(managed.liveMatch.selectedFormation,'4-4-2');
  await page.locator('[data-action="live-substitute"]').click();
  managed=await state();
  assert.ok(managed.liveMatch.world.pendingSubstitutions.length+
