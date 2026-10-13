@@ -14,7 +14,7 @@ const rand=w=>((w.seed=(Math.imul(w.seed,1664525)+1013904223)>>>0)/4294967296);
 const clampPos=(p)=>{p.x=clamp(p.x,.2,FIELD.width-.2);p.y=clamp(p.y,.2,FIELD.length-.2);return p;};
 function event(w,kind,text,team=-1,extra={}){
  const elapsed=w.minute;
- const e={minute:Math.min(90,Math.max(1,Math.floor(elapsed))),clock:elapsed,kind,team,text,
+ const e={minute:Math.min(w.competitionCup?120:90,Math.max(1,Math.floor(elapsed))),clock:elapsed,kind,team,text,
    x:clamp(w.ball.x/FIELD.width*100,2,98),y:clamp(w.ball.y/FIELD.length*100,1,99),...extra};
  w.events.push(e);
  return e;
@@ -129,7 +129,7 @@ function updateDelayedEntries(w){
 
 function findCarrier(w){return w.players.find(p=>p.id===w.carrier)||null;}
 function strengths(w,p,tag){return clamp((p[tag]||55)/65,.65,1.5)*clamp(p.stamina/90,.68,1.08);}
-function direction(w,side){return (side===0?-1:1)*(w.half===2?-1:1);}
+function direction(w,side){return (side===0?-1:1)*([2,4].includes(w.half)?-1:1);}
 function ownGoal(side,w){return direction(w,side)===-1?FIELD.length:0;}
 function attackGoal(side,w){return direction(w,side)===-1?0:FIELD.length;}
 function atGoalDistance(p,side,w){return Math.abs(p.y-attackGoal(side,w));}
@@ -678,7 +678,7 @@ function restartTargets(w){
  if(!w.restart)return;
  const r=w.restart,kind=['offside','goalkick','kickoff','backpass','indirect'].includes(r.kind)?'freekick':r.kind;
  const normalized=w.teams.map(t=>({
-  ...t,side:w.half===2?1-t.side:t.side,players:w.players.filter(p=>p.side===t.side).map(p=>({...p,x:p.x/FIELD.width*100,y:p.y/FIELD.length*100}))
+  ...t,side:[2,4].includes(w.half)?1-t.side:t.side,players:w.players.filter(p=>p.side===t.side).map(p=>({...p,x:p.x/FIELD.width*100,y:p.y/FIELD.length*100}))
  }));
  const spots=restartPositions(normalized,kind,w.teams[r.team].id,
   {x:r.x/FIELD.width*100,y:r.y/FIELD.length*100},r.takerName);
@@ -893,6 +893,27 @@ export function secondHalfWorld(w){
  p.x=34;p.y=52.5;w.carrier=p.id;
  w.ball={x:34,y:52.5,z:.12,vx:0,vy:0,vz:0,spin:0,owner:p.id,lastTouch:newSide};
  event(w,'kickoff','Começa a segunda parte. As equipas trocaram de campo.',w.teams[newSide].id);
+ return w;
+}
+export function extraTimeStartWorld(w,period=3){
+ if(![3,4].includes(period))throw Error('Período de prolongamento inválido.');
+ if(w.half===period)return w;
+ if(period===3&&w.half!==2)throw Error('O prolongamento exige 90 minutos completos.');
+ if(period===4&&w.half!==3)throw Error('A segunda parte exige a primeira do prolongamento.');
+ w.half=period;w.competitionCup=true;
+ for(const team of w.teams)for(const anchor of team.anchors)anchor.y=FIELD.length-anchor.y;
+ for(const p of w.players){
+  p.y=FIELD.length-p.y;p.vx=0;p.vy=0;p.facing-=Math.PI;
+  clampPos(p);
+ }
+ w.phase='kickoff';w.phaseTime=1;w.restart=null;
+ const side=period===3?0:1;
+ const p=teamPlayers(w,side).find(p=>p.pos==='MID')||teamPlayers(w,side)[0];
+ if(p){
+  p.x=34;p.y=52.5;w.carrier=p.id;w.possessor=side;
+  w.ball={x:34,y:52.5,z:.12,vx:0,vy:0,vz:0,spin:0,owner:p.id,lastTouch:side};
+ }
+ event(w,'extra',period===3?'Inicia-se a primeira parte do prolongamento.':'Inicia-se a segunda parte do prolongamento.',-1);
  return w;
 }
 export function finalWorld(w){
