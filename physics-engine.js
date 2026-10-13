@@ -616,9 +616,11 @@ function ballPhysics(w,dt){
      if(rand(w)<chance){
       w.stats[1-attacking].saves++;
       goalkeeper.pose='dive';goalkeeper.poseUntil=1.1;
-      b.lastTouch=1-attacking;
+      b.lastTouch=1-attacking;b.lastPlayerId=goalkeeper.id;
       if(reach<1.45&&rand(w)<.48){
        b.owner=goalkeeper.id;w.carrier=goalkeeper.id;w.possessor=1-attacking;
+        b.keeperHeld=true;b.lastPlayerId=goalkeeper.id;
+        w.referee??={};w.referee.keeperHold=0;
        b.vx=0;b.vy=0;b.vz=0;b.z=.12;b.spin=0;
       }else{
        // Parry: the ball remains independent and can produce a real corner.
