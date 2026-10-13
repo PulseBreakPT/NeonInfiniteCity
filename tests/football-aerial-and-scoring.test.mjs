@@ -31,3 +31,21 @@ test('goal metadata cannot attribute an own goal to the attacking scorer',()=>{
  assert.equal(goal.playerId,null);
  assert.equal(worldResult(w).hg,1);
 });
+
+test('headed shots count exactly once and are logged as shots',()=>{
+ let witnessed=false;
+ for(let seed=1;seed<=64&&!witnessed;seed++){
+  const w=make();
+  w.phase='open';w.phaseTime=0;w.carrier=null;w.ball.owner=null;w.actionCooldown=10;
+  const p=w.players.find(p=>p.side===0&&p.pos==='ATT');
+  p.x=34;p.y=7;p.phy=99;
+  for(const q of w.players)if(q!==p){q.x=q.side===0?8:60;q.y=85;}
+  Object.assign(w.ball,{x:34,y:7,z:2.11,vx:0,vy:0,vz:0,spin:0,lastTouch:1});
+  w.seed=seed;stepWorld(w);
+  if(!w.events.some(e=>e.kind==='header'&&e.shot))continue;
+  witnessed=true;
+  assert.equal(w.events.filter(e=>e.kind==='shot').length,w.stats[0].shots+w.stats[1].shots);
+  assert.equal(w.events.filter(e=>e.kind==='shot'&&e.method==='header').length,1);
+ }
+ assert.ok(witnessed,'A deterministic close-range headed shot should be produced');
+});

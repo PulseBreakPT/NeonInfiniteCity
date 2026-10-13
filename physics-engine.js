@@ -460,7 +460,10 @@ function aerialContest(w){
   b.shot={team:p.side,playerId:p.id,xg,onTarget};
  }
  event(w,'header',p.name+(shot?' cabeceia à baliza.':' ganha o duelo aéreo.'),w.teams[p.side].id,
-  {player:p.name,playerId:p.sourceId??p.id});
+  {player:p.name,playerId:p.sourceId??p.id,shot});
+ // Headed attempts must have a shot event just like physical kicks and penalties.
+ if(shot)event(w,'shot','Remate de cabeça de '+p.name+'.',w.teams[p.side].id,
+  {player:p.name,playerId:p.sourceId??p.id,xg:+xg.toFixed(3),method:'header'});
  w.actionCooldown=.6;
  return true;
 }

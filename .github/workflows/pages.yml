@@ -5,74 +5,104 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-  pages: write
-  id-token: write
 concurrency:
-  group: pages
+  group: club-dynasty-pages-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
-  test:
+  unit:
+    name: Football and syntax tests
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: "22"
-      - name: Check module syntax
-        run: npm run check
-      - name: Run football engine tests
-        run: npm test
-      - name: Verify physics with 16 deterministic complete leagues
-        run: MATCH_SOAK_COUNT=16 node tests/physics-soak.mjs
-      - name: Install Impeccable design skill (project scope)
-        run: npm run design:install
-      - name: Impeccable design scan
+          node-version: '22'
+          package-manager-cache: false
+      - run: npm run check
+      - run: npm test
+
+  physics-soak:
+    name: 16 complete simulated matches
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - run: MATCH_SOAK_COUNT=16 node tests/physics-soak.mjs
+
+  design:
+    name: Impeccable design audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Audit CSS and HTML
         shell: bash
         run: |
           set +e
           npm run --silent design:audit > impeccable-audit.json
           status=$?
-          echo "Impeccable scan exit code: $status"
-          if [ "$status" = "1" ]; then
+          set -e
+          if [ "$status" -ne 0 ]; then
             cat impeccable-audit.json
-            exit 1
+            exit "$status"
           fi
-          node -e "const f=require('fs');const a=JSON.parse(f.readFileSync('impeccable-audit.json','utf8'));console.log('Impeccable: '+a.length+' findings')"
-      - name: Archive Impeccable design findings
+          node -e "JSON.parse(require('fs').readFileSync('impeccable-audit.json','utf8'));console.log('Design scan JSON is valid')"
+      - name: Save design report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: club-dynasty-impeccable-audit
           path: impeccable-audit.json
           if-no-files-found: ignore
-      - name: Install browser QA controller
-        run: npm install --no-save --package-lock=false playwright-core@1.56.1
-      - name: Validate game UI in Chromium
-        run: node tests/browser-smoke.mjs
-      - name: Verify tactical XI changes in Android and desktop Chromium
-        run: node tests/browser-lineup.mjs
-      - name: Validate saved-club economic recovery in Android Chromium
-        run: node tests/browser-economy.mjs
-      - name: Validate spatial tactical renderer in Android Chromium
-        run: node tests/browser-live.mjs
-      - name: Measure clipped text in all game screens
-        run: node tests/clipping-audit.mjs
-      - name: Archive game screenshots
+
+  browser:
+    name: Android and desktop Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - run: npm install --no-save --package-lock=false playwright-core@1.56.1
+      - run: node tests/browser-smoke.mjs
+      - run: node tests/browser-lineup.mjs
+      - run: node tests/browser-economy.mjs
+      - run: node tests/browser-live.mjs
+      - run: node tests/clipping-audit.mjs
+      - name: Save screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: club-dynasty-ui-screenshots
           path: .browser-qa/
           if-no-files-found: ignore
           include-hidden-files: true
+
   deploy:
-    needs: test
+    name: GitHub Pages publication
+    needs: [unit, physics-soak, design, browser]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
