@@ -227,7 +227,7 @@ function minimumPlayers(w){
 function bookPlayer(w,p,kind='yellow'){
  if(!p||p.active===false)return;
  if(kind==='red'||(p.yellows=(p.yellows||0)+1)>=2){
-  p.active=false;
+  p.active=false;p.sentOff=true;
   w.stats[p.side].red++;
   event(w,'card','Cartão vermelho para '+p.name+'.',w.teams[p.side].id,{player:p.name,playerId:p.sourceId??p.id,color:'red'});
   if(w.ball.owner===p.id){w.ball.owner=null;w.carrier=null;}
@@ -386,7 +386,7 @@ function executeAction(w,p){
  if(close>0&&rand(w)<.19){
   const opponent=defenders.sort((a,b)=>dist(a,p)-dist(b,p))[0];
   w.stats[1-p.side].fouls++;
-  const penalty=isPenaltyArea(p.x,p.y,1-p.side);
+  const penalty=isPenaltyArea(p.x,p.y,1-p.side,w.half||1);
   const advantage=!penalty&&goalDistance<28&&rand(w)<.28;
   if(advantage){
    w.referee??={};w.referee.advantage={team:p.side,where:{x:p.x,y:p.y},expires:w.tick+15,penalty:false};
@@ -414,7 +414,7 @@ function detectHandball(w){
  if(b.owner!==null||b.z<1.05||b.z>1.75||w.phase!=='open')return false;
  for(const p of w.players){
   if(p.active===false||dist(p,b)>1.18)continue;
-  if(p.pos==='GK'&&isPenaltyArea(p.x,p.y,p.side))continue;
+  if(p.pos==='GK'&&isPenaltyArea(p.x,p.y,p.side,w.half||1))continue;
   const angle=Number.isFinite(p.facing)?p.facing:0;
   const perpendicular={x:-Math.sin(angle),y:Math.cos(angle)};
   const extension=(p.pose==='sprint'? .48:.33)+(p.bodyLean||0)*.08;
@@ -423,7 +423,7 @@ function detectHandball(w){
     y:p.y+perpendicular.y*extension*sign+.10*Math.sin(angle)};
    const contact=dist(hand,b);
    if(contact>.22||Math.abs(b.z-1.4)>.28)continue;
-   const attacking=1-p.side,penalty=isPenaltyArea(p.x,p.y,p.side);
+   const attacking=1-p.side,penalty=isPenaltyArea(p.x,p.y,p.side,w.half||1);
    w.stats[p.side].fouls++;
    event(w,'handball','Mão na bola de '+p.name+'.',w.teams[attacking].id,
      {player:p.name,playerId:p.sourceId??p.id});
@@ -488,7 +488,7 @@ function controlLooseBall(w){
  }
  if(!best||bestDistance>1.35)return;
  const b=w.ball,pass=b.intended,flag=b.pendingOffside;
- if(best.pos==='GK'&&!goalkeeperHandlingAllowed(best,b)){
+ if(best.pos==='GK'&&!goalkeeperHandlingAllowed(best,b,w.half||1)){
   if(rand(w)<.3){
    w.referee??={handballDecisions:0};
    w.referee.handballDecisions++;
@@ -521,7 +521,7 @@ function controlLooseBall(w){
  const wasShot=!!b.shot;
  delete b.shot;delete b.intended;delete b.pendingOffside;delete b.fromThrowin;delete b.deliberateBackpass;
  b.owner=best.id;w.carrier=best.id;w.possessor=best.side;
- b.keeperHeld=best.pos==='GK'&&goalkeeperHandlingAllowed(best,b)&&wasShot;
+ b.keeperHeld=best.pos==='GK'&&goalkeeperHandlingAllowed(best,b,w.half||1)&&wasShot;
  w.referee??={};w.referee.keeperHold=0;
  b.vx=0;b.vy=0;b.vz=0;b.z=.12;b.spin=0;
  w.actionCooldown=.45;
@@ -868,7 +868,7 @@ export function worldResult(w){
  foulsHome:a.fouls,foulsAway:b.fouls,cornersHome:a.corners,cornersAway:b.corners,
  savesHome:a.saves,savesAway:b.saves,blocksHome:a.blocks||0,blocksAway:b.blocks||0,yellowHome:a.yellow,yellowAway:b.yellow,redHome:a.red,redAway:b.red},
  fatigue:Object.fromEntries(w.players.filter(p=>w.teams[p.side].id===0).map(p=>[p.sourceId??p.id,Math.max(9,Math.round((100-p.stamina)*.55))])),
- discipline:w.players.filter(p=>p.yellows>0||p.active===false).map(p=>({playerId:p.sourceId??p.id,team:w.teams[p.side].id,yellow:p.yellows||0,red:p.active===false})),
+ discipline:w.players.filter(p=>p.yellows>0||p.sentOff===true).map(p=>({playerId:p.sourceId??p.id,team:w.teams[p.side].id,yellow:p.yellows||0,red:p.sentOff===true})),
  injuries:(w.injuries||[]).slice(),substitutions:(w.substitutions||[[],[]]).flat(),forfeit:w.forfeit||null,engine:'physics-v2',physicsRevision:6,
  weather:w.weather?.condition||'limpo',weatherDetail:{...(w.weather||{})},involved:true,cup:false,friendly:false,
  homeTactics:w.teams[0].tactics,awayTactics:w.teams[1].tactics};
