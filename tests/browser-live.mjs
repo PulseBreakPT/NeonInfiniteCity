@@ -137,7 +137,10 @@ try{
  assert.equal(s.league.round,2);
  assert.equal(s.week,2);
  assert.ok(s.lastMatch?.events.some(e=>e.kind==='end'));
- assert.ok(await page.locator('#match-timeline:not([disabled])').count());
+ // The final result is persisted before the newly rendered replay becomes visible.
+ // Require the actual replay UI instead of sampling the DOM during the render transition.
+ await page.waitForSelector('#match-timeline:not([disabled])',{state:'attached',timeout:15000});
+ assert.ok(await page.locator('[data-action="replay"]:not([disabled])').count(),'Final result must allow replay');
  assert.equal(s.finance.debt,0);
  assert.deepEqual(errors,[]);
  await page.screenshot({path:'.browser-qa/live-fulltime-android.png'});

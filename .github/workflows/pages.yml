@@ -45,7 +45,7 @@ jobs:
         with:
           node-version: '22'
           package-manager-cache: false
-      - name: Audit CSS and HTML
+      - name: Impeccable design scan
         shell: bash
         run: |
           set +e
