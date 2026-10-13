@@ -16,7 +16,7 @@ export function goalkeeperHandlingAllowed(keeper,ball,half=1){
  return true;
 }
 export function isPenaltyArea(x,y,defendingSide,half=1){
- const defendsFar=(defendingSide===0)===(half!==2);
+ const defendsFar=(defendingSide===0)===(![2,4].includes(half));
  return x>=13.84&&x<=54.16&&(defendsFar?y>=88.5:y<=16.5);
 }
 export function requiredDistance(kind){
