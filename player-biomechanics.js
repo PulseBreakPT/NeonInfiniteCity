@@ -33,6 +33,27 @@ export function articulatedPose(player,frameTime=0){
   hips.push(hip);knees.push(knee);feet.push(foot);shoulders.push(shoulder);elbows.push(elbow);hands.push(hand);
  }
  if(dive){head.y+=.3;head.z-=.55;chest.z-=.45;pelvis.z-=.39;}
+ if(action==='header'){
+  // Full-body aerial effort: vertical leap, raised counterbalancing arms and
+  // controlled head contact during the crossing phase.
+  for(const joint of [pelvis,chest,neck,head])joint.z+=.28;
+  head.y+=.20;
+  for(const j of feet)j.z+=.16;
+  for(const j of knees)j.z+=.25;
+  for(const j of hips)j.z+=.28;
+  for(const j of shoulders)j.z+=.28;
+  for(const j of elbows){j.z+=.46;j.y+=.15;}
+  for(const j of hands){j.z+=.52;j.y+=.20;}
+ }
+ if(action==='throw'){
+  for(const j of elbows){j.z+=.35;j.y+=.14;}
+  for(const j of hands){j.z+=.82;j.y+=.33;}
+ }
+ if(action==='block'){
+  pelvis.z-=.22;chest.z-=.16;head.z-=.12;
+  for(const j of knees)j.z-=.14;
+  for(const j of hands){j.z+=.1;j.y+=.25;}
+ }
  if(action==='injured'){
   // Player is temporarily rendered lying on the grass before medical exit.
   pelvis.z=.18;chest.z=.26;chest.y+=.36;head.z=.24;head.y+=.82;
