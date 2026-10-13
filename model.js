@@ -263,6 +263,14 @@ export function migrate(saved){
        gk:p.gk||55,phy:p.phy||55,fitness:p.fitness||90}));
     });
    }
+   // Old saves had no explicit dismissal marker; reconstruct only actual
+   // red-card events, never infer a dismissal from the player's inactive state.
+   const reds=new Set((world.events||[]).filter(e=>e.kind==='card'&&e.color==='red')
+    .map(e=>String(e.playerId)));
+   for(const p of world.players||[]){
+    if(reds.has(String(p.sourceId??p.id)))p.sentOff=true;
+    if(p.replaced||p.injury>0||p.temporaryExitUntilTick!==undefined)p.sentOff=false;
+   }
    world.substitutions??=[[],[]];world.subWindows??=[0,0];
    world.pendingSubstitutions??=[];world.injuries??=[];world.version=5;
   }
