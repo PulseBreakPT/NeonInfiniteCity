@@ -1,10 +1,62 @@
 
 import {rng,hash,clamp,teamPower,getPlayer,fixtureName,standings,makeCup,makeLeague,autoLineup,makeMarket,makeRivals,rivalTick,generatePlayer,rating,log,weeklyWageBill,televisionIncome,sponsorIncome,campusMaintenance} from './model.js';
 import {runMatch,tacticalModifiers} from './match-engine.js';
+import {runCompetitionFixture} from './competition-physics.js';
 const pick=(random,arr)=>arr[Math.floor(random()*arr.length)];
 const poisson=(random,lambda)=>{let k=0,p=1,L=Math.exp(-lambda);while(p>L&&k<10){p*=random();k++;}return k-1;};
 export function tacticsMultiplier(state){return tacticalModifiers(state?.tactics||{},state?.mentors?.find(m=>m.id===state.mentorActive)||null);}
-export function simulateMatch(state,fixture,options={}){return runMatch(state,fixture,options);}
+export function simulateMatch(state,fixture,options={}){
+ const clubIncluded=fixture.home===0||fixture.away===0;
+ if(clubIncluded){
+  const ids=state.lineups[state.formation]||[];
+  if(ids.length!==11||new Set(ids).size!==11||ids.some(id=>{
+   const p=getPlayer(state,id);
+   return !p||(p.injury||0)>0||(p.contract??0)<=0||(p.suspendedUntilWeek||0)>=state.week;
+  }))state.lineups[state.formation]=autoLineup(state);
+ }
+ // Every fixture now uses the same metric ball, referee, tactics and 22-player
+ // engine as the watched match. No synthetic score is assigned before play.
+ const result=runCompetitionFixture(state,fixture,options);
+ if(clubIncluded&&!options.friendly){
+  const won=result.hg===result.ag&&options.cup&&result.penaltyWinner!==null
+   ?result.penaltyWinner===0:fixture.home===0?result.hg>result.ag:result.ag>result.hg;
+  const lost=result.hg===result.ag&&options.cup&&result.penaltyWinner!==null
+   ?result.penaltyWinner!==0:fixture.home===0?result.hg<result.ag:result.ag<result.hg;
+  const active=new Set([
+   ...(state.lineups[state.formation]||[]),
+   ...(result.substitutions||[]).filter(s=>s.team===0).map(s=>s.inId)
+  ]);
+  for(const id of active){
+   const player=getPlayer(state,id);if(!player)continue;
+   player.apps=(player.apps||0)+1;
+   player.xp=(player.xp||0)+(won?12:7);
+   player.fitness=clamp((player.fitness||90)-Math.max(8,result.fatigue?.[id]??14),4,100);
+   player.morale=clamp((player.morale||80)+(won?4:lost?-4:1),5,100);
+   const conceded=fixture.home===0?result.ag:result.hg;
+   if(player.pos==='GK'&&conceded===0)player.cleanSheets=(player.cleanSheets||0)+1;
+  }
+  for(const event of result.events||[])if(event.kind==='goal'&&event.team===0){
+   if(event.playerId&&!event.ownGoal){
+    const scorer=getPlayer(state,event.playerId);
+    if(scorer)scorer.goals=(scorer.goals||0)+1;
+   }
+   if(event.assistId){
+    const assister=getPlayer(state,event.assistId);
+    if(assister)assister.assists=(assister.assists||0)+1;
+   }
+  }
+  for(const injury of result.injuries||[])if(injury.team===0){
+   const player=getPlayer(state,injury.playerId);
+   if(player)player.injury=Math.max(player.injury||0,injury.weeks||1);
+  }
+  for(const card of result.discipline||[])if(card.team===0){
+   const player=getPlayer(state,card.playerId);if(!player)continue;
+   player.cards=(player.cards||0)+(card.yellow||0);
+   if(card.red)player.suspendedUntilWeek=Math.max(player.suspendedUntilWeek||0,state.week+1);
+  }
+ }
+ return result;
+}
 export function addLedger(state,label,amount){
  if(!state.finance)state.finance={income:0,expenses:0,ledger:[]};
  const prior=state.budget;
