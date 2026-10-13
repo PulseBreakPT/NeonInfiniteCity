@@ -296,7 +296,7 @@ function act(action,data={}){
 }
 function paintReplay(minute){
  const r=state?.lastMatch;if(!r||page!=='matches')return;
- const end=Math.min(90,Math.max(0,Math.round(minute))),events=r.events||[];
+ const duration=r.extraTime?120:90,end=Math.min(duration,Math.max(0,Math.round(minute))),events=r.events||[];
  const clock=$('#live-minute'),comment=$('#live-comment'),score=$('#live-score'),ball=$('#ball'),slider=$('#match-timeline'),clockLive=$('#timeline-clock');
  if(clock)clock.textContent=end+'’';
  if(clockLive)clockLive.textContent=String(end).padStart(2,'0')+':00';
@@ -327,9 +327,9 @@ function replay(resume=false){
  paintReplay(replayStep);
  replayTimer=setInterval(()=>{
   if(page!=='matches'||!$('#live-minute')){stopReplay();return;}
-  replayStep=Math.min(90,replayStep+1);
+  replayStep=Math.min(state.lastMatch?.extraTime?120:90,replayStep+1);
   paintReplay(replayStep);
-  if(replayStep>=90){stopReplay();const el=$('#replay-pause-label');if(el)el.textContent='RECOMEÇAR';}
+  if(replayStep>=(state.lastMatch?.extraTime?120:90)){stopReplay();const el=$('#replay-pause-label');if(el)el.textContent='RECOMEÇAR';}
  },Math.round(220/replaySpeed));
 }
 function exportSave(){
