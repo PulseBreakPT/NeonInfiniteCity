@@ -22,8 +22,8 @@ jobs:
         run: npm run check
       - name: Run football engine tests
         run: npm test
-      - name: Verify physics with 128 deterministic headless matches
-        run: MATCH_SOAK_COUNT=128 node tests/physics-soak.mjs
+      - name: Verify physics with 16 deterministic complete leagues
+        run: MATCH_SOAK_COUNT=16 node tests/physics-soak.mjs
       - name: Install Impeccable design skill (project scope)
         run: npm run design:install
       - name: Impeccable design scan
