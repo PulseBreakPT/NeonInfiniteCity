@@ -1,0 +1,24 @@
+name: Club Dynasty — Nightly Physics Stress
+on:
+  schedule:
+    - cron: '21 3 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  physics-stress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate all modules
+        run: npm run check
+      - name: Run 128 complete career games with all rival fixtures
+        env:
+          MATCH_SOAK_COUNT: '128'
+        run: node tests/physics-soak.mjs
+      - name: Run football and competition unit tests
+        run: npm test
