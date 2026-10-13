@@ -779,6 +779,11 @@ export function stepWorld(w,dt=FIXED_DT){
   const keeper=findCarrier(w);
   if(keeper?.pos==='GK'){
    w.referee.keeperHold=(w.referee.keeperHold||0)+dt;
+   if(w.referee.keeperHold>=3&&!w.referee.keeperWarning){
+    w.referee.keeperWarning=true;
+    event(w,'countdown','O árbitro inicia a contagem visível de cinco segundos para o guarda-redes.',
+     w.teams[keeper.side].id);
+   }
    if(w.referee.keeperHold>8){
     const opponent=1-keeper.side,goalY=ownGoal(keeper.side,w);
     w.stats[opponent].corners++;
@@ -787,7 +792,7 @@ export function stepWorld(w,dt=FIXED_DT){
     return w;
    }
   }
- }else w.referee.keeperHold=0;
+ }else{w.referee.keeperHold=0;w.referee.keeperWarning=false;}
  if(w.phase==='kickoff'){w.phaseTime-=dt;if(w.phaseTime<=0){
   const p=findCarrier(w);if(p){w.ball.owner=p.id;w.carrier=p.id;}w.phase='open';
  }return w;}
