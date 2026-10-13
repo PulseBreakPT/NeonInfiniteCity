@@ -1,6 +1,6 @@
 {
   "name": "club-dynasty",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "private": true,
   "type": "module",
   "description": "Offline football manager with independent fixed-timestep match simulation",
