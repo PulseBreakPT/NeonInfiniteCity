@@ -1,3 +1,4 @@
+import {resolveCupTie} from './cup-resolution.js';
 
 import {rng,hash,clamp,getPlayer,fixtureName,rating,teamPower} from './model.js';
 
@@ -76,7 +77,7 @@ export function runMatch(state,fixture,{cup=false,friendly=false}={}){
   // The ball is stored as progress and lateral displacement of current possession.
   const mapX=clamp(current===0?ball.y:100-ball.y,3,97);
   const mapY=clamp(current===0?100-ball.x:ball.x,2,98);
-  events.push({minute:Math.min(90,Math.max(1,Math.floor(minute))),kind,
+  events.push({minute:Math.min(cup?120:90,Math.max(1,Math.floor(minute))),kind,
    team:side===-1?-1:teams[side].id,text,x:mapX,y:mapY,...extra});
  };
  const choosing=(team,role)=>selectWeighted(random,team.starters.filter(p=>!team.sentOff.has(p.id)),p=>{
@@ -265,14 +266,16 @@ export function runMatch(state,fixture,{cup=false,friendly=false}={}){
   else if(random()<.12){current=1-current;ball.x=100-ball.x;}
  }
  minute=90;
- const stats1=statistics[0],stats2=statistics[1],poss=stats1.possession+stats2.possession;
- let penaltyWinner=null,shootout=null;
+ let penaltyWinner=null,shootout=null,extraTime=null;
  if(cup&&score[0]===score[1]){
-  const roll=random()+clamp((strength(home,away)-strength(away,home))*.008,-.20,.20);
-  penaltyWinner=roll<.5?away.id:home.id;
-  shootout={home:penaltyWinner===home.id?5:4,away:penaltyWinner===away.id?5:4};
-  event('penalties',penaltyWinner===home.id?0:1,'Decisão nos penáltis: '+fixtureName(state,penaltyWinner)+' vence '+shootout.home+'–'+shootout.away+'.');
+  const overtime=resolveCupTie({teams,score,statistics,random,clamp,
+   at:(time,side)=>{minute=time;current=side;ball={x:87,y:50};},
+   emit:event});
+  penaltyWinner=overtime.penaltyWinner;
+  shootout=overtime.shootout;
+  extraTime=overtime.extraTime;
  }
+ const stats1=statistics[0],stats2=statistics[1],poss=stats1.possession+stats2.possession;
  event('end',-1,'Apito final: '+home.name+' '+score[0]+'–'+score[1]+' '+away.name+'.');
  if(!friendly){
   for(const team of teams){
@@ -298,6 +301,6 @@ export function runMatch(state,fixture,{cup=false,friendly=false}={}){
    foulsHome:stats1.fouls,foulsAway:stats2.fouls,cornersHome:stats1.corners,cornersAway:stats2.corners,
    savesHome:stats1.saves,savesAway:stats2.saves,yellowHome:stats1.yellow,yellowAway:stats2.yellow,
    redHome:stats1.red,redAway:stats2.red},
-   penaltyWinner,shootout,weather,homeTactics:home.tactical,awayTactics:away.tactical,involved:home.isUser||away.isUser,cup,friendly,engine:'events-v4'};
+   penaltyWinner,shootout,extraTime,weather,homeTactics:home.tactical,awayTactics:away.tactical,involved:home.isUser||away.isUser,cup,friendly,engine:'events-v4'};
 }
 export const tacticalModifiers=tactics;
