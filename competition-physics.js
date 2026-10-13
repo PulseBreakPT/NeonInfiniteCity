@@ -13,6 +13,39 @@ const seedId=(state,fixture,cup,friendly)=>[state.club.name,state.season,state.w
  fixture.id,fixture.home,fixture.away,state.gameNonce||0,cup?1:0,friendly?1:0,
  state.tactics?.pressure,state.tactics?.mentality,state.tactics?.passing].join(':');
 
+// Advance other league games one fixed physics step for each watched-match step.
+// Saves contain these worlds, so Android resume and deterministic tests do not
+// need to re-simulate seven fixtures at the final whistle.
+export function createLeagueFixtureJob(state,fixture){
+ const session={id:seedId(state,fixture,false,false),
+  spatial:{teams:spatialTeams(state,fixture)},
+  result:{home:fixture.home,away:fixture.away,
+   homeName:fixtureName(state,fixture.home),awayName:fixtureName(state,fixture.away)}};
+ return {fixtureId:fixture.id,world:createWorld(session),minute:0,substep:0,complete:false};
+}
+export function tickLeagueFixtureJob(job){
+ if(job.complete)return job;
+ const w=job.world;
+ if(w.phase!=='final'){
+  w.minute=job.minute+job.substep/STEPS_PER_MINUTE;
+  stepWorld(w);
+ }
+ job.substep++;
+ if(job.substep>=STEPS_PER_MINUTE||w.phase==='final'){
+  job.substep=0;job.minute++;
+  if(job.minute===45&&w.phase!=='final'){
+   w.minute=45;halfTimeWorld(w);secondHalfWorld(w);
+  }
+  if(job.minute>=90||w.phase==='final'){
+   if(w.phase!=='final'){w.minute=90;finalWorld(w);}
+   job.complete=true;
+   job.result={...worldResult(w),engine:'physics-v2',physicsRevision:8,
+    involved:false,cup:false,friendly:false};
+   delete job.world; // compact the persisted career snapshot after completion
+  }
+ }
+ return job;
+}
 export function runCompetitionFixture(state,fixture,{cup=false,friendly=false}={}){
  if(!fixture||!Number.isInteger(fixture.home)||!Number.isInteger(fixture.away))
   throw Error('Partida da competição inválida.');
