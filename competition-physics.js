@@ -46,6 +46,24 @@ export function tickLeagueFixtureJob(job){
  }
  return job;
 }
+export function resolvePhysicalCupShootout(w){
+ if(w.score[0]!==w.score[1])throw Error('Só é permitida série de penáltis após empate.');
+ w.minute=120;
+ const teams=w.teams.map((team,side)=>({
+  id:team.id,name:team.name,sentOff:new Set(),
+  starters:w.players.filter(p=>p.side===side&&p.active!==false)
+   .map(p=>({...p,id:p.sourceId??p.id}))
+ }));
+ const penalty=resolvePenalties({teams,random:()=>randomFor(w),clamp,
+  at:()=>{w.minute=120;},
+  emit:(kind,side,text,extra={})=>w.events.push({
+   kind,minute:120,clock:120,team:side===-1?-1:w.teams[side].id,text,
+   x:50,y:50,...extra
+  })});
+ return penalty;
+
+}
+
 export function runCompetitionFixture(state,fixture,{cup=false,friendly=false}={}){
  if(!fixture||!Number.isInteger(fixture.home)||!Number.isInteger(fixture.away))
   throw Error('Partida da competição inválida.');
@@ -76,18 +94,7 @@ export function runCompetitionFixture(state,fixture,{cup=false,friendly=false}={
   if(w.phase!=='final'){w.minute=105;extraTimeStartWorld(w,4);simulate(105,120);}
   extraTime.goals=[w.score[0]-before[0],w.score[1]-before[1]];
   if(w.phase!=='final'&&w.score[0]===w.score[1]){
-   w.minute=120;
-   const teams=w.teams.map((team,side)=>({
-    id:team.id,name:team.name,sentOff:new Set(),
-    starters:w.players.filter(p=>p.side===side&&p.active!==false)
-     .map(p=>({...p,id:p.sourceId??p.id}))
-   }));
-   const penalty=resolvePenalties({teams,random:()=>randomFor(w),clamp,
-    at:()=>{w.minute=120;},
-    emit:(kind,side,text,extra={})=>w.events.push({
-     kind,minute:120,clock:120,team:side===-1?-1:w.teams[side].id,text,
-     x:50,y:50,...extra
-    })});
+   const penalty=resolvePhysicalCupShootout(w);
    shootout=penalty.shootout;penaltyWinner=penalty.penaltyWinner;
   }
  }
