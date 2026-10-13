@@ -161,7 +161,7 @@ export function setLiveFormation(state,formation){
  const team=session.world.teams[side];
  team.anchors=formationAnchors(formation,side,session.world.half||1);
  team.formation=formation;
- if(session.after)session.after.formation=formation;
+ session.selectedFormation=formation;
  session.world.events.push({minute:Math.max(1,Math.floor(session.world.minute)),
   clock:session.world.minute,x:50,y:50,kind:'tactical',team:0,text:'Mudança de sistema tático: '+formation+'.'});
  return formation;
@@ -210,6 +210,7 @@ export function finishLiveMatch(state){
   // No match, league-table, wage or transfer operation has been applied yet.
   // Settle the entire round in this single final-whistle transaction.
   applyRound(committed,{featuredResult:worldResult(session.world)});
+  if(session.selectedFormation)committed.formation=session.selectedFormation;
  }
  delete committed.liveMatch;
  return committed;
