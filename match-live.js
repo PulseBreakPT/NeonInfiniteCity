@@ -2,6 +2,7 @@ import {applyRound} from './sim.js';
 import {clamp,hash,nextFixture,autoLineup,getPlayer} from './model.js';
 import {spatialTeams,formationAnchors} from './pitch-spatial.js';
 import {createWorld,stepWorld,STEPS_PER_MINUTE,halfTimeWorld,secondHalfWorld,finalWorld,worldResult,requestSubstitution} from './physics-engine.js';
+import {createLeagueFixtureJob,tickLeagueFixtureJob} from './competition-physics.js';
 
 /** The event engine runs on an isolated clone at kick-off.
  * League tables, finances, players and official results are committed atomically
@@ -72,7 +73,12 @@ export function beginLiveMatch(state,options={}){
     hg:0,ag:0,events:[]},
   after,spatial:{schema:1,teams:spatialTeams(after,fixture)}
  };
- if(physics){session.world=createWorld(session);session.result=worldResult(session.world);}
+ if(physics){
+  session.world=createWorld(session);session.result=worldResult(session.world);
+  const round=after.league.rounds[after.league.round-1]||[];
+  session.rivalFixtures=round.filter(f=>!f.played&&f.id!==fixture.id)
+   .map(f=>createLeagueFixtureJob(after,f));
+ }
  state.liveMatch=session;
  return session;
 }
@@ -104,6 +110,7 @@ export function tickLiveMatchStep(state){
  };
  world.minute=session.minute+substep/STEPS_PER_MINUTE;
  stepWorld(world);
+ for(const job of session.rivalFixtures||[])tickLeagueFixtureJob(job);
  if(world.phase==='final'&&world.forfeit){
   session.minute=session.total;session.substep=0;session.phase='final';
   session.result=worldResult(world);return session;
@@ -209,7 +216,9 @@ export function finishLiveMatch(state){
  if(session.schema===2){
   // No match, league-table, wage or transfer operation has been applied yet.
   // Settle the entire round in this single final-whistle transaction.
-  applyRound(committed,{featuredResult:worldResult(session.world)});
+  const rivals=Object.fromEntries((session.rivalFixtures||[])
+   .filter(job=>job.complete&&job.result).map(job=>[job.fixtureId,job.result]));
+  applyRound(committed,{featuredResult:worldResult(session.world),otherResults:rivals});
   if(session.selectedFormation)committed.formation=session.selectedFormation;
  }
  delete committed.liveMatch;
