@@ -452,8 +452,8 @@ function aerialContest(w){
    :friend?{x:friend.x,y:friend.y}:{x:34,y:attackGoal(p.side,w)};
  kick(w,p,target,shot?15:12,shot?1.7:1.2);
  b.z=height;b.vz=shot?1.6:1.2;p.pose='header';p.poseUntil=.85;
+ const xg=shot?clamp(.31*Math.exp(-goalDistance/19),.015,.36):0;
  if(shot){
-  const xg=clamp(.31*Math.exp(-goalDistance/19),.015,.36);
   w.stats[p.side].shots++;w.stats[p.side].xg+=xg;
   const onTarget=target.x>=FIELD.goalLeft&&target.x<=FIELD.goalRight;
   if(onTarget)w.stats[p.side].onTarget++;
