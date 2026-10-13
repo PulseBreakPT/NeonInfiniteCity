@@ -7,15 +7,17 @@ export function restartGoalVerdict(restartKind,takerSide,attackingSide,otherPlay
  if(restartKind==='throwin'||INDIRECT_RESTARTS.has(restartKind))return 'goalkick';
  return 'goal';
 }
-export function goalkeeperHandlingAllowed(keeper,ball){
+export function goalkeeperHandlingAllowed(keeper,ball,half=1){
  if(keeper?.pos!=='GK')return false;
- const ownBox=keeper.side===0?ball.y>=105-16.5:ball.y<=16.5;
+ const defendsFar=(keeper.side===0)===(half!==2);
+ const ownBox=defendsFar?ball.y>=105-16.5:ball.y<=16.5;
  if(!ownBox||ball.x<13.84||ball.x>54.16)return false;
  if(ball?.fromThrowin===keeper.side||ball?.deliberateBackpass===keeper.side)return false;
  return true;
 }
-export function isPenaltyArea(x,y,defendingSide){
- return x>=13.84&&x<=54.16&&(defendingSide===0?y>=88.5:y<=16.5);
+export function isPenaltyArea(x,y,defendingSide,half=1){
+ const defendsFar=(defendingSide===0)===(half!==2);
+ return x>=13.84&&x<=54.16&&(defendsFar?y>=88.5:y<=16.5);
 }
 export function requiredDistance(kind){
  return kind==='throwin'?2:kind==='goalkick'?0:9.15;
