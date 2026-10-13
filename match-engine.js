@@ -282,10 +282,12 @@ export function runMatch(state,fixture,{cup=false,friendly=false}={}){
    for(const p of team.starters.concat(team.reserves.filter(p=>p._used))){
     if(team.isUser){
      p.apps=(p.apps||0)+1;
-     const fatigue=Math.ceil((11+random()*8)*team.tactical.fatigue);
+     const fatigue=Math.ceil((11+random()*8)*team.tactical.fatigue*(extraTime?1.18:1));
      p.fitness=clamp(p.fitness-fatigue,4,100);
      const ownGoals=team===home?score[0]:score[1],otherGoals=team===home?score[1]:score[0];
-     p.morale=clamp(p.morale+(ownGoals>otherGoals?4:ownGoals<otherGoals?-4:1),5,100);
+     const won=ownGoals===otherGoals&&cup&&penaltyWinner!==null?team.id===penaltyWinner:ownGoals>otherGoals;
+     const lost=ownGoals===otherGoals&&cup&&penaltyWinner!==null?team.id!==penaltyWinner:ownGoals<otherGoals;
+     p.morale=clamp(p.morale+(won?4:lost?-4:1),5,100);
      if(p.pos==='GK'&&otherGoals===0)p.cleanSheets=(p.cleanSheets||0)+1;
      if(!Number.isFinite(p.xp))p.xp=0;p.xp+=(ownGoals>otherGoals?12:7);
     }
