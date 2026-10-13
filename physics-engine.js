@@ -940,7 +940,7 @@ export function worldResult(w){
  savesHome:a.saves,savesAway:b.saves,blocksHome:a.blocks||0,blocksAway:b.blocks||0,yellowHome:a.yellow,yellowAway:b.yellow,redHome:a.red,redAway:b.red},
  fatigue:Object.fromEntries(w.players.filter(p=>w.teams[p.side].id===0).map(p=>[p.sourceId??p.id,Math.max(9,Math.round((100-p.stamina)*.55))])),
  discipline:w.players.filter(p=>p.yellows>0||p.sentOff===true).map(p=>({playerId:p.sourceId??p.id,team:w.teams[p.side].id,yellow:p.yellows||0,red:p.sentOff===true})),
- injuries:(w.injuries||[]).slice(),varReviews:(w.referee?.reviewLog||[]).slice(),substitutions:(w.substitutions||[[],[]]).flat(),forfeit:w.forfeit||null,engine:'physics-v2',physicsRevision:6,
+ injuries:(w.injuries||[]).slice(),varReviews:(w.referee?.reviewLog||[]).slice(),substitutions:(w.substitutions||[[],[]]).flat(),forfeit:w.forfeit||null,engine:'physics-v2',physicsRevision:9,
  weather:w.weather?.condition||'limpo',weatherDetail:{...(w.weather||{})},involved:true,cup:false,friendly:false,
  homeTactics:w.teams[0].tactics,awayTactics:w.teams[1].tactics};
 }
