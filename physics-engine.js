@@ -5,6 +5,7 @@ import {clamp,hash} from './model.js';
 import {restartPositions} from './pitch-spatial.js';
 import {createWeather,advanceWeather,surfaceGrip,rollingDrag} from './weather-systems.js';
 import {restartGoalVerdict,goalkeeperHandlingAllowed,isPenaltyArea,requiredDistance} from './football-rules.js';
+import {auditGoalCrossing} from './referee-audit.js';
 export const FIELD={width:68,length:105,goalLeft:30.34,goalRight:37.66,boxLeft:13.84,boxRight:54.16,boxDepth:16.5};
 export const FIXED_DT=.2;
 export const STEPS_PER_MINUTE=36;
@@ -41,7 +42,7 @@ export function createWorld(session){
   weather:createWeather(hash(session.id+':climate')),
   bench:teams.map(t=>(t.bench||[]).map(b=>({...b}))),
   substitutions:[[],[]],subWindows:[0,0],pendingSubstitutions:[],
-  referee:{advantage:null,handballDecisions:0},
+  referee:{advantage:null,handballDecisions:0,reviewLog:[]},
   stats:[0,1].map(()=>({shots:0,onTarget:0,xg:0,passes:0,accurate:0,possession:0,fouls:0,corners:0,saves:0,yellow:0,red:0})),
   actionCooldown:1.3,lastAction:'kickoff'
  };
@@ -571,10 +572,11 @@ function ballPhysics(w,dt){
  }
  const drag=b.z>.16?Math.exp(-.085*dt):Math.exp(-rollingDrag(w.weather)*dt);
  b.vx*=drag;b.vy*=drag;b.spin=spin*Math.exp(-.28*dt);
+ const travelEnd={x:b.x,y:b.y,z:b.z};
  if(blockShot(w,lastX,lastY,lastZ))return;
  // Posts and crossbar are physical solid obstacles, not probabilistic misses.
- const goalEnd=b.y<0?0:b.y>FIELD.length?FIELD.length:null;
- const sideEnd=b.x<0?0:b.x>FIELD.width?FIELD.width:null;
+ const goalEnd=b.y<-.11?0:b.y>FIELD.length+.11?FIELD.length:null;
+ const sideEnd=b.x<-.11?0:b.x>FIELD.width+.11?FIELD.width:null;
  const goalFraction=goalEnd===null?Infinity:clamp((goalEnd-lastY)/((b.y-lastY)||1e-9),0,1);
  const sideFraction=sideEnd===null?Infinity:clamp((sideEnd-lastX)/((b.x-lastX)||1e-9),0,1);
  if(sideEnd!==null&&sideFraction<goalFraction){
@@ -648,7 +650,12 @@ function ballPhysics(w,dt){
  }
  if(b.y<0||b.y>FIELD.length){
   const end=b.y<0?0:FIELD.length,attacking=attackGoal(0,w)===end?0:1;
-  const legalGoal=b.x>=FIELD.goalLeft&&b.x<=FIELD.goalRight&&b.z<2.44;
+  const review=auditGoalCrossing({
+   before:{x:lastX,y:lastY,z:lastZ},after:travelEnd,goalLine:end,
+   field:FIELD,attacking,restartKind:b.restartKind,
+   restartSide:b.restartSide,restartTouched:b.restartTouched
+  });
+  const legalGoal=review.approved;
   if(legalGoal){
    const verdict=restartGoalVerdict(b.restartKind,b.restartSide,attacking,b.restartTouched);
    if(verdict!=='goal'){
@@ -657,11 +664,12 @@ function ballPhysics(w,dt){
     return;
    }
    w.score[attacking]++;
+   w.referee??={};(w.referee.reviewLog??=[]).push({clock:w.minute,attackingTeam:w.teams[attacking].id,...review});
    const scorer=w.players.find(p=>p.id===(w.ball.shot?.playerId??w.ball.lastPlayerId)&&p.side===attacking);
    const ownGoal=b.lastTouch!==attacking,assister=!ownGoal?w.players.find(p=>p.id===w.ball.shot?.assistId):null;
    event(w,'goal','GOLO! '+w.teams[attacking].name+(scorer?' — '+scorer.name:'' )+'.',
     w.teams[attacking].id,{player:ownGoal?null:scorer?.name||null,playerId:ownGoal?null:scorer?.sourceId??scorer?.id??null,
-     ownGoal,assist:assister?.name||null,assistId:assister?.sourceId??null});
+     ownGoal,assist:assister?.name||null,assistId:assister?.sourceId??null,review});
    restart(w,'kickoff',1-attacking,{x:34,y:52.5});
   }else if(b.lastTouch===1-attacking){
    w.stats[attacking].corners++;
@@ -932,7 +940,7 @@ export function worldResult(w){
  savesHome:a.saves,savesAway:b.saves,blocksHome:a.blocks||0,blocksAway:b.blocks||0,yellowHome:a.yellow,yellowAway:b.yellow,redHome:a.red,redAway:b.red},
  fatigue:Object.fromEntries(w.players.filter(p=>w.teams[p.side].id===0).map(p=>[p.sourceId??p.id,Math.max(9,Math.round((100-p.stamina)*.55))])),
  discipline:w.players.filter(p=>p.yellows>0||p.sentOff===true).map(p=>({playerId:p.sourceId??p.id,team:w.teams[p.side].id,yellow:p.yellows||0,red:p.sentOff===true})),
- injuries:(w.injuries||[]).slice(),substitutions:(w.substitutions||[[],[]]).flat(),forfeit:w.forfeit||null,engine:'physics-v2',physicsRevision:6,
+ injuries:(w.injuries||[]).slice(),varReviews:(w.referee?.reviewLog||[]).slice(),substitutions:(w.substitutions||[[],[]]).flat(),forfeit:w.forfeit||null,engine:'physics-v2',physicsRevision:6,
  weather:w.weather?.condition||'limpo',weatherDetail:{...(w.weather||{})},involved:true,cup:false,friendly:false,
  homeTactics:w.teams[0].tactics,awayTactics:w.teams[1].tactics};
 }
