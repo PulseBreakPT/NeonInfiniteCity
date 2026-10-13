@@ -31,3 +31,15 @@ test('substitution data is preserved through save migration',()=>{
  const restored=migrate(JSON.parse(JSON.stringify(state)));
  assert.deepEqual(restored.liveMatch.world.pendingSubstitutions,w.pendingSubstitutions);
 });
+
+test('old career save with a changed formation and missing XI is repaired without resetting the season',()=>{
+ const state=makeState('Carreira Recuperada','Faro');
+ const expectedRound=state.league.round;
+ state.formation='4-4-2';
+ delete state.lineups['4-4-2'];
+ const after=migrate(JSON.parse(JSON.stringify(state)));
+ assert.equal(after.formation,'4-4-2');
+ assert.equal(after.lineups['4-4-2'].length,11);
+ assert.equal(new Set(after.lineups['4-4-2']).size,11);
+ assert.equal(after.league.round,expectedRound);
+});

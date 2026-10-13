@@ -1,5 +1,5 @@
 import {applyRound} from './sim.js';
-import {clamp,hash,nextFixture,autoLineup,getPlayer} from './model.js';
+import {clamp,hash,nextFixture,autoLineup,getPlayer,FORMATIONS} from './model.js';
 import {spatialTeams,formationAnchors} from './pitch-spatial.js';
 import {createWorld,stepWorld,STEPS_PER_MINUTE,halfTimeWorld,secondHalfWorld,finalWorld,worldResult,requestSubstitution} from './physics-engine.js';
 import {createLeagueFixtureJob,tickLeagueFixtureJob} from './competition-physics.js';
@@ -219,7 +219,25 @@ export function finishLiveMatch(state){
   const rivals=Object.fromEntries((session.rivalFixtures||[])
    .filter(job=>job.complete&&job.result).map(job=>[job.fixtureId,job.result]));
   applyRound(committed,{featuredResult:worldResult(session.world),otherResults:rivals});
-  if(session.selectedFormation)committed.formation=session.selectedFormation;
+  if(session.selectedFormation){
+   const nextFormation=session.selectedFormation,oldFormation=committed.formation;
+   committed.lineups??={};
+   // A live formation change must create a playable career XI. Keep the
+   // manually selected players instead of silently replacing the entire team.
+   if(!Array.isArray(committed.lineups[nextFormation])||committed.lineups[nextFormation].length!==11){
+    const pool=[...new Set(committed.lineups[oldFormation]||[])]
+     .map(id=>getPlayer(committed,id)).filter(Boolean);
+    const chosen=FORMATIONS[nextFormation].map(position=>{
+     if(!pool.length)return null;
+     const index=pool.findIndex(p=>p.pos===position);
+     return pool.splice(index<0?0:index,1)[0].id;
+    });
+    const used=new Set(chosen.filter(Boolean));
+    const backup=autoLineup(committed,nextFormation).filter(id=>id&&!used.has(id));
+    committed.lineups[nextFormation]=chosen.map(id=>id||backup.shift()||null);
+   }
+   committed.formation=nextFormation;
+  }
  }
  delete committed.liveMatch;
  return committed;

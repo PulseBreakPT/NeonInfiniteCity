@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {makeState} from '../model.js';
-import {beginLiveMatch,setLiveFormation} from '../match-live.js';
-import {requestSubstitution,stepWorld,worldResult,halfTimeWorld,secondHalfWorld} from '../physics-engine.js';
+import {beginLiveMatch,setLiveFormation,finishLiveMatch} from '../match-live.js';
+import {requestSubstitution,stepWorld,worldResult,halfTimeWorld,secondHalfWorld,finalWorld} from '../physics-engine.js';
+import {matches} from '../ui-main.js';
 import {isPenaltyArea,goalkeeperHandlingAllowed} from '../football-rules.js';
 
 function boot(){const state=makeState('Disciplina FC','Faro');const match=beginLiveMatch(state,{engine:'physics'});return {state,w:match.world};}
@@ -48,4 +49,20 @@ test('live formation changes are deterministic in both halves',()=>{
  setLiveFormation(state,'4-4-2');
  assert.equal(w.teams[side].formation,'4-4-2');
  assert.ok(w.teams[side].anchors[0].y<15,'Home GK has swapped ends in second half');
+});
+
+test('changing the formation in a live match preserves the XI and displays replay after full time',()=>{
+ const {state,w}=boot();
+ const starting=state.lineups['4-3-3'].slice();
+ const session=state.liveMatch;
+ setLiveFormation(state,'4-4-2');
+ session.minute=session.total;session.phase='final';
+ finalWorld(w);
+ const after=finishLiveMatch(state);
+ assert.equal(after.formation,'4-4-2');
+ const xi=after.lineups['4-4-2'];
+ assert.equal(xi.length,11);
+ assert.equal(new Set(xi).size,11);
+ assert.deepEqual(new Set(xi),new Set(starting),'The manually chosen XI must be retained');
+ assert.ok(matches(after).includes('id="match-timeline"'),'The post-match replay must render');
 });

@@ -279,6 +279,12 @@ export function migrate(saved){
   if(!Array.isArray(state.market))state.market=[];
   if((state.finance?.economyRevision||0)<4)state.market=makeMarket(state,hash(state.club.name)+state.week*923+state.season*322);
   regularizeEconomy(state);
+  // Recover older career saves that were committed with a changed formation
+  // but no corresponding XI. Do not overwrite intentionally empty slots.
+  if(!FORMATIONS[state.formation])state.formation='4-3-3';
+  if(!state.lineups||typeof state.lineups!=='object')state.lineups={};
+  if(!Array.isArray(state.lineups[state.formation]))
+   state.lineups[state.formation]=autoLineup(state,state.formation);
   return state;
  }
  if(saved.version===1){

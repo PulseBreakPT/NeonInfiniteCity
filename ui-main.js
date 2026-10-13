@@ -38,7 +38,7 @@ function matchPitch(s,view){
  [50,88],[14,72],[37,74],[63,74],[86,72],[22,51],[50,54],[78,51],[21,31],[50,25],[79,31]
  ];
  const points=positions.map(([x,y],i)=>{
- const id=s.lineups[s.formation][i],p=getPlayer(s,id);
+ const id=s.lineups?.[s.formation]?.[i],p=getPlayer(s,id);
  return '<div class="pitch-dot home-dot" style="left:'+x+'%;top:'+y+'%;--delay:'+i*.3+'s" title="'+esc(p?.name)+'"><span>'+esc(String(p?.number??(i+1)))+'</span></div>';
  }).join('');
  const opponents=positions.map(([x,y],i)=>'<div class="pitch-dot away-dot" style="left:'+x+'%;top:'+(100-y)+'%;--delay:'+i*.2+'s"><span>'+(i+1)+'</span></div>').join('');
