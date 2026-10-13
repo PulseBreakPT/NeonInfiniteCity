@@ -502,10 +502,15 @@ function controlLooseBall(w){
  if(!best||bestDistance>1.35)return;
  const b=w.ball,pass=b.intended,flag=b.pendingOffside;
  if(best.pos==='GK'&&!goalkeeperHandlingAllowed(best,b,w.half||1)){
-  if(rand(w)<.3){
+  const inOwnArea=isPenaltyArea(best.x,best.y,best.side,w.half||1);
+  const forbiddenBackpass=inOwnArea&&(b.fromThrowin===best.side||b.deliberateBackpass===best.side);
+  const illegalHands=forbiddenBackpass?rand(w)<.3:
+   (!inOwnArea&&b.shot&&b.z>.9&&rand(w)<.28);
+  if(illegalHands){
    w.referee??={handballDecisions:0};
    w.referee.handballDecisions++;
-   restart(w,'backpass',1-best.side,{x:best.x,y:best.y},'Reposição ilegal ao guarda-redes');
+   restart(w,forbiddenBackpass?'backpass':'freekick',1-best.side,
+    {x:best.x,y:best.y},forbiddenBackpass?'Reposição ilegal ao guarda-redes':'Mão fora da área');
    return;
   }
  }
