@@ -105,7 +105,7 @@ function awardMatch(state,result,fixture){
  updateProgress(state,'match');
  log(state,won?'Vitória importante!':draw?'Empate disputado':'Derrota da equipa',result.homeName+' '+result.hg+'–'+result.ag+' '+result.awayName);
 }
-export function applyRound(state,{featuredResult=null}={}){
+export function applyRound(state,{featuredResult=null,otherResults=null}={}){
  const round=state.league.rounds[state.league.round-1];
  if(!round||round.every(f=>f.played))throw Error('Não existe jornada por disputar.');
  const playerFixture=round.find(f=>f.home===0||f.away===0);
@@ -120,7 +120,7 @@ export function applyRound(state,{featuredResult=null}={}){
  let featured=null;
  for(const fixture of round){
   if(fixture.played)continue;
-  const result=fixture===playerFixture&&featuredResult?featuredResult:simulateMatch(state,fixture);
+  const result=fixture===playerFixture&&featuredResult?featuredResult:(otherResults?.[fixture.id]||simulateMatch(state,fixture));
   if(fixture===playerFixture&&featuredResult){
    const line=state.lineups[state.formation]||[];
    const played=new Set([...line,...(featuredResult.substitutions||[]).filter(x=>x.side=== (fixture.home===0?0:1)||x.team===0).map(x=>x.inId)]);
