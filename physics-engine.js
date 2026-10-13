@@ -706,6 +706,7 @@ function restartKick(w){
  const teammates=teamPlayers(w,r.team).filter(p=>p.pos!=='GK'||r.kind==='goalkick');
  const nearest=teammates.find(p=>p.id===r.takerId)||teammates.sort((a,b)=>dist(a,r)-dist(b,r))[0];
  if(!nearest)return;
+ if(nearest.id!==r.takerId){r.takerId=nearest.id;r.takerName=nearest.name;}
  // Never teleport the taker: the restart stays frozen until they arrive.
  if(dist(nearest,r)>.85)return;
  if(r.deliberateDelay)return;
@@ -791,6 +792,7 @@ export function stepWorld(w,dt=FIXED_DT){
   const p=findCarrier(w);if(p){w.ball.owner=p.id;w.carrier=p.id;}w.phase='open';
  }return w;}
  if(w.phase==='restart'){
+  if(minimumPlayers(w))return w;
   restartTargets(w);w.phaseTime-=dt;w.restart.elapsed+=dt;
   if(w.restart.deliberateDelay&&w.phaseTime<=0){
    const r=w.restart,taker=w.players.find(p=>p.id===r.takerId);
