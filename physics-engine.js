@@ -463,19 +463,32 @@ function aerialContest(w){
  w.actionCooldown=.6;
  return true;
 }
-function blockShot(w){
+function blockShot(w,fromX=w.ball.x,fromY=w.ball.y,fromZ=w.ball.z){
  const b=w.ball;
- if(b.owner!==null||!b.shot||b.z>2.1||w.phase!=='open')return false;
- const opponents=teamPlayers(w,1-b.shot.team).filter(p=>p.pos!=='GK');
- const d=opponents.sort((a,c)=>dist(a,b)-dist(c,b))[0];
- if(!d||dist(d,b)>0.73)return false;
+ if(b.owner!==null||!b.shot||w.phase!=='open')return false;
+ const dx=b.x-fromX,dy=b.y-fromY,lengthSq=dx*dx+dy*dy||1e-9;
+ let hit=null,best=Infinity;
+ for(const p of teamPlayers(w,1-b.shot.team)){
+  if(p.pos==='GK')continue;
+  const fraction=clamp(((p.x-fromX)*dx+(p.y-fromY)*dy)/lengthSq,0,1);
+  const x=fromX+fraction*dx,y=fromY+fraction*dy,z=fromZ+fraction*(b.z-fromZ);
+  const clearance=hypot(p.x-x,p.y-y);
+  if(clearance<.74&&z>=.08&&z<2.1&&fraction<best){
+   hit={p,fraction,x,y,z};best=fraction;
+  }
+ }
+ if(!hit)return false;
+ const p=hit.p;
+ // Resolve at the first physical contact along the ball's swept path,
+ // rather than at the end of a 0.2 s frame (prevents tunnelling).
+ b.x=hit.x;b.y=hit.y;b.z=Math.max(.12,hit.z);
  b.vx=-b.vx*(.25+rand(w)*.25);b.vy=-b.vy*(.4+rand(w)*.3);
- b.vz=1.1+rand(w)*2;b.lastTouch=d.side;b.spin*=-.6;
+ b.vz=1.1+rand(w)*2;b.lastTouch=p.side;b.spin*=-.6;
  delete b.shot;delete b.pendingOffside;delete b.intended;
- w.stats[d.side].blocks=(w.stats[d.side].blocks||0)+1;
- d.pose='block';d.poseUntil=.6;
- event(w,'block','Remate bloqueado por '+d.name+'.',w.teams[d.side].id,
-  {player:d.name,playerId:d.sourceId??d.id});
+ w.stats[p.side].blocks=(w.stats[p.side].blocks||0)+1;
+ p.pose='block';p.poseUntil=.6;
+ event(w,'block','Remate bloqueado por '+p.name+'.',w.teams[p.side].id,
+  {player:p.name,playerId:p.sourceId??p.id});
  return true;
 }
 function controlLooseBall(w){
@@ -553,6 +566,7 @@ function ballPhysics(w,dt){
  }
  const drag=b.z>.16?Math.exp(-.085*dt):Math.exp(-rollingDrag(w.weather)*dt);
  b.vx*=drag;b.vy*=drag;b.spin=spin*Math.exp(-.28*dt);
+ if(blockShot(w,lastX,lastY,lastZ))return;
  // Posts and crossbar are physical solid obstacles, not probabilistic misses.
  const goalEnd=b.y<0?0:b.y>FIELD.length?FIELD.length:null;
  const sideEnd=b.x<0?0:b.x>FIELD.width?FIELD.width:null;
@@ -651,7 +665,7 @@ function ballPhysics(w,dt){
   delete b.shot;
   return;
  }
- if(!detectHandball(w)&&!blockShot(w)&&!aerialContest(w))controlLooseBall(w);
+ if(!detectHandball(w)&&!aerialContest(w))controlLooseBall(w);
 }
 function restartTargets(w){
  if(!w.restart)return;
