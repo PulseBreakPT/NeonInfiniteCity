@@ -110,3 +110,7 @@
  .elite-shell .live-tactics-controls{flex-direction:column;align-items:stretch}
  .elite-shell .live-tactics-controls label{justify-content:space-between}
 }
+
+/* Match integrity: verified physical goal-line crossing is informational. */
+.goal-review{font-size:.66rem;font-weight:800;letter-spacing:.04em;color:#c7f0cb;white-space:normal}
+.match-events .goal-review{color:#487c59}
