@@ -10,7 +10,7 @@ test('every unattended league fixture uses the same spatial football engine',()=
  const fixture=nextFixture(state),before=JSON.stringify(state);
  const result=simulateMatch(state,fixture,{friendly:true});
  assert.equal(result.engine,'physics-v2');
- assert.equal(result.physicsRevision,8);
+ assert.equal(result.physicsRevision,9);
  assert.equal(result.hg+result.ag,result.events.filter(e=>e.kind==='goal').length);
  assert.equal(JSON.stringify(state),before,'A friendly simulation must not alter the club');
 });
