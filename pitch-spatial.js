@@ -10,6 +10,13 @@ const SHAPES={
  '3-5-2':[[50,92],[25,76],[50,78],[75,76],[10,55],[31,56],[50,61],[69,56],[90,55],[36,29],[64,29]],
  '5-3-2':[[50,92],[10,74],[29,77],[50,78],[71,77],[90,74],[28,55],[50,60],[72,55],[36,29],[64,29]]
 };
+export function formationAnchors(formation,side=0,half=1){
+ const shape=SHAPES[formation];if(!shape)throw Error('Formação inválida: '+formation);
+ return shape.map(([x,y])=>({
+  x:(side===0?x:100-x)*.68,
+  y:(half===2?(side===0?100-y:y):(side===0?y:100-y))*1.05
+ }));
+}
 const DEFAULT=['GK','DEF','DEF','DEF','DEF','MID','MID','MID','ATT','ATT','ATT'];
 const clampPoint=p=>({x:clamp(p.x,3,97),y:clamp(p.y,2,98)});
 const interpolate=(a,b,t)=>a+(b-a)*clamp(t,0,1);
