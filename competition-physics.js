@@ -39,7 +39,7 @@ export function tickLeagueFixtureJob(job){
   if(job.minute>=90||w.phase==='final'){
    if(w.phase!=='final'){w.minute=90;finalWorld(w);}
    job.complete=true;
-   job.result={...worldResult(w),engine:'physics-v2',physicsRevision:8,
+   job.result={...worldResult(w),engine:'physics-v2',physicsRevision:9,
     involved:false,cup:false,friendly:false};
    delete job.world; // compact the persisted career snapshot after completion
   }
@@ -105,6 +105,6 @@ export function runCompetitionFixture(state,fixture,{cup=false,friendly=false}={
  const result=worldResult(w);
  return {...result,home:fixture.home,away:fixture.away,
   cup:!!cup,friendly:!!friendly,involved:fixture.home===0||fixture.away===0,
-  engine:'physics-v2',physicsRevision:8,extraTime,penaltyWinner,shootout,
+  engine:'physics-v2',physicsRevision:9,extraTime,penaltyWinner,shootout,
   fixtureId:fixture.id};
 }
