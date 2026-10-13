@@ -225,7 +225,7 @@ export function migrate(saved){
   const state={...base,...saved,club:{...base.club,...saved.club},tactics:{...base.tactics,...saved.tactics},facilities:{...base.facilities,...saved.facilities},coach:{...base.coach,...saved.coach},finance:{...base.finance,...saved.finance},inventory:{...base.inventory,...saved.inventory},events:{...base.events,...saved.events}};
   state.finance.economyRevision=Number(saved.finance?.economyRevision)||0;
   state.rivals=(saved.rivals&&Object.keys(saved.rivals).length)?saved.rivals:makeRivals(state);
-  state.engineVersion=7;
+  state.engineVersion=9;
   const seen=new Set(state.players.map(p=>p.id));
   state.market=(state.market||[]).filter(o=>o&&Number.isFinite(o.id));
   const observed=new Set(seen);
