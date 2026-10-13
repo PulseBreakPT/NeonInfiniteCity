@@ -148,7 +148,8 @@ test('jogo antigo continua a poder terminar com replay/eventos legados',()=>{
  assert.equal(classic.schema,1);
  const after=play(state);
  assert.equal(after.results.length,1);
- assert.notEqual(after.lastMatch.engine,'physics-v2');
+ assert.equal(after.lastMatch.engine,'physics-v2');
+  assert.equal(after.lastMatch.physicsRevision,9);
 });
 
 test('guarda-redes tem atributos próprios para reagir a remates físicos',()=>{

@@ -146,7 +146,7 @@ test('importação v1 conserva progresso antigo e acrescenta a IA nova',()=>{
  const s=game(),old={version:1,club:s.club,players:s.players,formation:s.formation,lineups:s.lineups,budget:112000,day:13,fans:5400,trainingTotal:6,activity:[]};
  const newer=migrate(old);
  assert.equal(newer.version,2);
- assert.equal(newer.engineVersion,3);
+ assert.equal(newer.engineVersion,9);
  assert.equal(newer.budget,112000);assert.equal(newer.day,13);assert.equal(newer.fans,5400);
  assert.equal(newer.players.length,26);
  assert.equal(Object.keys(newer.rivals).length,15);

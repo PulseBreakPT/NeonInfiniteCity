@@ -16,7 +16,9 @@ test('independent goal-line audit requires the entire ball to cross between post
  assert.equal(valid.evidence.goalLine,0);
  assert.equal(auditGoalCrossing({...input,after:{x:34,y:-.05,z:.12}}).approved,false);
  assert.equal(auditGoalCrossing({...input,after:{x:15,y:-1,z:.12}}).approved,false);
- assert.equal(auditGoalCrossing({...input,after:{x:34,y:-1,z:2.8}}).approved,false);
+ // Validate height at the interpolated goal-line crossing, not at the end of the physics step.
+ assert.equal(auditGoalCrossing({...input,before:{x:34,y:.4,z:3.1},after:{x:34,y:-1,z:3.1}}).approved,false);
+ assert.equal(auditGoalCrossing({...input,after:{x:34,y:-1,z:2.8}}).approved,true);
 });
 test('the review rejects a direct throw-in goal without another player touch',()=>{
  const review=auditGoalCrossing({

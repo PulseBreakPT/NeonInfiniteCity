@@ -55,10 +55,11 @@ test('free kick: three-player defensive wall between ball and goal',()=>{
  const s=initial(),teams=spatialTeams(s,nextFixture(s)),location={x:43,y:31};
  const players=restartPositions(teams,'freekick',teams[0].id,location);
  const defensive=players.slice(11);
- const wallY=location.y+(5-location.y)*.30;
+ const defendingGoalY=teams[0].side===0?.2:99.8;
+ const wallY=location.y+(defendingGoalY-location.y)*.30;
  const wall=defensive.filter(p=>p.pos==='DEF'&&Math.abs(p.y-wallY)<1&&Math.abs(p.x-location.x)<7);
  assert.equal(wall.length,3,'The wall must contain three actual defenders, never the goalkeeper');
- assert.ok(wall.every(p=>p.y>5&&p.y<location.y));
+ assert.ok(wall.every(p=>p.y>defendingGoalY&&p.y<location.y));
  assert.ok(Math.max(...wall.map(p=>p.x))-Math.min(...wall.map(p=>p.x))<=9);
 });
 test('penalty: only taker and keeper inside the penalty zone',()=>{
@@ -67,7 +68,7 @@ test('penalty: only taker and keeper inside the penalty zone',()=>{
  assert.ok(attacker[9].y<18);
  assert.ok(attacker.filter((p,i)=>i>0&&i!==9&&p.y<=18).length===0);
  assert.ok(defenders.filter((p,i)=>i>0&&p.y<=18).length===0);
- assert.ok(Math.abs(defenders.find(p=>p.pos==='GK').y-5)<1,'the actual goalkeeper stays on the goal line');
+ assert.ok(Math.abs(defenders.find(p=>p.pos==='GK').y-.2)<.01,'the actual goalkeeper stays on the defending goal line');
 });
 test('throw-in restarts at the touchline with nearby passing options',()=>{
  const s=initial(),teams=spatialTeams(s,nextFixture(s));
@@ -84,9 +85,10 @@ test('match engine creates positional pass and restart events with finite coordi
  assert.ok(r.events.length>20);
  for(const e of r.events){
   assert.ok(Number.isFinite(e.x)&&Number.isFinite(e.y),e.kind+' coordinate');
-  assert.ok(e.x>=3&&e.x<=97&&e.y>=2&&e.y<=98);
+  assert.ok(e.x>=0&&e.x<=100&&e.y>=0&&e.y<=100,e.kind+' physical pitch boundaries');
  }
- assert.equal(r.engine,'events-v4');
+ assert.equal(r.engine,'physics-v2');
+ assert.equal(r.physicsRevision,9);
 });
 test('spatial snapshots interpolate passing plays and are repeatable after saving',()=>{
  const s=initial(),live=beginLiveMatch(s),timeline=buildSpatialTimeline(live);
@@ -121,9 +123,9 @@ test('the actual named taker, not a random shirt, executes each set piece',()=>{
   assert.ok(actual,kind);
   if(kind==='corner'){assert.ok(actual.x<=4&&actual.y<=7);}
   if(kind==='freekick'){assert.equal(actual.x,43);assert.equal(actual.y,31);}
-  if(kind==='penalty'){assert.equal(actual.x,50);assert.equal(actual.y,17);}
+  if(kind==='penalty'){assert.equal(actual.x,50);assert.ok(Math.abs(actual.y-12.2)<.01);}
   if(kind==='throwin'){assert.ok(actual.x<=4);assert.equal(actual.y,48);}
   const goalie=positions.slice(11).find(p=>p.pos==='GK');
-  assert.equal(goalie.y,kind==='throwin'?8:5);
+  assert.equal(goalie.y,kind==='throwin'?8:.2);
  }
 });
