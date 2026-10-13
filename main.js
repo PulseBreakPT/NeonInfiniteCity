@@ -1,7 +1,7 @@
 
 import {COLORS,makeState,migrate,loadState,saveState,rating,FORMATIONS} from './model.js';
 import {execute} from './actions.js';
-import {beginLiveMatch,tickLiveMatch,tickLiveMatchStep,PHYSICS_FRAME_MS,pauseLiveMatch,resumeLiveMatch,finishLiveMatch,requestLiveSubstitution,setLiveTactic,visibleEvents,eventAtMinute,liveScore,matchClock,matchPhase} from './match-live.js';
+import {beginLiveMatch,tickLiveMatch,tickLiveMatchStep,PHYSICS_FRAME_MS,pauseLiveMatch,resumeLiveMatch,finishLiveMatch,requestLiveSubstitution,setLiveTactic,setLiveFormation,visibleEvents,eventAtMinute,liveScore,matchClock,matchPhase} from './match-live.js';
 import {shell,welcome,esc} from './ui-core.js';
 import {createPitchRenderer} from './pitch-render.js';
 import {roomScene} from './scene-ui.js';
@@ -212,6 +212,9 @@ function act(action,data={}){
    if(live.schema!==2)startLiveClock();
    resumeSpatial();return;
   }
+  if(action==='live-formation'){
+   setLiveFormation(state,data.value);persist();paintLive();return;
+  }
   if(action==='live-tactic'){
    setLiveTactic(state,data.key,data.value);
    persist();paintLive();return;
@@ -354,6 +357,7 @@ document.addEventListener('click',event=>{
 document.addEventListener('change',event=>{
  const el=event.target;
  if(el.dataset.action==='formation'){ui.slot=null;ui.candidate=null;act('formation',{value:el.value});}
+ if(el.dataset.liveFormation){act('live-formation',{value:el.value});return;}
  if(el.dataset.liveTactic){act('live-tactic',{key:el.dataset.liveTactic,value:el.value});return;}
  if(el.dataset.tactic)act('tactic',{key:el.dataset.tactic,value:el.value});
  if(el.id==='player-filter'){ui.position=el.value;render();}
