@@ -174,6 +174,18 @@ export function startBankLoan(s,amount){
  logNews(s,'Financiamento bancário',s.club.name+' obteve um crédito de '+amount+' €, sujeito a juros.','finance');
  return amount;
 }
+export function repayBankLoan(s,amount){
+ ensureUniverse(s);
+ const debt=s.finance.loanBalance;
+ if(debt<=0)throw Error('Não existe crédito bancário para amortizar.');
+ if(!Number.isInteger(amount)||amount<=0)throw Error('Montante de amortização inválido.');
+ const pay=Math.min(amount,debt);
+ if(s.budget<pay)throw Error('Saldo insuficiente para amortizar o crédito.');
+ s.budget-=pay;s.finance.loanBalance-=pay;
+ s.finance.ledger.unshift({day:s.day,label:'Amortização de crédito bancário',amount:-pay});
+ logNews(s,'Crédito amortizado','O clube amortizou '+pay+' € de capital do financiamento.','finance');
+ return pay;
+}
 export function managementWeeklyTick(s,round){
  ensureUniverse(s);
  const key=s.season+':'+round;
@@ -232,6 +244,7 @@ export function createAnnualYouthIntake(s){
  for(let i=0;i<qty;i++){
   const p=generatePlayer(s.nextId++,positions[Math.floor(random()*positions.length)],random,45+s.facilities.academy+random()*6);
   p.age=15+Math.floor(random()*2);p.potential=clamp(p.potential+Math.round(random()*4),52,96);
+  p.promises=[];
   s.academy.push(p);
   logNews(s,'Novo talento da formação',p.name+' entrou na academia do clube.','youth');
  }

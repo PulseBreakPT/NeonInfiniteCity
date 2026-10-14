@@ -41,8 +41,8 @@ test('contract negotiations require market-based wages, persist accepted terms a
  s.week++;
  const second=execute(s,'contract-offer',{id:p.id,salary:Math.ceil(min*1.08/100)*100,years:3});
  assert.match(second.message,/Contrato aceite/);
- assert.equal(p.contract,3);
- assert.ok(p.salary>before);
+ assert.equal(s.players.find(x=>x.id===p.id).contract,3);
+ assert.ok(s.players.find(x=>x.id===p.id).salary>before);
 });
 test('sponsor agreements are initially negotiable but prevent repeated switching within the season',()=>{
  const s=newClub(),base=s.budget;
@@ -122,7 +122,7 @@ test('promise of minutes has a deadline and affects player satisfaction',()=>{
  s.week=5;managementWeeklyTick(s,4);
  const promise=s.playerPromises.find(x=>x.playerId===p.id);
  assert.equal(promise.status,'broken');
- assert.ok(p.satisfaction<initial);
+ assert.ok(s.players.find(x=>x.id===p.id).satisfaction<initial);
  assert.ok(s.world.news.some(n=>n.title==='Compromissos do balneário'));
 });
 test('kept promises reward satisfaction',()=>{
@@ -191,4 +191,15 @@ test('weekly universe processing and migration are idempotent',()=>{
  const saved=migrate(JSON.parse(JSON.stringify(s)));
  assert.equal(saved.world.financialHistory.length,s.world.financialHistory.length);
  assert.equal(saved.playerPromises.length,s.playerPromises.length);
+});
+
+test('credit capital can be repaid once and cannot be repaid twice',()=>{
+ const s=newClub(),before=s.budget;
+ execute(s,'bank-loan',{amount:100000});
+ execute(s,'bank-repay',{amount:25000});
+ assert.equal(s.finance.loanBalance,75000);
+ assert.equal(s.budget,before+75000);
+ execute(s,'bank-repay',{amount:75000});
+ assert.equal(s.finance.loanBalance,0);
+ assert.throws(()=>execute(s,'bank-repay',{amount:25000}),/Não existe/);
 });

@@ -98,7 +98,8 @@ export function finance(s){
   info('Posição a reforçar',advisor.weakest)+info('Salários por jornada',money(forecast.wages))+info('Dívidas futuras de transferências',money(forecast.futurePayables))+info('Previsão para 4 jornadas',money(forecast.netNextFourWeeks))+info('Contratos em risco',forecast.highRisk)+
   advisor.alerts.map(a=>'<div class="history-item">'+esc(a)+'</div>').join(''))+'</div>'+
  panel('Financiamento e risco',info('Crédito bancário',money(f.loanBalance||0))+info('Juros já pagos',money(f.loanInterestPaid||0))+info('Reputação do clube',(s.reputation||40)+'/100')+
- btn('bank-loan','Pedir crédito · 100 000 €','subtle full','data-amount="100000" '+(f.debt>0||f.loanBalance>0||f.boardConfidence<55?'disabled':'')));
+ btn('bank-loan','Pedir crédito · 100 000 €','subtle full','data-amount="100000" '+(f.debt>0||f.loanBalance>0||f.boardConfidence<55?'disabled':''))+
+ btn('bank-repay','Amortizar crédito · 25 000 €','subtle full','data-amount="25000" '+(!f.loanBalance||s.budget<Math.min(25000,f.loanBalance)?'disabled':'')));
 
 }
 export function mentors(s){
