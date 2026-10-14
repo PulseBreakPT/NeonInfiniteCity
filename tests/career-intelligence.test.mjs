@@ -100,7 +100,7 @@ test('the board grants funds once per season and rejects insolvent requests',()=
  const result=execute(s,'board-request');
  assert.match(result.message,/aprovou/);
  assert.ok(s.budget>before);
- assert.throws(()=>execute(s,'board-request'),/já pediste/);
+ assert.throws(()=>execute(s,'board-request'),/Já pediste/);
  const insolvent=fresh();insolvent.finance.debt=1000;
  assert.match(execute(insolvent,'board-request').message,/recusado/);
 });

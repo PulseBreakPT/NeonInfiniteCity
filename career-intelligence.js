@@ -46,13 +46,16 @@ export function preserveLineups(state,removedId){
  for(const [formation,old] of Object.entries(state.lineups||{})){
   if(!FORMATIONS[formation]||!Array.isArray(old))continue;
   const used=new Set();
+  // Protect every existing teammate, including players later in the array.
+  // Otherwise filling an early vacancy can steal a starter from a later slot.
+  const reserved=new Set(old.filter(id=>id!==removedId&&playable(state,id)));
   const ids=old.map(id=>id===removedId?null:id);
   for(let i=0;i<11;i++){
    const id=ids[i];
    if(id!==null&&id!==undefined&&playable(state,id)&&!used.has(id)){used.add(id);continue;}
    // Keep an intentionally vacant slot; only fill a slot displaced by a sale.
    if(id===null&&old[i]!==removedId)continue;
-   const pool=state.players.filter(p=>playable(state,p.id)&&!used.has(p.id));
+   const pool=state.players.filter(p=>playable(state,p.id)&&!reserved.has(p.id)&&!used.has(p.id));
    pool.sort((a,b)=>(b.pos===FORMATIONS[formation][i]?100:0)+rating(b)-
     ((a.pos===FORMATIONS[formation][i]?100:0)+rating(a)));
    ids[i]=pool[0]?.id??null;
