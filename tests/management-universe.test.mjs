@@ -28,7 +28,7 @@ test('legacy state migration adds missing finance and contract structures once',
  delete s.clubIdentity;delete s.reputation;delete s.finance.transferPayables;
  const m=migrate(JSON.parse(JSON.stringify(s)));assert.ok(m.loans&&m.contractOffers&&m.clubIdentity);
  assert.ok(m.finance.transferPayables);
- assert.deepEqual(migrate(JSON.parse(JSON.stringify(m)).world.outsideMarket,m.world.outsideMarket);
+ assert.deepEqual(migrate(JSON.parse(JSON.stringify(m))).world.outsideMarket,m.world.outsideMarket);
 });
 test('contract negotiations require market-based wages, persist accepted terms and block proposal spam',()=>{
  const s=newClub(),p=s.players[0],before=p.salary;
@@ -114,7 +114,7 @@ test('insolvent teams cannot draw bank loans',()=>{
  assert.throws(()=>execute(s,'bank-loan',{amount:100000}),/recusou/);
 });
 test('promise of minutes has a deadline and affects player satisfaction',()=>{
- const s=newClub(),p=s.players[0];
+ const s=newClub(),p=s.players.find(x=>!s.lineups[s.formation].includes(x.id));
  const initial=p.satisfaction;
  execute(s,'promise-minutes',{id:p.id});
  assert.throws(()=>execute(s,'promise-minutes',{id:p.id}),/promessa ativa/);
