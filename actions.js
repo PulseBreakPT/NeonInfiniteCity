@@ -102,6 +102,7 @@ export function execute(state,action,data={}){
  }
  case 'bid':{
   const offer=s.market.find(x=>x.id===Number(data.id));if(!offer)throw Error('Oferta já não disponível.');
+  if(offer.ask>100000)throw Error('Esta contratação exige negociação com o clube vendedor.');
   if(s.players.length>=35)throw Error('Plantel completo: limite de 35 atletas.');
   const bid=Math.round(offer.ask*(1+(offer.bids||0)*.08));
   requireFunds(s,bid);

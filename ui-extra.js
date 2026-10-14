@@ -24,8 +24,8 @@ export function market(s){
   const cost=Math.round(p.ask*(1+(p.bids||0)*.08)),free=!!p.freeAgent||cost===0,canPay=s.budget>=cost,full=s.players.length>=35;
   return '<div class="market-card"><div class="row">'+avatar(p)+'<div class="grow"><b>'+esc(p.name)+'</b><small>'+esc(p.nation)+' · '+p.age+' anos · '+POSITIONS[p.pos]+'</small></div><span class="ovr">'+rating(p)+'</span></div>'+
    (free?'<div class="market-free-label">'+icon('check',16)+' JOGADOR LIVRE</div>':'')+
-   '<div class="market-details">'+info('Potencial',p.potential)+info('Taxa de transferência',free?'GRÁTIS':money(cost))+info('Salário por jornada',money(Math.ceil((p.salary||0)/4)))+info('Contrato','3 épocas')+'</div>'+
-   (!free&&cost>100000?
+   '<div class="market-details">'+info('Potencial',p.potential)+(p.sourceClubId?info('Clube vendedor',esc(s.rivals?.[p.sourceClubId]?.name||'Clube rival')):'')+info('Taxa de transferência',free?'GRÁTIS':money(cost))+info('Salário por jornada',money(Math.ceil((p.salary||0)/4)))+info('Contrato','3 épocas')+'</div>'+
+   (!free&&p.ask>100000?
     '<label class="control-field"><span>Proposta em euros</span><input type="number" id="offer-'+p.id+'" min="'+Math.ceil(p.ask*.65/1000)*1000+'" max="'+s.budget+'" step="1000" value="'+Math.min(cost,s.budget)+'"></label>'+
     btn('offer-transfer',full?'Plantel completo':s.budget<Math.ceil(p.ask*.65)?'SALDO INSUFICIENTE':'ENVIAR PROPOSTA '+icon('arrow'),'subtle full','data-id="'+p.id+'" '+(full||s.budget<Math.ceil(p.ask*.65)?'disabled':''))
     :btn('bid',full?'Plantel completo':free?'CONTRATAR GRÁTIS':canPay?'CONTRATAR '+icon('arrow'):'SALDO INSUFICIENTE',free?'accent full':'subtle full','data-id="'+p.id+'" '+(full||!canPay?'disabled':'')))+'</div>';

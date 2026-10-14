@@ -189,3 +189,20 @@ test('a counterproposal persists its player through a renewed market and can be 
  assert.ok(s.players.some(p=>p.id===player.id));
  assert.ok(!s.players.find(p=>p.id===player.id).ask);
 });
+
+test('premium market offers are owned by rivals and transfers genuinely move the player',()=>{
+ const s=fresh(),offer=s.market.filter(p=>p.sourceClubId&&p.ask>100000&&p.ask*1.12<s.budget)
+  .sort((a,b)=>a.ask-b.ask)[0];
+ assert.ok(offer,'Expected a priced player listed by a real rival club');
+ const seller=s.rivals[offer.sourceClubId],oldBudget=seller.budget;
+ assert.ok(seller.players.some(p=>p.id===offer.id));
+ assert.throws(()=>execute(s,'bid',{id:offer.id}),/negociação/);
+ const amount=Math.ceil(offer.ask*1.1/1000)*1000;
+ execute(s,'offer-transfer',{id:offer.id,amount});
+ s.week++;
+ progressCareerWeek(s,1);
+ assert.ok(s.players.some(p=>p.id===offer.id));
+ assert.ok(!seller.players.some(p=>p.id===offer.id));
+ assert.ok(seller.budget>=oldBudget);
+ assert.ok(!seller.lineup.includes(offer.id));
+});

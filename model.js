@@ -168,9 +168,22 @@ export function makeCup(state){
 export function makeMarket(state,seed){
  const random=rng(seed),count=7+state.facilities.scouting;
  const idBase=state.nextId;state.nextId+=count;
+ const listed=new Set();
  return Array.from({length:count},(_,i)=>{
   const positions=['GK','DEF','DEF','MID','MID','ATT','ATT'];
   const freePosition=['GK','DEF','MID','ATT'][(i+Math.max(0,state.week||1))%4];
+  if(i>=3&&state.rivals){
+   const available=Object.values(state.rivals).flatMap(club=>
+    club.players.filter(p=>p.age>=19&&(p.contract??1)>0&&!listed.has(p.id)&&club.players.length>14)
+     .map(p=>({club,p})));
+   if(available.length){
+    const {club,p}=available[Math.floor(random()*available.length)];
+    listed.add(p.id);
+    return {...p,sourceClubId:club.id,sourcePlayerId:p.id,
+     ask:Math.min(transferValue(p),Math.round(transferValue(p)*(.76+random()*.22)/1000)*1000),
+     expires:state.day+2+Math.ceil(random()*3),bids:0};
+   }
+  }
   const p=generatePlayer(idBase+i,i<2?freePosition:positions[i%positions.length],random,i<2?50+random()*11:56+random()*22);
   if(i<2){p.freeAgent=true;p.ask=0;p.contract=2;}
   else p.ask=i===2?Math.min(95000,transferValue(p)):transferValue(p);

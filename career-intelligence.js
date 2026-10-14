@@ -144,6 +144,9 @@ function resolveNegotiations(state,random){
   const offer=state.market.find(p=>p.id===deal.playerId)||deal.playerSnapshot;
   if(!offer){deal.status='expired';continue;}
   const club=state.rivals[deal.clubId];
+  if(offer.sourceClubId&&(!club||!club.players.some(p=>p.id===(offer.sourcePlayerId||offer.id)))){
+   deal.status='expired';continue;
+  }
   const valuation=Number(offer.ask)||1;
   const personality=developIdentity(offer).personality;
   const demanded=Math.ceil(valuation*(.85+personality.ambition/600));
@@ -161,6 +164,7 @@ function resolveNegotiations(state,random){
   delete signed.ask;delete signed.expires;delete signed.bids;delete signed.freeAgent;
   state.players.push(signed);
   state.market=state.market.filter(x=>x.id!==offer.id);
+  if(club&&offer.sourceClubId){club.players=club.players.filter(p=>p.id!==(offer.sourcePlayerId||offer.id));club.lineup=rivalLineup(club);}
   deal.status='accepted';deal.settledWeek=state.week;
   if(club)club.budget+=Math.round(deal.amount*.75);
   state.world.transfers.unshift({season:state.season,week:state.week,playerId:offer.id,player:offer.name,fee:deal.amount,to:state.club.name});
@@ -304,7 +308,7 @@ export function acceptIncomingOffer(state,id){
  if(!rival||rival.budget<offer.amount)throw Error('O clube comprador já não dispõe de orçamento.');
  const buy=offer.amount;
  rival.budget-=buy;
- rival.players.push({...player,id:state.world.nextRivalId++,apps:0,goals:0,assists:0,contract:Math.max(2,player.contract)});
+ rival.players.push({...player,id:player.id,apps:0,goals:0,assists:0,contract:Math.max(2,player.contract)});
  rival.lineup=rivalLineup(rival);
  state.players=state.players.filter(p=>p.id!==player.id);
  preserveLineups(state,player.id);
@@ -324,7 +328,7 @@ export function negotiateMarket(state,playerId,amount){
  if(!Number.isFinite(amount)||amount<Math.round(player.ask*.65)||amount>state.budget)
   throw Error('A proposta deve ser válida e caber no orçamento.');
  const clubs=Object.values(state.rivals);
- const club=clubs[hash('selling:'+player.id)%clubs.length];
+ const club=state.rivals[player.sourceClubId]||clubs[hash('selling:'+player.id)%clubs.length];
  const deal={id:state.world.serial++,playerId:player.id,clubId:club.id,amount:Math.round(amount/1000)*1000,
   createdWeek:state.week,status:'pending',playerSnapshot:{...player}};
  state.negotiations.push(deal);
