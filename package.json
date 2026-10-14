@@ -1,13 +1,13 @@
 {
   "name": "club-dynasty",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "private": true,
   "type": "module",
   "description": "Offline football manager with independent fixed-timestep match simulation",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "check": "node --check model.js && node --check career-intelligence.js && node --check management-universe.js && node --check sim.js && node --check match-engine.js && node --check cup-resolution.js && node --check competition-physics.js && node --check match-live.js && node --check actions.js && node --check ui-core.js && node --check scene-ui.js && node --check ui-main.js && node --check ui-extra.js && node --check main.js && node --check pitch-spatial.js && node --check pitch-render.js && node --check physics-engine.js && node --check weather-systems.js && node --check football-rules.js && node --check referee-audit.js && node --check player-biomechanics.js && node --check broadcast-render.js",
-    "design:audit": "npx --yes impeccable@4.5.2 detect --json styles-v13.css index.html",
+    "design:audit": "npx --yes impeccable@4.5.2 detect --json styles-v14.css index.html",
     "design:install": "npx --yes impeccable@4.5.2 install -y --providers=codex --scope=project --no-hooks"
   }
 }

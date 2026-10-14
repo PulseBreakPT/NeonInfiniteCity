@@ -1,0 +1,149 @@
+@import url('./styles-v13.css');
+
+/*
+ * Game artwork v14.
+ * Each menu has its own transparent, object-based illustration and natural
+ * palette. No emblems, shields or generic icon circles are used for navigation.
+ */
+.elite-shell[data-ui="career8"] .game-art{
+ display:block;flex:none;object-fit:contain;object-position:center;
+ max-width:100%;max-height:100%;height:auto;width:auto;
+ aspect-ratio:1;pointer-events:none;user-select:none;
+ -webkit-user-drag:none;filter:drop-shadow(0 3px 4px #0008);
+ transition:transform .18s ease,filter .18s ease;
+}
+.elite-shell[data-ui="career8"] .nav-item[data-art="dashboard"]{--art-accent:#71cf72}
+.elite-shell[data-ui="career8"] .nav-item[data-art="matches"]{--art-accent:#9de751}
+.elite-shell[data-ui="career8"] .nav-item[data-art="tactics"]{--art-accent:#ecc05d}
+.elite-shell[data-ui="career8"] .nav-item[data-art="squad"]{--art-accent:#69bafa}
+.elite-shell[data-ui="career8"] .nav-item[data-art="more"]{--art-accent:#c29efa}
+.elite-shell[data-ui="career8"] .game-rail .nav-item{
+ padding:5px 3px;gap:3px;
+ border-color:transparent;background:transparent;
+ min-width:0;min-height:70px;overflow:visible;
+}
+.elite-shell[data-ui="career8"] .game-rail .nav-glyph{
+ display:flex;align-items:center;justify-content:center;
+ width:43px;height:42px;overflow:visible;
+}
+.elite-shell[data-ui="career8"] .game-rail .nav-glyph .game-art{width:43px;height:43px}
+.elite-shell[data-ui="career8"] .game-rail .nav-word{
+ font-size:10px;font-weight:850;line-height:1.15;color:#dce9e0;
+ white-space:nowrap;letter-spacing:0;
+}
+.elite-shell[data-ui="career8"] .game-rail .nav-item.active{
+ background:radial-gradient(ellipse at 50% 35%,color-mix(in srgb,var(--art-accent) 17%,transparent),transparent 78%);
+ border-color:color-mix(in srgb,var(--art-accent) 53%,#345046);
+ box-shadow:inset 0 1px color-mix(in srgb,var(--art-accent) 22%,transparent),0 5px 13px #0003;
+}
+.elite-shell[data-ui="career8"] .game-rail .nav-item.active .nav-word{color:#fff}
+.elite-shell[data-ui="career8"] .nav-item.active .game-art{
+ filter:drop-shadow(0 1px 5px color-mix(in srgb,var(--art-accent) 60%,#000));
+ transform:translateY(-2px) scale(1.07);
+}
+.elite-shell[data-ui="career8"] .game-rail .nav-item:hover .game-art{
+ transform:translateY(-3px) scale(1.1);
+}
+.elite-shell[data-ui="career8"] .rail-division .game-art,
+.elite-shell[data-ui="career8"] .rail-settings .game-art,
+.elite-shell[data-ui="career8"] .top-settings .game-art{
+ width:27px;height:27px;
+}
+.elite-shell[data-ui="career8"] .hud-wallet .game-art{
+ width:22px;height:22px;display:inline-block;vertical-align:middle;
+}
+.elite-shell[data-ui="career8"] .ribbon-links button{
+ gap:6px;padding-inline:10px;
+}
+.elite-shell[data-ui="career8"] .ribbon-links .game-art{
+ width:22px;height:22px;flex:none;
+}
+.elite-shell[data-ui="career8"] .ribbon-links button.active .game-art{
+ filter:drop-shadow(0 0 5px #efffa354);
+}
+.elite-shell[data-ui="career8"] .more-tile>span{
+ display:flex;align-items:center;justify-content:center;
+ min-width:64px;min-height:62px;background:transparent;border:0;box-shadow:none;
+}
+.elite-shell[data-ui="career8"] .more-tile>span .game-art{
+ width:56px;height:56px;max-width:none;max-height:none;
+}
+.elite-shell[data-ui="career8"] .more-tile:hover .game-art{
+ transform:translateY(-4px) scale(1.08);
+}
+.elite-shell[data-ui="career8"] .home-module .module-symbol,
+.elite-shell[data-ui="career8"] .home-module .home-module-head .module-symbol{
+ display:flex;align-items:center;justify-content:center;
+ width:45px;height:45px;min-height:45px;border:0;background:transparent;
+ box-shadow:none;overflow:visible;
+}
+.elite-shell[data-ui="career8"] .home-module .module-symbol .game-art{
+ width:43px;height:43px;max-width:none;max-height:none;
+}
+.elite-shell[data-ui="career8"] .home-module:hover .module-symbol .game-art{
+ transform:translateY(-3px) scale(1.07);
+}
+.elite-shell[data-ui="career8"] .scene-hotspot .hotspot-pin{
+ display:flex;align-items:center;justify-content:center;overflow:visible;
+}
+.elite-shell[data-ui="career8"] .scene-hotspot .hotspot-pin .game-art{
+ width:30px;height:30px;max-width:none;max-height:none;
+}
+.elite-shell[data-ui="career8"] .scene-hotspot:hover .game-art{
+ transform:scale(1.12);
+}
+/* Object art in page headings: an extension of the game HUD, not a card. */
+.elite-shell[data-ui="career8"] .game-stage:not([data-screen="dashboard"]) .page-title::before{
+ content:"";width:54px;height:54px;flex:0 0 54px;
+ background-position:center;background-repeat:no-repeat;background-size:contain;
+ filter:drop-shadow(0 3px 7px #0008);
+}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="matches"] .page-title::before{background-image:url('./assets/ui-icons/matches.svg')}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="tactics"] .page-title::before{background-image:url('./assets/ui-icons/tactics.svg')}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="squad"] .page-title::before{background-image:url('./assets/ui-icons/squad.svg')}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="league"] .page-title::before{background-image:url('./assets/ui-icons/league.svg')}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="market"] .page-title::before{background-image:url('./assets/ui-icons/market.svg')}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="training"] .page-title::before{background-image:url('./assets/ui-icons/training.svg')}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="academy"] .page-title::before{background-image:url('./assets/ui-icons/academy.svg')}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="campus"] .page-title::before{background-image:url('./assets/ui-icons/campus.svg')}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="finance"] .page-title::before{background-image:url('./assets/ui-icons/finance.svg')}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="mentors"] .page-title::before{background-image:url('./assets/ui-icons/mentors.svg')}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="events"] .page-title::before{background-image:url('./assets/ui-icons/events.svg')}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="collection"] .page-title::before{background-image:url('./assets/ui-icons/collection.svg')}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="profile"] .page-title::before{background-image:url('./assets/ui-icons/profile.svg')}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="social"] .page-title::before{background-image:url('./assets/ui-icons/social.svg')}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="club"] .page-title::before{background-image:url('./assets/ui-icons/club.svg')}
+.elite-shell[data-ui="career8"] .game-stage[data-screen="more"] .page-title::before{background-image:url('./assets/ui-icons/more.svg')}
+/* Dock layout: the user must see all five buttons without horizontal scroll. */
+@media(max-width:850px){
+ .elite-shell[data-ui="career8"] .mobile-nav .nav-item{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:0;min-width:0;width:20%;overflow:visible;
+  padding:4px 1px 3px;height:57px;
+ }
+ .elite-shell[data-ui="career8"] .mobile-nav .nav-glyph{
+  width:36px;height:34px;display:flex;align-items:center;justify-content:center;
+ }
+ .elite-shell[data-ui="career8"] .mobile-nav .nav-glyph .game-art{
+  width:35px;height:35px;max-width:none;max-height:none;
+ }
+ .elite-shell[data-ui="career8"] .mobile-nav .nav-word{
+  white-space:nowrap;font-size:10px;line-height:1.15;color:#d1dfd5;
+ }
+ .elite-shell[data-ui="career8"] .mobile-nav .nav-item.active .nav-word{color:#fff}
+ .elite-shell[data-ui="career8"] .more-tile>span .game-art{width:48px;height:48px}
+ .elite-shell[data-ui="career8"] .game-stage:not([data-screen="dashboard"]) .page-title::before{
+  width:42px;height:42px;flex-basis:42px;
+ }
+}
+@media(max-width:380px){
+ .elite-shell[data-ui="career8"] .mobile-nav .nav-glyph .game-art{width:30px;height:30px}
+ .elite-shell[data-ui="career8"] .mobile-nav .nav-glyph{height:30px}
+ .elite-shell[data-ui="career8"] .mobile-nav .nav-word{font-size:9px}
+ .elite-shell[data-ui="career8"] .game-stage:not([data-screen="dashboard"]) .page-title::before{
+  width:35px;height:35px;flex-basis:35px;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .elite-shell[data-ui="career8"] .game-art{transition:none}
+}

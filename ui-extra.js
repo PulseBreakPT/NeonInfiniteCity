@@ -1,6 +1,6 @@
 
 import {FORMATIONS,POSITIONS,COLORS,FACILITY_DATA,MENTORS,rating,teamPower,standings,money,getPlayer,nextFixture,fixtureName,clamp,weeklyWageBill,televisionIncome,sponsorIncome,campusMaintenance} from './model.js';
-import {esc,icon,crest,pill,bar,avatar,btn,title,panel,playerItem,info,navItems} from './ui-core.js';
+import {esc,icon,crest,pill,bar,avatar,btn,title,panel,playerItem,info,navItems,gameArt} from './ui-core.js';
 import {getAdvisorReport} from './career-intelligence.js';
 import {universeAdvisor} from './management-universe.js';
 function team(s,id){return esc(fixtureName(s,id));}
@@ -156,5 +156,5 @@ export function club(s){
 }
 export function more(s){
  return title('TODOS OS SISTEMAS','CENTRO DE OPERAÇÕES','')+
- '<div class="more-grid">'+navItems().map(([id,ic,label,desc])=>'<button class="more-tile" data-nav="'+id+'"><span>'+icon(ic,24)+'</span><strong>'+label+'</strong><small>'+desc+'</small></button>').join('')+'</div>';
+ '<div class="more-grid">'+navItems().map(([id,ic,label,desc])=>'<button class="more-tile" data-nav="'+id+'"><span>'+gameArt(id,56)+'</span><strong>'+label+'</strong><small>'+desc+'</small></button>').join('')+'</div>';
 }

@@ -245,3 +245,22 @@ integral de todos os clubes; negociação salarial usa limiares determinísticos
 não conversas livres; empréstimos são por uma época sem opção de compra;
 o crédito tem juros mas não substitui um sistema de contas bancárias real.
 Todos os clubes, jogadores e patrocinadores são fictícios.
+
+
+## Navegação ilustrada — Game Art v14
+
+O projeto utiliza **17 imagens SVG transparentes**, sem fundos, emblemas ou
+escudos, para as 16 áreas de gestão e o menu **Mais**. A linguagem visual segue
+as cores naturais de cada objeto: relva verde no estádio, bola branca/preta,
+quadro tático verde, taça dourada, dinheiro verde e dourado, halteres metálicos,
+materiais de treino, etc. Os ficheiros estão em \`assets/ui-icons/\`.
+
+Todos os ícones surgem na barra lateral, navegação móvel, atalhos do centro de
+operações e títulos das áreas, com tamanhos adaptados e acessibilidade mantida
+através do nome dos botões. Os elementos são vetoriais, escaláveis e possuem
+transparência nativa; não dependem de fontes de ícones externas. O service
+worker pré-carrega as imagens para que funcionem offline.
+
+*Para editar um ícone*, altera apenas o SVG correspondente em
+\`assets/ui-icons/<id>.svg\`; os caminhos são definidos no renderizador em
+\`ui-core.js\`. As regras de apresentação estão em \`styles-v14.css\`.

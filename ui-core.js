@@ -18,6 +18,15 @@ export const info=(k,v)=>'<div class="info"><span>'+k+'</span><strong>'+v+'</str
 export function playerItem(p,action='show-player',value=null){
  return '<button class="player-item" data-action="'+action+'" data-id="'+(value??p.id)+'">'+avatar(p)+'<span class="player-desc"><b>'+esc(p.name)+'</b><small>'+esc(POSITIONS[p.pos])+' · '+p.age+' anos</small></span><span class="ovr">'+rating(p)+'</span></button>';
 }
+
+const MENU_ART_IDS=new Set(['dashboard','matches','tactics','squad','league','market','training','academy','campus','finance','mentors','events','collection','profile','social','club','more']);
+/** Object-based game artwork: transparent images, never badges or logos. */
+export function gameArt(id,size=36){
+ const name=MENU_ART_IDS.has(id)?id:'more';
+ const pixels=Math.max(16,Math.min(96,Math.round(size)));
+ return '<img class="game-art" src="./assets/ui-icons/'+name+'.svg" alt="" aria-hidden="true" width="'+pixels+'" height="'+pixels+'" decoding="async" draggable="false">';
+}
+
 export function navItems(){return [
  ['dashboard','home','Estádio','Próximo jogo e acessos'],['matches','pitch','Jogo','Resultado e replay'],['tactics','shield','Táticas','Sistema de jogo'],['squad','users','Equipa','Jogadores e contratos'],
  ['league','trophy','Competições','Liga e taça'],['market','swap','Mercado','Transferências'],['training','bolt','Treinos','Evolução'],['academy','book','Academia','Novos talentos'],
@@ -33,20 +42,20 @@ export function shell(state,page,body,notice=''){
  const rank=standings(state).findIndex(t=>t.id===0)+1,round=Math.min(30,state.league.round);
  const navLink=(id,mobile=false)=>{
   const [k,ic,label]=navMap[id]||['more','grid','Operações'],active=k===page||k==='more'&&isMore;
-  return '<button type="button" data-nav="'+k+'" class="nav-item '+(active?'active':'')+'" title="'+esc(label)+'" aria-current="'+(active?'page':'false')+'" aria-label="'+esc(label)+'"><span class="nav-glyph">'+icon(ic,mobile?22:23)+'</span><span class="nav-word">'+esc(label)+'</span></button>';
+  return '<button type="button" data-nav="'+k+'" class="nav-item '+(active?'active':'')+'" data-art="'+k+'" title="'+esc(label)+'" aria-current="'+(active?'page':'false')+'" aria-label="'+esc(label)+'"><span class="nav-glyph">'+gameArt(k,mobile?36:43)+'</span><span class="nav-word">'+esc(label)+'</span></button>';
  };
  const sceneLabel=({dashboard:'Gabinete',matches:'Partida',tactics:'Táticas',squad:'Plantel',more:'Gestão'})[page]||current[2].toUpperCase();
  const toast=notice?'<div class="toast" role="status"><span class="toast-mark">◆</span>'+esc(notice)+'</div>':'';
  return '<div class="app-shell game-shell elite-shell" data-ui="career8" data-scene="'+esc(page)+'" style="--club-color:'+esc(state.club.color)+'">'+
  '<aside class="side game-rail game-dock" aria-label="Comandos do treinador"><div class="brand"><span class="logo">CD<span class="logo-spark">✦</span></span><span class="rail-brand"><strong>CLUB DYNASTY</strong></span></div>'+
  '<div class="rail-caption">CLUB DYNASTY</div><nav class="nav-scroll" aria-label="Modos do jogo">'+primary.map(id=>navLink(id)).join('')+'</nav>'+
- '<div class="rail-bottom"><button type="button" data-nav="league" class="rail-division rail-target" title="Ver classificação"><span class="mini-trophy">'+icon('trophy',18)+'</span><strong>'+rank+'º</strong><small>NA LIGA</small></button><button type="button" data-nav="club" class="rail-settings" title="Gestão do clube">'+icon('settings',21)+'</button></div></aside>'+
+ '<div class="rail-bottom"><button type="button" data-nav="league" class="rail-division rail-target" title="Ver classificação"><span class="mini-trophy">'+gameArt('league',23)+'</span><strong>'+rank+'º</strong><small>NA LIGA</small></button><button type="button" data-nav="club" class="rail-settings" title="Gestão do clube">'+gameArt('club',27)+'</button></div></aside>'+
  '<div class="main-frame game-canvas"><header class="top-bar game-hud cockpit-hud"><div class="hud-club">'+crest(state,true)+'<div class="hud-club-copy"><span class="hud-label"><i class="online-indicator"></i> GUARDADO NESTE DISPOSITIVO</span><strong>'+esc(state.club.name)+'</strong><small>'+esc(state.club.city)+' <i>◆</i> DIVISÃO '+state.division+'</small></div></div>'+
  '<div class="hud-command"><div class="hud-season"><span class="hud-label">CALENDÁRIO</span><strong>ÉPOCA '+state.season+' <span class="hud-chapter">/ JORNADA '+round+'</span></strong><small>LIGA NACIONAL · '+rank+'º CLASSIFICADO</small></div>'+
- '<div class="resources"><span class="hud-wallet">'+icon('coins',16)+'<span class="hud-number">'+money(state.budget)+'</span></span><span class="tokens"><b>✦</b>'+state.tokens+'</span></div>'+
- '<button type="button" data-nav="club" class="top-settings" aria-label="Clube e opções">'+icon('settings',19)+'</button></div></header>'+
+ '<div class="resources"><span class="hud-wallet">'+gameArt('finance',22)+'<span class="hud-number">'+money(state.budget)+'</span></span><span class="tokens"><b>✦</b>'+state.tokens+'</span></div>'+
+ '<button type="button" data-nav="club" class="top-settings" aria-label="Clube e opções">'+gameArt('club',27)+'</button></div></header>'+
  '<div class="game-ribbon mission-strip"><div class="ribbon-location"><span class="ribbon-led"></span> <span>CLUBE</span><span class="ribbon-slash">/</span><strong>'+esc(sceneLabel)+'</strong></div>'+
- '<nav class="ribbon-links" aria-label="Salas do clube">'+['league','market','training','academy','campus','finance','mentors','events','collection','profile','social','club'].map(id=>{const x=navMap[id];return '<button type="button" data-nav="'+id+'" class="'+(page===id?'active':'')+'">'+icon(x[1],14)+' '+esc(x[2])+'</button>';}).join('')+'</nav><div class="ribbon-mark"><span>●</span> OFFLINE</div></div>'+
+ '<nav class="ribbon-links" aria-label="Salas do clube">'+['league','market','training','academy','campus','finance','mentors','events','collection','profile','social','club'].map(id=>{const x=navMap[id];return '<button type="button" data-nav="'+id+'" class="'+(page===id?'active':'')+'">'+gameArt(id,22)+' '+esc(x[2])+'</button>';}).join('')+'</nav><div class="ribbon-mark"><span>●</span> OFFLINE</div></div>'+
  '<main class="page game-stage" id="page" data-screen="'+esc(page)+'"><div class="screen-backdrop" aria-hidden="true"></div><div class="scene-content">'+body+'</div></main>'+
  '<div class="game-statusline"><span><b>◆</b> CLUB DYNASTY <em>/</em> '+esc(sceneLabel)+'</span><span>ÉPOCA '+state.season+' · J'+round+' <em>/</em> '+esc(state.coach?.name||'Treinador')+'</span><span class="status-saved">● GUARDADO AUTOMATICAMENTE</span></div></div>'+
  '<nav class="mobile-nav" aria-label="Navegação principal">'+primary.map(id=>navLink(id,true)).join('')+'</nav>'+toast+'</div>';
