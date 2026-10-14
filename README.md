@@ -220,3 +220,28 @@ A antiga cadência de 36 passos físicos executados em apenas 320 ms por minuto 
 Nova camada gráfica independente do motor físico: relvado 2.5D com marcações, redes, bancadas, LED publicitário e iluminação; futebolistas procedurais articulados com cabeça, camisola, braços, pernas e animação de corrida, números e sombras; bola com altura aparente, posição real e portador destacado. Quatro câmaras reais de Canvas: TV, Equilibrada, Lateral e Tática, alternadas no ecrã do jogo e gravadas por partida. A câmara acompanha a bola de modo suave sem alterar a física ou revelar acontecimentos futuros. Correção adicional de orientação corporal limitada por velocidade de rotação, condução mais estável sem saltos aleatórios e guarda-redes posicionado segundo a proximidade à própria baliza.
 
 A inspiração técnica veio da apresentação de destaque, controlo de câmaras e animações contextuais de Top Eleven e dos sistemas de mistura de animações e de posicionamento do Football Manager e Soccer Manager; **esta implementação é original, em Canvas 2D, não usa código nem assets proprietários e não é um motor 3D comercial**. A atualização preserva o save v2.1, a economia e as competições. O frontend guarda o ângulo de câmara no save `liveMatch.camera` e não altera os resultados.
+
+
+## Universo de gestão v1.0 (14 outubro 2026)
+
+Além da simulação de partidas, o modo carreira tem agora sistemas de gestão
+persistentes e determinísticos, sem serviços externos e compatíveis com os saves
+anteriores: mercado com clubes compradores financiados, negociação individual de
+salários e duração dos contratos, empréstimos de uma época com retorno ao clube
+de origem, promessas de utilização e consequências no balneário, patrocínios com
+prazo mínimo, crédito bancário e encargos financeiros, entradas anuais de
+jovens e progressão dos clubes rivais.
+
+A interface do plantel oferece novas decisões individuais; finanças apresenta
+indicadores de dívida, exposição e previsão das próximas quatro jornadas; eventos
+agrega notícias, evolução das divisões secundárias e histórico económico, e o
+perfil do treinador apresenta os registos das épocas encerradas. As operações
+continuam transacionais em \`execute\`; o novo módulo \`management-universe.js\`
+centraliza as regras complementares.
+
+O universo offline simplifica necessariamente aspetos do futebol profissional:
+os campeonatos inativos usam uma classificação abstrata, e não um calendário
+integral de todos os clubes; negociação salarial usa limiares determinísticos,
+não conversas livres; empréstimos são por uma época sem opção de compra;
+o crédito tem juros mas não substitui um sistema de contas bancárias real.
+Todos os clubes, jogadores e patrocinadores são fictícios.

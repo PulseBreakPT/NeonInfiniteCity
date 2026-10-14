@@ -5,6 +5,7 @@
  * animation, and retain IDs so old saves, lineups and histories survive.
  */
 import {FORMATIONS,autoLineup,clamp,generatePlayer,hash,makeRivals,rating,rng,standings,transferValue} from './model.js';
+import {ensureUniverse,managementWeeklyTick,settleLoans,createAnnualYouthIntake} from './management-universe.js';
 
 const traits=['ambition','loyalty','professionalism','patience','adaptability'];
 const profile=(p)=>{const random=rng(hash(String(p.id)+':'+p.name+':character'));
@@ -32,6 +33,7 @@ export function ensureCareer(state){
  state.negotiations??=[];state.incomingOffers??=[];
  state.board??={targetRank:Math.max(1,Math.min(16,state.boardObjectives?.target||10)),requestedSeason:0,warnings:0,status:'normal',lastReviewWeek:0};
  state.coach.skillPoints??=Math.max(0,(state.coach.level||1)-1-(state.coach.skills?.length||0));
+ ensureUniverse(state);
  state.academy??=[];
  for(const p of [...(state.players||[]),...state.academy,...(state.market||[])])developIdentity(p);
  for(const club of Object.values(state.rivals||{})){
@@ -83,6 +85,11 @@ export function updateRivalIntelligence(state,round){
  for(const club of Object.values(state.rivals)){
   const strategy=club.strategy;
   if(round%3!==0)continue;
+  if(club.form<=-8&&club.manager&&round>=9){
+   club.manager={name:'Treinador '+club.name+' '+state.season,style:'equilibrada',adaptability:.35+random()*.55};
+   news(state,'Treinador substituído',club.name+' mudou de treinador após uma série negativa.','manager');
+   club.form=-2;
+  }
   const position=needPosition(club),players=club.players.slice().sort((a,b)=>rating(a)-rating(b));
   const weak=players.find(p=>p.pos===position)||players[0];
   const pressure=club.form< -4||club.morale<58;
@@ -216,10 +223,12 @@ export function progressCareerWeek(state,round){
   const report=getAdvisorReport(state);
   if(report.recurring<0)news(state,'Alerta de tesouraria','O saldo recorrente é negativo. Analisa salários e instalações.','finance');
  }
+ managementWeeklyTick(state,round);
  return state;
 }
 export function nextSeasonCareer(state,previousDivision=state.division){
  ensureCareer(state);
+ settleLoans(state);
  const random=rng(hash(state.club.name+':offseason:'+state.season));
  const old=state.rivals;
  // Keep opponents, their players, transfer history and managers between seasons.
@@ -294,6 +303,7 @@ export function nextSeasonCareer(state,previousDivision=state.division){
  }
  state.world.retired=state.world.retired.slice(0,100);
  for(const p of state.academy)developIdentity(p);
+ createAnnualYouthIntake(state);
  state.negotiations=[];state.incomingOffers=[];
  news(state,'Nova época, novas metas','A direção espera um lugar entre os primeiros '+state.board.targetRank+'.','board');
  return state;

@@ -2,6 +2,7 @@
 import {FORMATIONS,FACILITY_DATA,MENTORS,clamp,rng,hash,rating,autoLineup,getPlayer,generatePlayer,makeMarket,log,teamPower,money,transferValue} from './model.js';
 import {simulateMatch,applyRound,advanceSeason} from './sim.js';
 import {developIdentity,preserveLineups,negotiateMarket,acceptIncomingOffer,boardBudgetRequest,ensureCareer} from './career-intelligence.js';
+import {executeRealSale,offerContract,proposeMinutes,loanOut,agreementSponsor,startBankLoan,ensureUniverse,minimumWage} from './management-universe.js';
 function requireFunds(s,cost){if(!Number.isFinite(cost)||cost<0)throw Error('Custo inválido.');if(s.budget<cost)throw Error('Saldo insuficiente.');if(s.board?.status==='ultimatum'&&cost>=120000)throw Error('A direção suspendeu investimentos elevados até recuperares a confiança.');}
 function spend(s,cost,label){requireFunds(s,cost);s.budget-=cost;s.finance.expenses+=cost;s.finance.ledger.unshift({day:s.day,label,amount:-cost});}
 function income(s,amount,label){s.budget+=amount;s.finance.income+=amount;s.finance.ledger.unshift({day:s.day,label,amount});}
@@ -119,12 +120,25 @@ export function execute(state,action,data={}){
   log(s,'Reforço confirmado',message);break;
  }
  case 'sell':{
-  if(!p||s.players.length<=16)throw Error('Precisas de pelo menos 16 jogadores.');
-  if((p.saleLockUntilWeek||0)>s.week)throw Error('O jogador deve permanecer no clube durante a integração.');
-  const price=Math.round(transferValue(p)*.65/1000)*1000;
-  income(s,price,'Venda: '+p.name);s.players=s.players.filter(x=>x.id!==p.id);
-  preserveLineups(s,p.id);
-  message=p.name+' vendido por '+money(price)+'.';log(s,'Transferência de saída',message);break;
+  const {player,price}=executeRealSale(s,data.id);
+  income(s,price,'Venda: '+player.name);
+  s.players=s.players.filter(x=>x.id!==player.id);preserveLineups(s,player.id);
+  message=player.name+' vendido por '+money(price)+' a um comprador com fundos.';log(s,'Transferência de saída',message);break;
+ }
+ case 'contract-offer':{
+  const decision=offerContract(s,data.id,Number(data.salary),Number(data.years));
+  message=decision.status==='accepted'?'Contrato aceite: '+money(decision.salary)+' por mês · '+decision.years+' épocas.':'Contraproposta: salário mínimo '+money(decision.minimum)+' por mês.';break;
+ }
+ case 'promise-minutes':{
+  proposeMinutes(s,data.id);message='Promessa de utilização registada para as próximas quatro jornadas.';break;
+ }
+ case 'loan-out':{
+  const loan=loanOut(s,data.id);preserveLineups(s,loan.playerId);
+  message=loan.player.name+' emprestado até ao fim da época.';break;
+ }
+ case 'bank-loan':{
+  const moneyReceived=startBankLoan(s,Number(data.amount));
+  message='Crédito de '+money(moneyReceived)+' contratado com juros mensais.';break;
  }
  case 'offer-transfer':{
   const deal=negotiateMarket(s,data.id,Number(data.amount));
@@ -182,18 +196,18 @@ export function execute(state,action,data={}){
   s.finance.stadiumTickets=v;message='Bilhetes definidos para '+v+' €.';break;
  }
  case 'sponsor':{
-  const sponsors={regular:{name:'Atlântico Energia',reward:0},premium:{name:'Norte Digital',reward:12000},elite:{name:'Horizonte Global',reward:22000}};
-  const choice=sponsors[data.value];if(!choice)throw Error('Patrocínio desconhecido.');
-  if(choice.name===s.club.sponsor)throw Error('Patrocinador já contratado.');
-  if(choice.reward)spend(s,choice.reward,'Negociação de patrocínio');
-  s.club.sponsor=choice.name;s.finance.sponsorTerm++;message='Novo patrocinador: '+choice.name+'.';break;
+  const choice=agreementSponsor(s,data.value);
+  message='Novo patrocinador: '+choice.name+' · contrato até à próxima época.';break;
  }
  case 'academy-train':{
   const kid=s.academy.find(x=>x.id===Number(data.id));if(!kid)throw Error('Jovem desconhecido.');
   if(kid.lastAcademyTraining===s.season+':'+s.week)throw Error('O jovem já treinou nesta jornada.');
   const cost=12000;spend(s,cost,'Formação jovem: '+kid.name);
   kid.lastAcademyTraining=s.season+':'+s.week;
-  enhance(kid,['pac','sho','pas','def','phy','gk'],2+s.facilities.academy);kid.potential=clamp(kid.potential+1,50,99);
+  const field=kid.pos==='GK'?'gk':kid.pos==='DEF'?'def':kid.pos==='MID'?'pas':'sho';
+  enhance(kid,[field,'phy'],s.facilities.academy>=5?2:1);
+  if(kid.age<=18&&kid.potential<96&&s.week%4===0)kid.potential++;
+  kid.fitness=clamp((kid.fitness||90)-7,35,100);
   message=kid.name+' evoluiu na academia.';break;
  }
  case 'academy-promote':{

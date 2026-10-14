@@ -2,6 +2,7 @@
 import {rng,hash,clamp,teamPower,getPlayer,fixtureName,standings,makeCup,makeLeague,autoLineup,makeMarket,makeRivals,rivalTick,generatePlayer,rating,log,weeklyWageBill,televisionIncome,sponsorIncome,campusMaintenance} from './model.js';
 import {runMatch,tacticalModifiers} from './match-engine.js';
 import {progressCareerWeek,nextSeasonCareer} from './career-intelligence.js';
+import {archiveSeasonResults,ensureUniverse} from './management-universe.js';
 import {runCompetitionFixture} from './competition-physics.js';
 const pick=(random,arr)=>arr[Math.floor(random()*arr.length)];
 const poisson=(random,lambda)=>{let k=0,p=1,L=Math.exp(-lambda);while(p>L&&k<10){p*=random();k++;}return k-1;};
@@ -201,6 +202,7 @@ export function advanceSeason(state){
  const pos=standings(state).findIndex(t=>t.id===0)+1;
  const previousDivision=state.division;
  const previous=state.season;
+ archiveSeasonResults(state,pos);
  state.history.unshift({season:previous,position:pos,champion:fixtureName(state,state.league.champion),cup:state.cup.winner===0,record:state.coach.wins+'/'+state.coach.draws+'/'+state.coach.losses});
  if(pos<=2)state.division=Math.max(1,state.division-1);else if(pos>=14)state.division=Math.min(8,state.division+1);
  state.season++;state.week=1;state.day++;state.trainingCount=0;
@@ -211,7 +213,7 @@ export function advanceSeason(state){
   if(p.contract===0){
    // Standard one-season club option: preserves a usable team and costs
    // a modest 2.5% wage rise, not an impossible signing fee.
-   p.contract=1;p.salary=Math.ceil((Number(p.salary)||5000)*1.025/100)*100;
+   p.contract=1;p.salary=Math.ceil((Number(p.salary)||5000)*(p.satisfaction<45?1.055:1.025)/100)*100;
    autoRenewed++;
   }
   p.fitness=95;p.injury=0;p.cards=0;p.goals=0;p.assists=0;p.apps=0;p.cleanSheets=0;

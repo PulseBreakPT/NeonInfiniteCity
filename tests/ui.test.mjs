@@ -30,7 +30,7 @@ test('o perfil não injeta HTML do nome do clube',()=>{
 test('os controlos de jogadores são acionáveis e a ficha não bloqueia propagação',()=>{
  const s=makeState();
  const html=playerDetail(s,s.players[0].id);
- assert.ok(html.includes('data-action="renew"'));assert.ok(html.includes('data-action="sell"'));
+ assert.ok(html.includes('data-action="contract-offer"'));assert.ok(html.includes('data-action="sell"'));
  assert.ok(html.includes('id="position-choice"'));
  assert.ok(!html.includes('event.stopPropagation()'));
 });
