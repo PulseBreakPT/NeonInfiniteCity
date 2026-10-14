@@ -1,6 +1,7 @@
 
 import {FORMATIONS,FACILITY_DATA,MENTORS,clamp,rng,hash,rating,autoLineup,getPlayer,generatePlayer,makeMarket,log,teamPower,money,transferValue} from './model.js';
 import {simulateMatch,applyRound,advanceSeason} from './sim.js';
+import {developIdentity,preserveLineups,negotiateMarket,acceptIncomingOffer,boardBudgetRequest,ensureCareer} from './career-intelligence.js';
 function requireFunds(s,cost){if(!Number.isFinite(cost)||cost<0)throw Error('Custo inválido.');if(s.budget<cost)throw Error('Saldo insuficiente.');}
 function spend(s,cost,label){requireFunds(s,cost);s.budget-=cost;s.finance.expenses+=cost;s.finance.ledger.unshift({day:s.day,label,amount:-cost});}
 function income(s,amount,label){s.budget+=amount;s.finance.income+=amount;s.finance.ledger.unshift({day:s.day,label,amount});}
@@ -53,6 +54,7 @@ export function execute(state,action,data={}){
   const t=types[data.kind];if(!t)throw Error('Treino inválido.');spend(s,t.cost,'Treino: '+data.kind);
   let gains=0;for(const player of s.players){
    if(data.kind==='recovery'){player.morale=clamp(player.morale+3,0,100);}else{gains+=enhance(player,t.keys,s.facilities.training>=4?2:1);}
+   developIdentity(player);player.satisfaction=clamp(player.satisfaction+(data.kind==='recovery'?3:1),0,100);
    player.fitness=clamp(player.fitness-t.fatigue,5,100);
    if(data.kind!=='recovery'&&player.fitness<25&&random()<.012)player.injury=Math.max(player.injury||0,1+Math.ceil(random()*2));
   }
@@ -76,10 +78,13 @@ export function execute(state,action,data={}){
   if(!p)throw Error('Jogador desconhecido.');
   if(p.lastRenewedSeason===s.season)throw Error('O contrato já foi renovado nesta época.');
   if((p.contract||0)>=5)throw Error('O jogador já tem contrato de longa duração.');
+  developIdentity(p);
+  if(p.satisfaction<28&&p.personality.loyalty<60)throw Error('O jogador recusou renovar: exige um projeto desportivo mais ambicioso.');
   const previous=Math.max(0,Number(p.contract)||0);
   p.contract=Math.min(5,previous+3);
   p.salary=Math.ceil((Number(p.salary)||5000)*1.02/100)*100;
   p.lastRenewedSeason=s.season;
+  p.satisfaction=clamp(p.satisfaction+6,0,100);
   message='Contrato de '+p.name+' prolongado até '+p.contract+' épocas, sem prémio de assinatura. Salário ajustado em 2%.';
   break;
  }
@@ -104,7 +109,7 @@ export function execute(state,action,data={}){
   const won=direct||random()>(.15+Math.min(.24,(offer.bids||0)*.04));
   if(!won){offer.bids++;message='Licitação superada por outro clube. Sem custos.';break;}
   if(bid>0)spend(s,bid,'Transferência: '+offer.name);
-  const signed={...offer,contract:3,injury:0,goals:0,assists:0,apps:0,
+  const signed={...developIdentity(offer),contract:3,injury:0,goals:0,assists:0,apps:0,
    saleLockUntilWeek:s.week+(offer.freeAgent?8:2)};
   delete signed.ask;delete signed.expires;delete signed.bids;
   s.players.push(signed);s.market=s.market.filter(x=>x.id!==offer.id);
@@ -117,13 +122,50 @@ export function execute(state,action,data={}){
   if((p.saleLockUntilWeek||0)>s.week)throw Error('O jogador deve permanecer no clube durante a integração.');
   const price=Math.round(transferValue(p)*.65/1000)*1000;
   income(s,price,'Venda: '+p.name);s.players=s.players.filter(x=>x.id!==p.id);
-  for(const f of Object.keys(s.lineups))s.lineups[f]=autoLineup(s,f);
+  preserveLineups(s,p.id);
   message=p.name+' vendido por '+money(price)+'.';log(s,'Transferência de saída',message);break;
+ }
+ case 'offer-transfer':{
+  const deal=negotiateMarket(s,data.id,Number(data.amount));
+  message='Proposta de '+money(deal.amount)+' enviada. Resposta após a próxima jornada.';break;
+ }
+ case 'accept-counter':{
+  ensureCareer(s);
+  const deal=s.negotiations.find(x=>x.id===Number(data.id)&&x.status==='counter');
+  if(!deal)throw Error('Contraproposta indisponível.');
+  if(deal.counterAmount>s.budget)throw Error('Saldo insuficiente para a contraproposta.');
+  deal.amount=deal.counterAmount;deal.createdWeek=s.week;deal.status='pending';
+  message='Contraproposta aceite. Aguardar confirmação na próxima jornada.';break;
+ }
+ case 'accept-offer':{
+  const value=acceptIncomingOffer(s,data.id);
+  message='Proposta aceite: '+money(value)+'.';break;
+ }
+ case 'reject-offer':{
+  ensureCareer(s);
+  const offer=s.incomingOffers.find(x=>x.id===Number(data.id)&&x.status==='pending');
+  if(!offer)throw Error('Proposta indisponível.');
+  offer.status='rejected';message='Proposta recusada.';break;
+ }
+ case 'board-request':{
+  const granted=boardBudgetRequest(s);
+  message=granted?'Direção aprovou '+money(granted)+' de orçamento adicional.':'Pedido recusado: melhora resultados e situação financeira.';break;
+ }
+ case 'coach-skill':{
+  ensureCareer(s);
+  const valid=['developer','economist','scout','leader'],skill=String(data.id);
+  if(!valid.includes(skill))throw Error('Especialização inválida.');
+  if(s.coach.skills.includes(skill))throw Error('Já desbloqueaste esta especialização.');
+  if((s.coach.skillPoints||0)<1)throw Error('Sem pontos de carreira.');
+  s.coach.skillPoints--;s.coach.skills.push(skill);
+  message='Especialização de treinador desbloqueada.';break;
  }
  case 'scout':{
   const cost=18000;spend(s,cost,'Relatório de olheiros');
   const market=makeMarket(s,hash(s.club.name)+s.day*991+s.nextId*73);
-  const candidate=market[0];s.market.unshift(candidate);s.gameNonce=(s.gameNonce||0)+1;message='Novo talento observado: '+candidate.name+'.';break;
+  const candidate=market[0];developIdentity(candidate);
+  if((s.coach.skills||[]).includes('scout'))candidate.potential=Math.min(99,candidate.potential+2);
+  s.market.unshift(candidate);s.gameNonce=(s.gameNonce||0)+1;message='Novo talento observado: '+candidate.name+'.';break;
  }
  case 'upgrade':{
   if(!FACILITY_DATA[data.key])throw Error('Instalação desconhecida.');
@@ -147,7 +189,9 @@ export function execute(state,action,data={}){
  }
  case 'academy-train':{
   const kid=s.academy.find(x=>x.id===Number(data.id));if(!kid)throw Error('Jovem desconhecido.');
+  if(kid.lastAcademyTraining===s.season+':'+s.week)throw Error('O jovem já treinou nesta jornada.');
   const cost=12000;spend(s,cost,'Formação jovem: '+kid.name);
+  kid.lastAcademyTraining=s.season+':'+s.week;
   enhance(kid,['pac','sho','pas','def','phy','gk'],2+s.facilities.academy);kid.potential=clamp(kid.potential+1,50,99);
   message=kid.name+' evoluiu na academia.';break;
  }

@@ -1,6 +1,7 @@
 
 import {rng,hash,clamp,teamPower,getPlayer,fixtureName,standings,makeCup,makeLeague,autoLineup,makeMarket,makeRivals,rivalTick,generatePlayer,rating,log,weeklyWageBill,televisionIncome,sponsorIncome,campusMaintenance} from './model.js';
 import {runMatch,tacticalModifiers} from './match-engine.js';
+import {progressCareerWeek,nextSeasonCareer} from './career-intelligence.js';
 import {runCompetitionFixture} from './competition-physics.js';
 const pick=(random,arr)=>arr[Math.floor(random()*arr.length)];
 const poisson=(random,lambda)=>{let k=0,p=1,L=Math.exp(-lambda);while(p>L&&k<10){p*=random();k++;}return k-1;};
@@ -101,7 +102,9 @@ function awardMatch(state,result,fixture){
  const fanShift=won?180:draw?65:-110;
  state.fans=clamp(state.fans+fanShift,100,2000000);
  state.coach.xp+=won?80:draw?45:20;
+ const previousLevel=state.coach.level;
  state.coach.level=1+Math.floor(state.coach.xp/320);
+ state.coach.skillPoints=(state.coach.skillPoints||0)+Math.max(0,state.coach.level-previousLevel);
  updateProgress(state,'match');
  log(state,won?'Vitória importante!':draw?'Empate disputado':'Derrota da equipa',result.homeName+' '+result.hg+'–'+result.ag+' '+result.awayName);
 }
@@ -165,6 +168,7 @@ export function applyRound(state,{featuredResult=null,otherResults=null}={}){
  state.league.round++;
  state.week++;state.day+=7;state.trainingCount=0;state.restDaysThisWeek=0;state.friendliesThisWeek=0;state.gameNonce=0;
  state.players.forEach(p=>{p.injury=Math.max(0,p.injury-1);p.fitness=clamp(p.fitness+8+state.facilities.medical*2,5,100);p.morale=clamp(p.morale+1,5,100);});
+ progressCareerWeek(state,state.league.round-1);
  state.market=makeMarket(state,hash(state.club.name)+state.week*923+state.season*322);
  // Recompensas conquistadas continuam resgatáveis; não destruir o progresso depois do apito final.
  state.events.daily.forEach(q=>{if(q.claimed){q.progress=0;q.claimed=false;}});
@@ -212,8 +216,12 @@ export function advanceSeason(state){
   p.fitness=95;p.injury=0;p.cards=0;p.goals=0;p.assists=0;p.apps=0;p.cleanSheets=0;
  });
  if(autoRenewed)log(state,'Continuidade do plantel',autoRenewed+' contratos prolongados automaticamente por uma época.');
+ nextSeasonCareer(state);
  state.league=makeLeague(state.club.name,state.season,hash(state.club.name),state.division);
- state.rivals=makeRivals(state);
+ // Persistent rival careers: do not erase squads, transfers or managers annually.
+ for(const team of state.league.teams.filter(t=>t.id!==0)){
+  const club=state.rivals[team.id];if(club){team.name=club.name;team.power=clamp(Math.round(club.players.reduce((sum,p)=>sum+rating(p),0)/Math.max(1,club.players.length)),40,95);}
+ }
  state.cup=makeCup(state);state.market=makeMarket(state,hash(state.club.name)+state.season*977);
  state.academy.forEach(p=>{p.age++;p.potential=clamp(p.potential+state.facilities.academy*.3,0,99);});
  state.mentors=state.mentors.filter(m=>(--m.contract)>0);if(!state.mentors.some(m=>m.id===state.mentorActive))state.mentorActive=null;

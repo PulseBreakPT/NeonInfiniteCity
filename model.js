@@ -1,4 +1,5 @@
 
+import {ensureCareer} from './career-intelligence.js';
 export const SAVE_KEY='club-dynasty-v2';
 export const OLD_KEY='club-dynasty-v1';
 export const FORMATIONS={
@@ -110,12 +111,8 @@ export function rivalTick(state,round){
     club.tactics.mentality=club.form<0?'defensiva':club.form>3?'ofensiva':'equilibrada';
     club.tactics.pressure=club.form<0?'media':'alta';
    }
-   const worst=club.players.slice().sort((a,b)=>rating(a)-rating(b))[0];
-   if(worst&&club.budget>150000&&random()<.45){
-    const recruit=generatePlayer(10000+club.id*100+18+round,worst.pos,random,50+random()*25);
-    club.players=club.players.filter(x=>x.id!==worst.id).concat(recruit);
-    club.budget-=110000;
-   }
+   // Squad decisions are handled by the career AI with finances,
+   // positional needs and a persistent transfer record.
    const pool=club.players.slice().sort((a,b)=>rating(b)-rating(a));
    club.lineup=FORMATIONS[club.formation].map(pos=>{let i=pool.findIndex(p=>p.pos===pos);if(i<0)i=0;return pool.splice(i,1)[0]?.id;});
   }
@@ -216,7 +213,7 @@ export function makeState(name='Atlético Aurora',city='Lisboa',color=COLORS[0])
  state.academy=Array.from({length:4},(_,i)=>{const p=generatePlayer(5000+i,['GK','DEF','MID','ATT'][i],random,43+random()*10);p.age=i===0?17:15+Math.floor(random()*4);p.potential=clamp(p.potential+10,65,99);return p;});
  state.finance.economyRevision=4;
  state.events={daily:[{id:'train',text:'Realizar um treino',target:1,progress:0,reward:7000,claimed:false},{id:'match',text:'Disputar uma partida',target:1,progress:0,reward:10000,claimed:false}],weekly:[{id:'win',text:'Vencer 2 partidas',target:2,progress:0,reward:1,kind:'token',claimed:false}],lastRefresh:1};
- return state;
+ return ensureCareer(state);
 }
 export function migrate(saved){
  if(!saved||!saved.club||!Array.isArray(saved.players))return null;
@@ -279,6 +276,7 @@ export function migrate(saved){
   if(!Array.isArray(state.market))state.market=[];
   if((state.finance?.economyRevision||0)<4)state.market=makeMarket(state,hash(state.club.name)+state.week*923+state.season*322);
   regularizeEconomy(state);
+  ensureCareer(state);
   // Recover older career saves that were committed with a changed formation
   // but no corresponding XI. Do not overwrite intentionally empty slots.
   if(!FORMATIONS[state.formation])state.formation='4-3-3';
@@ -302,7 +300,7 @@ export function migrate(saved){
   log(base,'Progresso importado','Os jogadores, dias, treinos e orçamento foram preservados da versão anterior.');
   base.finance.economyRevision=0;
   regularizeEconomy(base);
-  return base;
+  return ensureCareer(base);
  }
  return null;
 }
