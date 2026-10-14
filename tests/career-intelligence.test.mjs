@@ -195,7 +195,7 @@ test('premium market offers are owned by rivals and transfers genuinely move the
   .sort((a,b)=>a.ask-b.ask)[0];
  assert.ok(offer,'Expected a priced player listed by a real rival club');
  const seller=s.rivals[offer.sourceClubId],oldBudget=seller.budget;
- assert.ok(seller.players.some(p=>p.id===offer.id));
+ assert.ok(seller.players.some(p=>p.id===offer.sourcePlayerId));
  assert.throws(()=>execute(s,'bid',{id:offer.id}),/negociação/);
  const amount=Math.ceil(offer.ask*1.1/1000)*1000;
  execute(s,'offer-transfer',{id:offer.id,amount});
@@ -203,7 +203,21 @@ test('premium market offers are owned by rivals and transfers genuinely move the
  progressCareerWeek(s,1);
  assert.ok(s.players.some(p=>p.id===offer.id));
  const settledSeller=s.rivals[offer.sourceClubId];
- assert.ok(!settledSeller.players.some(p=>p.id===offer.id));
+ assert.ok(!settledSeller.players.some(p=>p.id===offer.sourcePlayerId));
  assert.ok(settledSeller.budget>=oldBudget);
- assert.ok(!settledSeller.lineup.includes(offer.id));
+ assert.ok(!settledSeller.lineup.includes(offer.sourcePlayerId));
+});
+
+test('market listing IDs stay unique from rival athlete IDs across saves',()=>{
+ const s=fresh();
+ const offers=s.market.filter(p=>p.sourceClubId);
+ assert.ok(offers.length>=2);
+ for(const offer of offers){
+  assert.notEqual(offer.id,offer.sourcePlayerId);
+  assert.ok(s.rivals[offer.sourceClubId].players.some(p=>p.id===offer.sourcePlayerId));
+ }
+ const clone=migrate(JSON.parse(JSON.stringify(s)));
+ assert.deepEqual(clone.market.map(p=>p.id),s.market.map(p=>p.id));
+ assert.ok(clone.nextId>=s.nextId);
+ assert.equal(new Set(clone.market.map(p=>p.id)).size,clone.market.length);
 });

@@ -179,7 +179,7 @@ export function makeMarket(state,seed){
    if(available.length){
     const {club,p}=available[Math.floor(random()*available.length)];
     listed.add(p.id);
-    return {...p,sourceClubId:club.id,sourcePlayerId:p.id,
+    return {...p,id:idBase+i,sourceClubId:club.id,sourcePlayerId:p.id,
      ask:Math.min(transferValue(p),Math.round(transferValue(p)*(.76+random()*.22)/1000)*1000),
      expires:state.day+2+Math.ceil(random()*3),bids:0};
    }
