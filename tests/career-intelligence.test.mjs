@@ -168,3 +168,24 @@ test('director ultimatum blocks expensive discretionary actions but permits trai
  execute(s,'train',{kind:'technical'});
  assert.equal(s.trainingCount,1);
 });
+
+test('a counterproposal persists its player through a renewed market and can be accepted',()=>{
+ const s=fresh(),player=s.market.filter(p=>p.ask>100000&&p.ask*.9<s.budget).sort((a,b)=>a.ask-b.ask)[0];
+ assert.ok(player);
+ const start=s.budget;
+ execute(s,'offer-transfer',{id:player.id,amount:Math.ceil(player.ask*.7/1000)*1000});
+ s.week++;
+ progressCareerWeek(s,1);
+ const deal=s.negotiations[0];
+ assert.equal(deal.status,'counter');
+ const updatedMarket=s.market.filter(p=>p.id!==player.id);
+ s.market=updatedMarket;
+ execute(s,'accept-counter',{id:deal.id});
+ assert.equal(deal.status,'pending');
+ s.week++;
+ progressCareerWeek(s,2);
+ assert.equal(deal.status,'accepted');
+ assert.equal(s.budget,start-deal.amount);
+ assert.ok(s.players.some(p=>p.id===player.id));
+ assert.ok(!s.players.find(p=>p.id===player.id).ask);
+});

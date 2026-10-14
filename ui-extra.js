@@ -32,7 +32,7 @@ export function market(s){
  }).join('')+'</div>'+
  '<div class="content-two">'+
  panel('Negociações com clubes',negotiations.map(d=>{
-  const p=s.market.find(p=>p.id===d.playerId);
+  const p=s.market.find(p=>p.id===d.playerId)||d.playerSnapshot;
   return '<div class="history-item"><strong>'+esc(p?.name||'Atleta')+'</strong><small>Proposta '+money(d.amount)+' · '+(d.status==='counter'?'Contraproposta '+money(d.counterAmount):'Resposta após a próxima jornada')+'</small>'+
    (d.status==='counter'?btn('accept-counter','Aceitar contraproposta','accent','data-id="'+d.id+'" '+(s.budget<d.counterAmount?'disabled':'')):'')+'</div>';
  }).join('')||'<div class="empty-state">Sem negociações pendentes.</div>')+

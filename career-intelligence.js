@@ -141,7 +141,7 @@ function createIncomingOffer(state,random){
 function resolveNegotiations(state,random){
  for(const deal of state.negotiations){
   if(deal.status!=='pending'||deal.createdWeek>=state.week)continue;
-  const offer=state.market.find(p=>p.id===deal.playerId);
+  const offer=state.market.find(p=>p.id===deal.playerId)||deal.playerSnapshot;
   if(!offer){deal.status='expired';continue;}
   const club=state.rivals[deal.clubId];
   const valuation=Number(offer.ask)||1;
@@ -157,11 +157,14 @@ function resolveNegotiations(state,random){
   state.budget-=deal.amount;
   state.finance.expenses+=deal.amount;
   state.finance.ledger.unshift({day:state.day,label:'Contratação negociada: '+offer.name,amount:-deal.amount});
-  state.players.push({...offer,contract:3,injury:0,goals:0,assists:0,apps:0,saleLockUntilWeek:state.week+3});
+  const signed={...offer,contract:3,injury:0,goals:0,assists:0,apps:0,saleLockUntilWeek:state.week+3};
+  delete signed.ask;delete signed.expires;delete signed.bids;delete signed.freeAgent;
+  state.players.push(signed);
   state.market=state.market.filter(x=>x.id!==offer.id);
   deal.status='accepted';deal.settledWeek=state.week;
   if(club)club.budget+=Math.round(deal.amount*.75);
   state.world.transfers.unshift({season:state.season,week:state.week,playerId:offer.id,player:offer.name,fee:deal.amount,to:state.club.name});
+  state.world.transfers=state.world.transfers.slice(0,100);
   news(state,'Contratação confirmada',offer.name+' assinou pelo '+state.club.name+'.','transfer');
  }
  state.negotiations=state.negotiations.slice(-40);
@@ -323,7 +326,7 @@ export function negotiateMarket(state,playerId,amount){
  const clubs=Object.values(state.rivals);
  const club=clubs[hash('selling:'+player.id)%clubs.length];
  const deal={id:state.world.serial++,playerId:player.id,clubId:club.id,amount:Math.round(amount/1000)*1000,
-  createdWeek:state.week,status:'pending'};
+  createdWeek:state.week,status:'pending',playerSnapshot:{...player}};
  state.negotiations.push(deal);
  news(state,'Negociação iniciada','Enviada proposta por '+player.name+'. O clube vendedor responderá após a próxima jornada.','transfer');
  return deal;
