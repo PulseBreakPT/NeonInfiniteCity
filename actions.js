@@ -2,7 +2,7 @@
 import {FORMATIONS,FACILITY_DATA,MENTORS,clamp,rng,hash,rating,autoLineup,getPlayer,generatePlayer,makeMarket,log,teamPower,money,transferValue} from './model.js';
 import {simulateMatch,applyRound,advanceSeason} from './sim.js';
 import {developIdentity,preserveLineups,negotiateMarket,acceptIncomingOffer,boardBudgetRequest,ensureCareer} from './career-intelligence.js';
-function requireFunds(s,cost){if(!Number.isFinite(cost)||cost<0)throw Error('Custo inválido.');if(s.budget<cost)throw Error('Saldo insuficiente.');}
+function requireFunds(s,cost){if(!Number.isFinite(cost)||cost<0)throw Error('Custo inválido.');if(s.budget<cost)throw Error('Saldo insuficiente.');if(s.board?.status==='ultimatum'&&cost>=120000)throw Error('A direção suspendeu investimentos elevados até recuperares a confiança.');}
 function spend(s,cost,label){requireFunds(s,cost);s.budget-=cost;s.finance.expenses+=cost;s.finance.ledger.unshift({day:s.day,label,amount:-cost});}
 function income(s,amount,label){s.budget+=amount;s.finance.income+=amount;s.finance.ledger.unshift({day:s.day,label,amount});}
 function requireToken(s,n){if(s.tokens<n)throw Error('Tokens insuficientes.');s.tokens-=n;}

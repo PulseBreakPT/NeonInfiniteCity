@@ -129,3 +129,42 @@ test('career adviser, transfers, director and world news are visible in the app'
  assert.ok(events(s).includes('Notícias do universo'));
  assert.ok(profile(s).includes('Especializações do treinador'));
 });
+
+test('older starters eventually retire and are replaced with different identities',()=>{
+ const s=fresh(),before=s.players.length,starter=s.lineups[s.formation][2];
+ s.players.find(p=>p.id===starter).age=40;
+ s.league.completed=true;
+ advanceSeason(s);
+ assert.equal(s.players.length,before);
+ assert.ok(!s.players.some(p=>p.id===starter));
+ assert.ok(!s.lineups[s.formation].includes(starter));
+ assert.ok(s.world.retired.some(p=>p.id===starter));
+});
+test('relegation changes the actual opponent clubs and archives the old division',()=>{
+ const s=fresh(),names=Object.values(s.rivals).map(x=>x.name);
+ for(const f of s.league.rounds.flat()){
+  f.played=true;
+  if(f.home===0){f.hg=0;f.ag=4;}
+  else if(f.away===0){f.hg=4;f.ag=0;}
+  else {f.hg=0;f.ag=0;}
+ }
+ s.league.completed=true;
+ advanceSeason(s);
+ assert.equal(s.division,2);
+ const now=Object.values(s.rivals).map(x=>x.name);
+ assert.notDeepEqual(now,names);
+ assert.ok(s.world.divisionArchives[1]);
+ assert.equal(s.league.teams[1].name,s.rivals[1].name);
+});
+test('leadership specialty raises morale-related satisfaction over time',()=>{
+ const normal=fresh(),leader=structuredClone(normal);
+ leader.coach.skills.push('leader');
+ progressCareerWeek(normal,1);progressCareerWeek(leader,1);
+ assert.ok(leader.players[0].satisfaction>=normal.players[0].satisfaction);
+});
+test('director ultimatum blocks expensive discretionary actions but permits training',()=>{
+ const s=fresh();s.board.status='ultimatum';
+ assert.throws(()=>execute(s,'upgrade',{key:'stadium'}),/direção/);
+ execute(s,'train',{kind:'technical'});
+ assert.equal(s.trainingCount,1);
+});

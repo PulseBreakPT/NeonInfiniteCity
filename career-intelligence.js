@@ -4,7 +4,7 @@
  * All mutations happen at explicit week/season boundaries, never during match
  * animation, and retain IDs so old saves, lineups and histories survive.
  */
-import {FORMATIONS,autoLineup,clamp,generatePlayer,hash,rating,rng,standings,transferValue} from './model.js';
+import {FORMATIONS,autoLineup,clamp,generatePlayer,hash,makeRivals,rating,rng,standings,transferValue} from './model.js';
 
 const traits=['ambition','loyalty','professionalism','patience','adaptability'];
 const profile=(p)=>{const random=rng(hash(String(p.id)+':'+p.name+':character'));
@@ -180,7 +180,7 @@ export function progressCareerWeek(state,round){
   player.careerGoals+=Math.max(0,(player.goals||0)-(player.previousGoals||0));
   player.previousGoals=player.goals||0;
   player.satisfaction=clamp(player.satisfaction+(started?3:-Math.max(1,Math.round(mind.ambition/30)))+
-   (player.morale>88?1:player.morale<40?-3:0),3,100);
+   (player.morale>88?1:player.morale<40?-3:0)+((state.coach.skills||[]).includes('leader')?2:0),3,100);
   if(started&&player.age<=29&&player.fitness>45&&
     (round+player.id)%Math.max(3,7-Math.floor(mind.professionalism/28)-(state.coach.skills||[]).includes('developer'))===0){
    const primary=player.pos==='GK'?'gk':player.pos==='DEF'?'def':player.pos==='MID'?'pas':'sho';
@@ -211,7 +211,7 @@ export function progressCareerWeek(state,round){
  }
  return state;
 }
-export function nextSeasonCareer(state){
+export function nextSeasonCareer(state,previousDivision=state.division){
  ensureCareer(state);
  const random=rng(hash(state.club.name+':offseason:'+state.season));
  const old=state.rivals;
@@ -234,7 +234,29 @@ export function nextSeasonCareer(state){
   club.lineup=rivalLineup(club);
   club.budget=Math.max(80000,club.budget||0);
  }
- state.world.seasons.unshift({season:state.season-1,club:state.club.name,division:state.division,
+ // Persist an actual opponent population for every division the user visits.
+ // Returning to a division restores its known clubs rather than recreating them.
+ if(previousDivision!==state.division){
+  state.world.divisionArchives??={};
+  state.world.divisionArchives[previousDivision]={season:state.season-1,rivals:old};
+  let population=state.world.divisionArchives[state.division]?.rivals;
+  if(!population){
+   population=makeRivals(state);
+   const locations=['Beja','Lamego','Viana','Portalegre','Chaves','Silves','Alcobaça','Leiria',
+    'Elvas','Guimarães','Mirandela','Bragança','Tomar','Vila Real','Tavira'];
+   const roots=['União','Desportivo','Atlético','Vitória','Sporting','Académico','Futebol Clube'];
+   for(const [i,club] of Object.values(population).entries()){
+    club.name=roots[(i+state.division)%roots.length]+' de '+locations[(i+state.division*3)%locations.length];
+    club.manager.name='Treinador de '+locations[(i+state.division*3)%locations.length];
+    club.players.forEach(p=>{p.id=state.world.nextRivalId++;developIdentity(p);});
+    club.lineup=rivalLineup(club);
+   }
+   state.world.divisionArchives[state.division]={season:state.season,rivals:population};
+  }
+  state.rivals=population;
+  news(state,'Nova divisão','A carreira entrou na divisão '+state.division+', com um conjunto diferente de adversários.','league');
+ }
+ state.world.seasons.unshift({season:state.season-1,club:state.club.name,division:previousDivision,
   target:state.board.targetRank,coach:state.coach.name});
  state.world.seasons=state.world.seasons.slice(0,25);
  state.board.targetRank=clamp(state.division===1?Math.max(6,12-(state.coach.trophies||0)):10,1,16);
@@ -248,6 +270,22 @@ export function nextSeasonCareer(state){
   p.satisfaction=clamp(p.satisfaction+12,0,100);
   p.previousGoals=0;
  }
+ // Maintain squad size without immortal athletes: retired players give way
+ // to locally generated academy graduates with new stable identities.
+ state.world.retired??=[];
+ const retirees=state.players.filter(p=>p.age>=39||(p.age>=36&&random()<.22));
+ for(const player of retirees){
+  state.world.retired.unshift({id:player.id,name:player.name,age:player.age,season:state.season-1,
+   club:state.club.name,apps:player.careerApps||player.apps});
+  state.players=state.players.filter(p=>p.id!==player.id);
+  const junior=developIdentity(generatePlayer(state.nextId++,player.pos,random,48+random()*13));
+  junior.age=18+Math.floor(random()*5);
+  junior.contract=3;
+  state.players.push(junior);
+  preserveLineups(state,player.id);
+  news(state,'Fim de carreira',player.name+' terminou a carreira. '+junior.name+' chegou para reforçar o plantel.','player');
+ }
+ state.world.retired=state.world.retired.slice(0,100);
  for(const p of state.academy)developIdentity(p);
  state.negotiations=[];state.incomingOffers=[];
  news(state,'Nova época, novas metas','A direção espera um lugar entre os primeiros '+state.board.targetRank+'.','board');

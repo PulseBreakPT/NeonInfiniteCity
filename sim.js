@@ -199,6 +199,7 @@ export function playCup(state){
 export function advanceSeason(state){
  if(!state.league.completed)throw Error('A época ainda não terminou.');
  const pos=standings(state).findIndex(t=>t.id===0)+1;
+ const previousDivision=state.division;
  const previous=state.season;
  state.history.unshift({season:previous,position:pos,champion:fixtureName(state,state.league.champion),cup:state.cup.winner===0,record:state.coach.wins+'/'+state.coach.draws+'/'+state.coach.losses});
  if(pos<=2)state.division=Math.max(1,state.division-1);else if(pos>=14)state.division=Math.min(8,state.division+1);
@@ -216,7 +217,7 @@ export function advanceSeason(state){
   p.fitness=95;p.injury=0;p.cards=0;p.goals=0;p.assists=0;p.apps=0;p.cleanSheets=0;
  });
  if(autoRenewed)log(state,'Continuidade do plantel',autoRenewed+' contratos prolongados automaticamente por uma época.');
- nextSeasonCareer(state);
+ nextSeasonCareer(state,previousDivision);
  state.league=makeLeague(state.club.name,state.season,hash(state.club.name),state.division);
  // Persistent rival careers: do not erase squads, transfers or managers annually.
  for(const team of state.league.teams.filter(t=>t.id!==0)){
