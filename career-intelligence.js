@@ -157,23 +157,29 @@ function resolveNegotiations(state,random){
   const valuation=Number(offer.ask)||1;
   const personality=developIdentity(offer).personality;
   const demanded=Math.ceil(valuation*(.85+personality.ambition/600));
-  const accepted=deal.amount>=demanded&&deal.amount<=state.budget&&state.players.length<35&&
+  const upfront=deal.installments===3?Math.ceil(deal.amount/3000)*1000:deal.amount;
+  const accepted=deal.amount>=demanded&&upfront<=state.budget&&state.players.length<35&&
    (offer.satisfaction||75)>=40;
   if(!accepted){
    deal.status=deal.amount<demanded?'counter':'rejected';
    if(deal.status==='counter')deal.counterAmount=Math.ceil(demanded/1000)*1000;
    continue;
   }
-  state.budget-=deal.amount;
-  state.finance.expenses+=deal.amount;
-  state.finance.ledger.unshift({day:state.day,label:'Contratação negociada: '+offer.name,amount:-deal.amount});
+  state.budget-=upfront;
+  state.finance.expenses+=upfront;
+  state.finance.ledger.unshift({day:state.day,label:'Contratação negociada: '+offer.name,amount:-upfront});
+  if(deal.installments===3){
+   const remaining=deal.amount-upfront;
+   state.finance.transferPayables.push({player:offer.name,remaining,installment:Math.ceil(remaining/2),
+    nextDay:state.day+7,sellerId:deal.clubId});
+  }
   const signed={...offer,contract:3,injury:0,goals:0,assists:0,apps:0,saleLockUntilWeek:state.week+3};
   delete signed.ask;delete signed.expires;delete signed.bids;delete signed.freeAgent;
   state.players.push(signed);
   state.market=state.market.filter(x=>x.id!==offer.id);
   if(club&&offer.sourceClubId){club.players=club.players.filter(p=>p.id!==(offer.sourcePlayerId||offer.id));club.lineup=rivalLineup(club);}
   deal.status='accepted';deal.settledWeek=state.week;
-  if(club)club.budget+=Math.round(deal.amount*.75);
+  if(club)club.budget+=Math.round(upfront*.75);
   state.world.transfers.unshift({season:state.season,week:state.week,playerId:offer.id,player:offer.name,fee:deal.amount,to:state.club.name});
   state.world.transfers=state.world.transfers.slice(0,100);
   news(state,'Contratação confirmada',offer.name+' assinou pelo '+state.club.name+'.','transfer');
@@ -329,18 +335,20 @@ export function acceptIncomingOffer(state,id){
  news(state,'Venda confirmada',player.name+' transferido para '+rival.name+'.','transfer');
  return buy;
 }
-export function negotiateMarket(state,playerId,amount){
+export function negotiateMarket(state,playerId,amount,installments=1){
  ensureCareer(state);
  const player=state.market.find(p=>p.id===Number(playerId));
  if(!player||player.freeAgent||player.ask<=100000)throw Error('Utiliza a contratação direta para esta oferta.');
  if(state.negotiations.some(x=>x.playerId===player.id&&['pending','counter'].includes(x.status)))
   throw Error('Já existe uma negociação para este atleta.');
- if(!Number.isFinite(amount)||amount<Math.round(player.ask*.65)||amount>state.budget)
+ if(![1,3].includes(installments))throw Error('Plano de pagamentos inválido.');
+ if(!Number.isFinite(amount)||amount<Math.round(player.ask*.65)||
+    (installments===1?amount>state.budget:amount>state.budget*2.5||Math.ceil(amount/3000)*1000>state.budget))
   throw Error('A proposta deve ser válida e caber no orçamento.');
  const clubs=Object.values(state.rivals);
  const club=state.rivals[player.sourceClubId]||clubs[hash('selling:'+player.id)%clubs.length];
  const deal={id:state.world.serial++,playerId:player.id,clubId:club.id,amount:Math.round(amount/1000)*1000,
-  createdWeek:state.week,status:'pending',playerSnapshot:{...player}};
+  createdWeek:state.week,status:'pending',installments,playerSnapshot:{...player}};
  state.negotiations.push(deal);
  news(state,'Negociação iniciada','Enviada proposta por '+player.name+'. O clube vendedor responderá após a próxima jornada.','transfer');
  return deal;

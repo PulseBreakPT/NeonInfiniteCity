@@ -203,3 +203,31 @@ test('credit capital can be repaid once and cannot be repaid twice',()=>{
  assert.equal(s.finance.loanBalance,0);
  assert.throws(()=>execute(s,'bank-repay',{amount:25000}),/Não existe/);
 });
+
+test('paying a transfer in instalments reserves the liability and settles the seller weekly',()=>{
+ const s=newClub(),offer=s.market.filter(x=>x.sourceClubId&&x.ask>100000&&x.ask*1.15<s.budget)
+  .sort((a,b)=>a.ask-b.ask)[0];
+ assert.ok(offer);
+ const total=Math.ceil(offer.ask*1.1/1000)*1000,before=s.budget;
+ execute(s,'offer-instalments',{id:offer.id,amount:total});
+ const deal=s.negotiations[0];assert.equal(deal.installments,3);
+ s.week++;s.day+=7;
+ progressCareerWeek(s,1);
+ assert.equal(deal.status,'accepted');
+ const upfront=Math.ceil(total/3000)*1000;
+ assert.equal(s.budget,before-upfront);
+ assert.equal(s.finance.transferPayables.length,1);
+ const receivables=s.finance.transferPayables[0].remaining;
+ assert.equal(receivables,total-upfront);
+ s.week++;s.day+=7;progressCareerWeek(s,2);
+ assert.ok(s.finance.transferPayables.length<=1);
+ s.week++;s.day+=7;progressCareerWeek(s,3);
+ assert.equal(s.finance.transferPayables.length,0);
+ assert.equal(s.budget,before-total);
+});
+test('instalment offers cannot exceed financing capacity and reject negative fees',()=>{
+ const s=newClub(),offer=s.market.find(p=>p.ask>100000);
+ assert.ok(offer);
+ assert.throws(()=>execute(s,'offer-instalments',{id:offer.id,amount:80000000}),/orçamento/);
+ assert.equal(s.negotiations.length,0);
+});

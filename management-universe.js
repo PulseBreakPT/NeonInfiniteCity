@@ -224,11 +224,12 @@ export function managementWeeklyTick(s,round){
  }
  const installments=s.finance.transferPayables;
  for(const debt of installments){
-  if(debt.remaining<=0||debt.nextWeek>s.week)continue;
+  if(debt.remaining<=0||(debt.nextDay??debt.nextWeek)>s.day)continue;
   const due=Math.min(debt.remaining,debt.installment);
   if(s.budget<due){s.finance.debt+=due-s.budget;s.budget=0;}else s.budget-=due;
   s.finance.expenses+=due;s.finance.ledger.unshift({day:s.day,label:'Prestação da transferência de '+debt.player,amount:-due});
-  debt.remaining-=due;debt.nextWeek+=1;
+  if(debt.sellerId&&s.rivals[debt.sellerId])s.rivals[debt.sellerId].budget+=Math.round(due*.75);
+  debt.remaining-=due;debt.nextDay=s.day+7;
  }
  s.finance.transferPayables=installments.filter(x=>x.remaining>0);
  s.world.financialHistory.unshift({season:s.season,round,budget:s.budget,debt:s.finance.debt,

@@ -144,15 +144,16 @@ export function execute(state,action,data={}){
   const paid=repayBankLoan(s,Number(data.amount));
   message='Crédito amortizado: '+money(paid)+'.';break;
  }
- case 'offer-transfer':{
-  const deal=negotiateMarket(s,data.id,Number(data.amount));
-  message='Proposta de '+money(deal.amount)+' enviada. Resposta após a próxima jornada.';break;
+ case 'offer-transfer':
+ case 'offer-instalments':{
+  const deal=negotiateMarket(s,data.id,Number(data.amount),action==='offer-instalments'?3:1);
+  message='Proposta de '+money(deal.amount)+' enviada'+(deal.installments===3?' em três pagamentos':'')+'. Resposta após a próxima jornada.';break;
  }
  case 'accept-counter':{
   ensureCareer(s);
   const deal=s.negotiations.find(x=>x.id===Number(data.id)&&x.status==='counter');
   if(!deal)throw Error('Contraproposta indisponível.');
-  if(deal.counterAmount>s.budget)throw Error('Saldo insuficiente para a contraproposta.');
+  if((deal.installments===3?Math.ceil(deal.counterAmount/3000)*1000:deal.counterAmount)>s.budget)throw Error('Saldo insuficiente para a contraproposta.');
   deal.amount=deal.counterAmount;deal.createdWeek=s.week;deal.status='pending';
   message='Contraproposta aceite. Aguardar confirmação na próxima jornada.';break;
  }

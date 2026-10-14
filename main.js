@@ -352,7 +352,7 @@ document.addEventListener('click',event=>{
  if(nav){go(nav);return;}
  const action=button.dataset.action;
  if(!action)return;
- act(action,{id:button.dataset.id,amount:action==='offer-transfer'?Number(document.getElementById('offer-'+button.dataset.id)?.value):button.dataset.amount!==undefined?Number(button.dataset.amount):undefined,salary:action==='contract-offer'?Number(document.getElementById('contract-salary-'+button.dataset.id)?.value):undefined,years:action==='contract-offer'?Number(document.getElementById('contract-years-'+button.dataset.id)?.value):undefined,slot:button.dataset.slot!==undefined?Number(button.dataset.slot):undefined,to:button.dataset.to,key:button.dataset.key,kind:button.dataset.kind,round:button.dataset.round,pos:button.dataset.pos});
+ act(action,{id:button.dataset.id,amount:['offer-transfer','offer-instalments'].includes(action)?Number(document.getElementById('offer-'+button.dataset.id)?.value):button.dataset.amount!==undefined?Number(button.dataset.amount):undefined,salary:action==='contract-offer'?Number(document.getElementById('contract-salary-'+button.dataset.id)?.value):undefined,years:action==='contract-offer'?Number(document.getElementById('contract-years-'+button.dataset.id)?.value):undefined,slot:button.dataset.slot!==undefined?Number(button.dataset.slot):undefined,to:button.dataset.to,key:button.dataset.key,kind:button.dataset.kind,round:button.dataset.round,pos:button.dataset.pos});
 });
 document.addEventListener('change',event=>{
  const el=event.target;

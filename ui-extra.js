@@ -28,14 +28,15 @@ export function market(s){
    '<div class="market-details">'+info('Potencial',p.potential)+(p.sourceClubId?info('Clube vendedor',esc(s.rivals?.[p.sourceClubId]?.name||'Clube rival')):'')+info('Taxa de transferência',free?'GRÁTIS':money(cost))+info('Salário por jornada',money(Math.ceil((p.salary||0)/4)))+info('Contrato','3 épocas')+'</div>'+
    (!free&&p.ask>100000?
     '<label class="control-field"><span>Proposta em euros</span><input type="number" id="offer-'+p.id+'" min="'+Math.ceil(p.ask*.65/1000)*1000+'" max="'+s.budget+'" step="1000" value="'+Math.min(cost,s.budget)+'"></label>'+
-    btn('offer-transfer',full?'Plantel completo':s.budget<Math.ceil(p.ask*.65)?'SALDO INSUFICIENTE':'ENVIAR PROPOSTA '+icon('arrow'),'subtle full','data-id="'+p.id+'" '+(full||s.budget<Math.ceil(p.ask*.65)?'disabled':''))
+    btn('offer-transfer',full?'Plantel completo':s.budget<Math.ceil(p.ask*.65)?'SALDO INSUFICIENTE':'ENVIAR PROPOSTA '+icon('arrow'),'subtle full','data-id="'+p.id+'" '+(full||s.budget<Math.ceil(p.ask*.65)?'disabled':''))+
+    btn('offer-instalments','PROPOR 3 PAGAMENTOS','subtle full','data-id="'+p.id+'" '+(full||s.budget<Math.ceil(p.ask*.65/3)?'disabled':''))
     :btn('bid',full?'Plantel completo':free?'CONTRATAR GRÁTIS':canPay?'CONTRATAR '+icon('arrow'):'SALDO INSUFICIENTE',free?'accent full':'subtle full','data-id="'+p.id+'" '+(full||!canPay?'disabled':'')))+'</div>';
  }).join('')+'</div>'+
  '<div class="content-two">'+
  panel('Negociações com clubes',negotiations.map(d=>{
   const p=s.market.find(p=>p.id===d.playerId)||d.playerSnapshot;
-  return '<div class="history-item"><strong>'+esc(p?.name||'Atleta')+'</strong><small>Proposta '+money(d.amount)+' · '+(d.status==='counter'?'Contraproposta '+money(d.counterAmount):'Resposta após a próxima jornada')+'</small>'+
-   (d.status==='counter'?btn('accept-counter','Aceitar contraproposta','accent','data-id="'+d.id+'" '+(s.budget<d.counterAmount?'disabled':'')):'')+'</div>';
+  return '<div class="history-item"><strong>'+esc(p?.name||'Atleta')+'</strong><small>Proposta '+money(d.amount)+(d.installments===3?' · em 3 pagamentos':'')+' · '+(d.status==='counter'?'Contraproposta '+money(d.counterAmount):'Resposta após a próxima jornada')+'</small>'+
+   (d.status==='counter'?btn('accept-counter','Aceitar contraproposta','accent','data-id="'+d.id+'" '+(s.budget<(d.installments===3?Math.ceil(d.counterAmount/3000)*1000:d.counterAmount)?'disabled':'')):'')+'</div>';
  }).join('')||'<div class="empty-state">Sem negociações pendentes.</div>')+
  panel('Propostas por jogadores do clube',proposals.map(o=>{
   const p=s.players.find(x=>x.id===o.playerId);
