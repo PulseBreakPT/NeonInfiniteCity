@@ -1,6 +1,7 @@
 
 import {FORMATIONS,POSITIONS,COLORS,FACILITY_DATA,MENTORS,rating,teamPower,standings,money,getPlayer,nextFixture,fixtureName,clamp,weeklyWageBill,televisionIncome,sponsorIncome,campusMaintenance} from './model.js';
 import {esc,icon,crest,pill,bar,avatar,btn,title,panel,playerItem,info,navItems} from './ui-core.js';
+import {getAdvisorReport} from './career-intelligence.js';
 function team(s,id){return esc(fixtureName(s,id));}
 export function league(s){
  const rows=standings(s),curr=s.league.rounds[Math.min(29,s.league.round-1)]||[];
@@ -15,6 +16,8 @@ export function league(s){
 }
 export function market(s){
  const affordable=s.market.filter(p=>s.budget>=Math.round(p.ask*(1+(p.bids||0)*.08))).length;
+ const negotiations=(s.negotiations||[]).filter(d=>['pending','counter'].includes(d.status));
+ const proposals=(s.incomingOffers||[]).filter(d=>d.status==='pending');
  return title('GESTÃO DE TALENTO','MERCADO DE TRANSFERÊNCIAS','Reforços livres e jogadores disponíveis em cada jornada.',btn('scout','Novo relatório de olheiros · 18 000 €','subtle'))+
  '<div class="market-head">'+pill('SALDO '+money(s.budget),'good')+pill(s.players.length+'/35 NO PLANTEL')+pill(affordable+' OFERTAS ACESSÍVEIS','good')+'</div>'+
  '<div class="cards-grid">'+s.market.map(p=>{
@@ -22,9 +25,23 @@ export function market(s){
   return '<div class="market-card"><div class="row">'+avatar(p)+'<div class="grow"><b>'+esc(p.name)+'</b><small>'+esc(p.nation)+' · '+p.age+' anos · '+POSITIONS[p.pos]+'</small></div><span class="ovr">'+rating(p)+'</span></div>'+
    (free?'<div class="market-free-label">'+icon('check',16)+' JOGADOR LIVRE</div>':'')+
    '<div class="market-details">'+info('Potencial',p.potential)+info('Taxa de transferência',free?'GRÁTIS':money(cost))+info('Salário por jornada',money(Math.ceil((p.salary||0)/4)))+info('Contrato','3 épocas')+'</div>'+
-   btn('bid',full?'Plantel completo':free?'CONTRATAR GRÁTIS':canPay?'CONTRATAR '+icon('arrow'):'SALDO INSUFICIENTE',free?'accent full':'subtle full','data-id="'+p.id+'" '+(full||!canPay?'disabled':''))+'</div>';
+   (!free&&cost>100000?
+    '<label class="control-field"><span>Proposta em euros</span><input type="number" id="offer-'+p.id+'" min="'+Math.ceil(p.ask*.65/1000)*1000+'" max="'+s.budget+'" step="1000" value="'+Math.min(cost,s.budget)+'"></label>'+
+    btn('offer-transfer',full?'Plantel completo':s.budget<Math.ceil(p.ask*.65)?'SALDO INSUFICIENTE':'ENVIAR PROPOSTA '+icon('arrow'),'subtle full','data-id="'+p.id+'" '+(full||s.budget<Math.ceil(p.ask*.65)?'disabled':''))
+    :btn('bid',full?'Plantel completo':free?'CONTRATAR GRÁTIS':canPay?'CONTRATAR '+icon('arrow'):'SALDO INSUFICIENTE',free?'accent full':'subtle full','data-id="'+p.id+'" '+(full||!canPay?'disabled':'')))+'</div>';
  }).join('')+'</div>'+
- '<p class="note muted">Os jogadores livres não exigem pagamento de transferência, mas os salários contam para as despesas. As ofertas renovam-se após cada jornada. Jogadores contratados por transferência podem ter concorrência de IA.</p>';
+ '<div class="content-two">'+
+ panel('Negociações com clubes',negotiations.map(d=>{
+  const p=s.market.find(p=>p.id===d.playerId);
+  return '<div class="history-item"><strong>'+esc(p?.name||'Atleta')+'</strong><small>Proposta '+money(d.amount)+' · '+(d.status==='counter'?'Contraproposta '+money(d.counterAmount):'Resposta após a próxima jornada')+'</small>'+
+   (d.status==='counter'?btn('accept-counter','Aceitar contraproposta','accent','data-id="'+d.id+'" '+(s.budget<d.counterAmount?'disabled':'')):'')+'</div>';
+ }).join('')||'<div class="empty-state">Sem negociações pendentes.</div>')+
+ panel('Propostas por jogadores do clube',proposals.map(o=>{
+  const p=s.players.find(x=>x.id===o.playerId);
+  return '<div class="history-item"><strong>'+esc(o.clubName)+'</strong><small>'+esc(p?.name||'Atleta')+' · '+money(o.amount)+' · até à jornada '+o.expiresWeek+'</small><div class="action-row">'+
+   btn('accept-offer','Aceitar','accent','data-id="'+o.id+'"')+btn('reject-offer','Recusar','subtle','data-id="'+o.id+'"')+'</div></div>';
+ }).join('')||'<div class="empty-state">Nenhuma proposta recebida.</div>')+'</div>'+
+ '<p class="note muted">Contratações de valor elevado exigem negociação e resposta do clube vendedor na jornada seguinte. As propostas não reservam dinheiro antes de serem aceites.</p>';
 }
 export function training(s){
  const workouts=[['technical','pitch','Técnica','Passe e remate','12 000 €'],['physical','bolt','Físico','Velocidade e resistência','15 000 €'],['defense','shield','Defesa','Marcação e robustez','13 500 €'],['teamwork','users','Coletivo','Equilíbrio e sincronização','11 000 €'],['recovery','heart','Recuperação','Condição e moral','7 500 €']];
@@ -38,7 +55,7 @@ export function training(s){
 export function academy(s){
  return title('FUTURO DO CLUBE','ACADEMIA DE JUNIORES','Promove jovens a partir dos 17 anos. Assinatura: 10 000 €.',btn('academy-recruit','Recrutar júnior · 35 000 €','accent'))+
  '<div class="headline-stats">'+pill('NÍVEL '+s.facilities.academy)+pill(s.academy.length+'/6 JOVENS')+pill('PROMOÇÕES PARA A EQUIPA PRINCIPAL')+'</div>'+
- '<div class="cards-grid">'+s.academy.map(p=>'<div class="academy-card"><div class="row">'+avatar(p)+'<div class="grow"><b>'+esc(p.name)+'</b><small>'+POSITIONS[p.pos]+' · '+p.age+' anos</small></div><span class="ovr">'+rating(p)+'</span></div>'+info('Potencial',p.potential+' OVR')+info('Nacionalidade',esc(p.nation))+info('Evolução',bar(Math.max(8,Math.min(99,(rating(p)/p.potential)*100))))+'<div class="action-row">'+btn('academy-train','Treinar · 12 000 €','subtle','data-id="'+p.id+'"')+btn('academy-promote','Promover','accent','data-id="'+p.id+'" '+(p.age<17?'disabled':''))+'</div></div>').join('')+'</div>'+
+ '<div class="cards-grid">'+s.academy.map(p=>'<div class="academy-card"><div class="row">'+avatar(p)+'<div class="grow"><b>'+esc(p.name)+'</b><small>'+POSITIONS[p.pos]+' · '+p.age+' anos</small></div><span class="ovr">'+rating(p)+'</span></div>'+info('Potencial',p.potential+' OVR')+info('Nacionalidade',esc(p.nation))+info('Evolução',bar(Math.max(8,Math.min(99,(rating(p)/p.potential)*100))))+'<div class="action-row">'+btn('academy-train',p.lastAcademyTraining===s.season+':'+s.week?'Já treinou nesta jornada':'Treinar · 12 000 €','subtle','data-id="'+p.id+'" '+(p.lastAcademyTraining===s.season+':'+s.week?'disabled':''))+btn('academy-promote','Promover','accent','data-id="'+p.id+'" '+(p.age<17?'disabled':''))+'</div></div>').join('')+'</div>'+
  '<p class="note muted">Os jovens evoluem no centro de formação. Promoção: mínimo de 17 anos e 10 000 € pela assinatura profissional. Não é possível vendê-los nas quatro primeiras jornadas após a promoção.</p>';
 }
 export function campus(s){
@@ -54,6 +71,7 @@ export function finance(s){
  const f=s.finance,net=f.income-f.expenses,television=televisionIncome(s),sponsors=sponsorIncome(s),
  wages=weeklyWageBill(s),maintenance=campusMaintenance(s),recurring=television+sponsors-wages-maintenance;
  const expiring=s.players.filter(p=>(p.contract||0)<=1).length;
+ const advisor=getAdvisorReport(s),board=s.board||{};
  return title('DIREÇÃO FINANCEIRA','FINANÇAS','Contas por jornada e contratos do clube.')+
  '<div class="kpi-grid"><div class="kpi"><small>SALDO ATUAL</small><strong class="currency">'+money(s.budget)+'</strong></div><div class="kpi"><small>RECEITAS DA ÉPOCA</small><strong class="currency pos">'+money(f.income)+'</strong></div><div class="kpi"><small>DESPESAS DA ÉPOCA</small><strong class="currency neg">'+money(f.expenses)+'</strong></div><div class="kpi"><small>RESULTADO ACUMULADO</small><strong class="currency '+(net<0?'neg':'pos')+'">'+money(net)+'</strong></div></div>'+
  '<div class="headline-stats">'+pill('DÍVIDA '+money(f.debt||0),(f.debt||0)>0?'danger':'good')+pill('CONFIANÇA DA DIREÇÃO '+(f.boardConfidence??75)+'%')+pill('CONTRATOS A 1 ÉPOCA '+expiring)+'</div>'+
@@ -69,7 +87,15 @@ export function finance(s){
  panel('Bilhetes e patrocínios',
   '<form id="finance-form"><label class="control-field"><span>Preço de bilhete (8 € – 70 €)</span><input type="number" min="8" max="70" name="tickets" value="'+f.stadiumTickets+'" required></label><label class="control-field"><span>Patrocinador</span><select name="sponsor">'+[['Atlântico Energia','regular'],['Norte Digital','premium'],['Horizonte Global','elite']].map(([n,id])=>'<option value="'+id+'" '+(s.club.sponsor===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label><div class="form-actions"><button type="submit" class="btn accent full">Guardar bilhetes e patrocínio</button></div></form>'+info('Capacidade do estádio',s.club.capacity.toLocaleString('pt-PT'))+info('Patrocinador atual',esc(s.club.sponsor))+
  '<p class="note muted">O patrocinador premium implica um custo de negociação único. Os salários são pagos por jornada; o contrato de um jogador pode ser prolongado sem prémio de assinatura.</p>')+'</div>'+
- panel('Livro de movimentos','<div class="ledger">'+(f.ledger.length?f.ledger.slice(0,20).map(e=>'<div class="ledger-line"><div><b>'+esc(e.label)+'</b><small>Dia '+e.day+'</small></div><strong class="'+(e.amount>=0?'pos':'neg')+'">'+(e.amount>0?'+':'')+money(e.amount)+'</strong></div>').join(''):'<div class="empty-state">Os movimentos aparecem após as operações.</div>')+'</div>');
+ panel('Livro de movimentos','<div class="ledger">'+(f.ledger.length?f.ledger.slice(0,20).map(e=>'<div class="ledger-line"><div><b>'+esc(e.label)+'</b><small>Dia '+e.day+'</small></div><strong class="'+(e.amount>=0?'pos':'neg')+'">'+(e.amount>0?'+':'')+money(e.amount)+'</strong></div>').join(''):'<div class="empty-state">Os movimentos aparecem após as operações.</div>')+'</div>')+
+ '<div class="content-two">'+
+ panel('Direção e objetivos',info('Objetivo de classificação','Top '+(board.targetRank||10))+
+  info('Estado',board.status==='ultimatum'?'ULTIMATO':board.status==='warning'?'EM ALERTA':'ESTÁVEL')+
+  info('Pedidos de verba',board.requestedSeason===s.season?'Já utilizado nesta época':'Disponível')+
+  btn('board-request','Pedir orçamento à direção','accent full',board.requestedSeason===s.season?'disabled':''))+
+ panel('Análise do diretor desportivo',info('Saldo recorrente estimado',money(advisor.recurring))+
+  info('Posição a reforçar',advisor.weakest)+
+  advisor.alerts.map(a=>'<div class="history-item">'+esc(a)+'</div>').join(''))+'</div>';
 }
 export function mentors(s){
  return title('EQUIPA TÉCNICA','MENTORES','Cada treinador oferece um bónus diferente ao onze.')+
@@ -84,6 +110,7 @@ export function events(s){
  return title('DESAFIOS E CONQUISTAS','EVENTOS & MISSÕES','Objetivos concluídos podem ser resgatados uma vez.',btn('reward',s.rewards.lastClaimWeek===s.season+':'+s.week?'Bónus da jornada recebido':'Resgatar bónus da jornada','accent',s.rewards.lastClaimWeek===s.season+':'+s.week?'disabled':''))+
  '<div class="event-hero"><div><span class="eyebrow">RECOMPENSAS POR JORNADA</span><h2>'+streak+' JORNADAS SEGUIDAS</h2><p>Bónus disponível uma vez em cada jornada.</p></div><span class="event-glyph">✦</span></div>'+
  '<div class="cards-grid">'+quests.map(q=>'<div class="quest-card"><span class="eyebrow">'+(s.events.daily.includes(q)?'OBJETIVO DIÁRIO':'OBJETIVO SEMANAL')+'</span><h3>'+esc(q.text)+'</h3><div class="progress-text">'+q.progress+'/'+q.target+'</div>'+bar(q.progress/q.target*100)+info('Recompensa',q.reward+(q.kind==='token'?' tokens':' €'))+btn('quest',q.claimed?'Concluído':q.progress>=q.target?'Resgatar recompensa':'Por concluir','accent full','data-id="'+q.id+'" '+(q.claimed||q.progress<q.target?'disabled':''))+'</div>').join('')+'</div>'+
+ panel('Notícias do universo', (s.world?.news||[]).slice(0,12).map(n=>'<div class="history-item"><strong>'+esc(n.title)+'</strong><small>Época '+n.season+' · Jornada '+n.week+' · '+esc(n.detail)+'</small></div>').join('')||'<div class="empty-state">As notícias surgem conforme a carreira avança.</div>')+
  panel('Troféus e conquistas',s.coach.achievements.map(a=>'<div class="history-item">'+icon('trophy',14)+' '+esc(a)+'</div>').join('')||'<div class="empty-state">Vence competições para desbloquear novos troféus.</div>')+
  '<p class="note muted">Os eventos atuais são desafios locais. Torneios mundiais sincronizados exigiriam contas e servidor.</p>';
 }
@@ -97,11 +124,13 @@ export function collection(s){
 }
 export function profile(s){
  const c=s.coach,apps=c.wins+c.draws+c.losses;
+ const skills=[['developer','Formação e progressão'],['economist','Gestão financeira'],['scout','Observação de talentos'],['leader','Liderança e motivação']];
  return title('O TREINADOR','CARREIRA & PERFIL','Resultados e histórico do treinador.')+
  '<div class="profile-banner"><div class="profile-avatar">'+icon('user',38)+'</div><div><span class="eyebrow">TREINADOR PRINCIPAL</span><h2>'+esc(c.name)+'</h2><p>Nível '+c.level+' · '+esc(s.club.name)+'</p></div>'+pill('XP '+c.xp,'good')+'</div>'+
  '<div class="kpi-grid"><div class="kpi"><small>VITÓRIAS</small><strong>'+c.wins+'</strong></div><div class="kpi"><small>EMPATES</small><strong>'+c.draws+'</strong></div><div class="kpi"><small>DERROTAS</small><strong>'+c.losses+'</strong></div><div class="kpi"><small>TROFÉUS</small><strong>'+c.trophies+'</strong></div></div>'+
  '<div class="content-two">'+panel('Perfil do treinador','<form id="coach-form"><label class="control-field"><span>Nome público</span><input name="coach" maxlength="32" value="'+esc(c.name)+'" required></label><button type="submit" class="btn accent full">Guardar perfil</button></form>'+info('Partidas disputadas',apps)+info('Percentagem de vitórias',apps?Math.round(c.wins/apps*100)+'%':'0%')+info('Experiência acumulada',c.xp+' XP')+info('Confiança da direção',(s.finance.boardConfidence??75)+'%'))+
- panel('Historial desportivo',s.history.map(e=>'<div class="history-item"><strong>Época '+e.season+'</strong><small>'+e.position+'º lugar · '+esc(e.champion)+'</small></div>').join('')+c.achievements.map(e=>'<div class="history-item">'+icon('trophy',14)+' '+esc(e)+'</div>').join('')||'<div class="empty-state">Sem épocas concluídas.</div>')+'</div>';
+ panel('Historial desportivo',s.history.map(e=>'<div class="history-item"><strong>Época '+e.season+'</strong><small>'+e.position+'º lugar · '+esc(e.champion)+'</small></div>').join('')+c.achievements.map(e=>'<div class="history-item">'+icon('trophy',14)+' '+esc(e)+'</div>').join('')||'<div class="empty-state">Sem épocas concluídas.</div>')+'</div>'+
+ panel('Especializações do treinador · '+(c.skillPoints||0)+' pontos',skills.map(([id,name])=>'<div class="history-item"><strong>'+name+'</strong>'+(c.skills.includes(id)?pill('DESBLOQUEADO','good'):btn('coach-skill','Desbloquear','accent','data-id="'+id+'" '+(!c.skillPoints?'disabled':'')))+'</div>').join(''));
 }
 export function social(s){
  const slots=Math.max(0,1-(s.friendliesThisWeek||0));
