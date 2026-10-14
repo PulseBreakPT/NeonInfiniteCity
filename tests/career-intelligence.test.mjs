@@ -202,7 +202,8 @@ test('premium market offers are owned by rivals and transfers genuinely move the
  s.week++;
  progressCareerWeek(s,1);
  assert.ok(s.players.some(p=>p.id===offer.id));
- assert.ok(!seller.players.some(p=>p.id===offer.id));
- assert.ok(seller.budget>=oldBudget);
- assert.ok(!seller.lineup.includes(offer.id));
+ const settledSeller=s.rivals[offer.sourceClubId];
+ assert.ok(!settledSeller.players.some(p=>p.id===offer.id));
+ assert.ok(settledSeller.budget>=oldBudget);
+ assert.ok(!settledSeller.lineup.includes(offer.id));
 });

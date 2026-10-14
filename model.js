@@ -174,7 +174,7 @@ export function makeMarket(state,seed){
   const freePosition=['GK','DEF','MID','ATT'][(i+Math.max(0,state.week||1))%4];
   if(i>=3&&state.rivals){
    const available=Object.values(state.rivals).flatMap(club=>
-    club.players.filter(p=>p.age>=19&&(p.contract??1)>0&&!listed.has(p.id)&&club.players.length>14)
+    club.players.filter(p=>p.age>=19&&(p.contract??1)>0&&transferValue(p)>150000&&!listed.has(p.id)&&club.players.length>14)
      .map(p=>({club,p})));
    if(available.length){
     const {club,p}=available[Math.floor(random()*available.length)];
