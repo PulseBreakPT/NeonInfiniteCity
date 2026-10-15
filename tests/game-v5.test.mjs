@@ -54,7 +54,7 @@ test('shell retains single page frame and accessible mobile game controls',()=>{
 });
 test('all new design resources are packaged for offline use',()=>{
  const index=load('index.html'),sw=load('sw.js'),css=load('styles-v4.css'),asset=load('assets/stadium-isometric.svg'),pkg=JSON.parse(load('package.json'));
- assert.ok(index.includes('styles-v13.css'));
+ assert.ok(index.includes('styles-v14.css'));
  assert.ok(sw.includes('styles-v13.css'));
  assert.ok(sw.includes('stadium-isometric.svg'));
  assert.ok(sw.includes('scene-ui.js'));

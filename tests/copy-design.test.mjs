@@ -61,7 +61,7 @@ test('Impeccable é parte do repositório e do workflow de qualidade',()=>{
  const html=read('index.html'),sw=read('sw.js'),css=read('styles-v13.css');
  const product=read('PRODUCT.md'),design=read('DESIGN.md'),agent=read('.agents/skills/impeccable/SKILL.md');
  const workflow=read('.github/workflows/pages.yml'),pkg=JSON.parse(read('package.json'));
- assert.ok(html.includes('styles-v13.css'));
+ assert.ok(html.includes('styles-v14.css'));
  assert.ok(sw.includes('styles-v13.css'));
  assert.ok(css.includes('styles-v12.css'));
  assert.ok(product.length>300&&design.length>300&&agent.length>300);

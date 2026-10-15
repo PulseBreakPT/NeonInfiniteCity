@@ -108,11 +108,13 @@ test('a venda gera um montante moderado e não milhões por jogadores livres',()
 });
 test('renovar um contrato sem dinheiro não bloqueia jogadores',()=>{
  const s=fresh(),p=s.players[0];
+ const initialWage=p.salary;
  s.budget=0;p.contract=0;
  const result=execute(s,'renew',{id:p.id});
  assert.equal(s.budget,0);
  assert.equal(p.contract,3);
- assert.match(result.message,/sem prémio de assinatura/);
+ assert.ok(p.salary>=initialWage);
+ assert.match(result.message,/valores de mercado/);
  assert.throws(()=>execute(s,'renew',{id:p.id}),/já foi renovado/);
 });
 test('o ecrã financeiro apresenta contas recorrentes e o mercado preços gratuitos',()=>{

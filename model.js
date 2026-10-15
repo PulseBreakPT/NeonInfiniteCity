@@ -78,7 +78,7 @@ export function generatePlayer(id,pos,random,quality=65){
 
 const RIVAL_SCHEMES=['4-3-3','4-4-2','4-2-3-1','3-5-2','5-3-2'];
 export function makeRivals(state){
- const random=rng(hash(state.club.name+'-rival-'+state.season));
+ const random=rng(hash((state.world?.careerSeed??hash(state.club.name))+'-rival-'+state.season));
  const roles=['GK','GK','DEF','DEF','DEF','DEF','DEF','DEF','MID','MID','MID','MID','MID','MID','ATT','ATT','ATT','ATT'];
  const rivals={};
  for(const t of state.league.teams.filter(x=>x.id!==0)){
@@ -96,7 +96,7 @@ export function makeRivals(state){
 }
 export function rivalTick(state,round){
  if(!state.rivals)return;
- const random=rng(hash(state.club.name+':rival:'+state.season+':'+round));
+ const random=rng(hash((state.world?.careerSeed??hash(state.club.name))+':rival:'+state.season+':'+round));
  for(const club of Object.values(state.rivals)){
   const match=state.league.rounds[round-1]?.find(f=>f.home===club.id||f.away===club.id);
   if(!match)continue;
@@ -160,7 +160,7 @@ export function makeLeague(name,season=1,seed=1,division=1){
  return {teams,rounds,round:1,completed:false,champion:null};
 }
 export function makeCup(state){
- const random=rng(hash(state.club.name)+state.season*709);
+ const random=rng((state.world?.careerSeed??hash(state.club.name))+state.season*709);
  const entrants=state.league.teams.map(t=>t.id);
  for(let i=entrants.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[entrants[i],entrants[j]]=[entrants[j],entrants[i]];}
  return {stage:0,participants:entrants,results:[],winner:null,completed:false};

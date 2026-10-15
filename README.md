@@ -264,3 +264,23 @@ worker pré-carrega as imagens para que funcionem offline.
 *Para editar um ícone*, altera apenas o SVG correspondente em
 \`assets/ui-icons/<id>.svg\`; os caminhos são definidos no renderizador em
 \`ui-core.js\`. As regras de apresentação estão em \`styles-v14.css\`.
+
+
+## Proteções contra exploits de gestão (2026)
+
+A lógica de oposição usa uma seed persistente do universo, não a força
+momentânea dos 13 ou 14 jogadores mais fortes, derrotas propositadas ou
+alterações ao nome do clube. O treino tem limites semanais por jogador; os
+relatórios de observação têm limite por jornada; as recompensas têm um livro
+de resgates persistente; os packs usam um nonce para impedir previsibilidade
+de resultados por repetição no mesmo dia. As renovações, incluindo os fluxos
+compatíveis com saves antigos, usam salários relacionados com o mercado.
+As vendas de reforços adquiridos na própria época têm proteção contra
+arbitragem imediata, além do período de integração.
+
+**Limite de segurança:** o jogo é single-player e funciona offline; por isso,
+quem editar o \`localStorage\`, a consola do navegador ou o ficheiro JSON do
+save pode alterar diretamente valores da carreira. Prevenir essa adulteração
+de forma fiável requer armazenamento e validação num servidor de confiança.
+As salvaguardas implementadas corrigem abusos das mecânicas normais do jogo,
+não prometem proteção anticheat contra um utilizador com controlo do cliente.

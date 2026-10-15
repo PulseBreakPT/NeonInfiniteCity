@@ -112,7 +112,7 @@ export function execute(state,action,data={}){
   if(!won){offer.bids++;message='Licitação superada por outro clube. Sem custos.';break;}
   if(bid>0)spend(s,bid,'Transferência: '+offer.name);
   const signed={...developIdentity(offer),contract:3,injury:0,goals:0,assists:0,apps:0,
-   saleLockUntilWeek:s.week+(offer.freeAgent?8:2)};
+   saleLockUntilWeek:s.week+(offer.freeAgent?8:2),acquisitionCost:bid,acquisitionSeason:s.season};
   delete signed.ask;delete signed.expires;delete signed.bids;
   s.players.push(signed);s.market=s.market.filter(x=>x.id!==offer.id);
   s.nextId=Math.max(s.nextId,signed.id+1);

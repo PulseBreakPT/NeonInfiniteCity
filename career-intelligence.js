@@ -173,8 +173,10 @@ function resolveNegotiations(state,random){
    state.finance.transferPayables.push({player:offer.name,remaining,installment:Math.ceil(remaining/2),
     nextDay:state.day+7,sellerId:deal.clubId});
   }
-  const signed={...offer,contract:3,injury:0,goals:0,assists:0,apps:0,saleLockUntilWeek:state.week+3};
+  const signed={...offer,contract:3,injury:0,goals:0,assists:0,apps:0,saleLockUntilWeek:state.week+3,
+   acquisitionCost:deal.amount,acquisitionSeason:state.season};
   delete signed.ask;delete signed.expires;delete signed.bids;delete signed.freeAgent;
+  delete signed.sourceClubId;delete signed.sourcePlayerId;
   state.players.push(signed);
   state.market=state.market.filter(x=>x.id!==offer.id);
   if(club&&offer.sourceClubId){club.players=club.players.filter(p=>p.id!==(offer.sourcePlayerId||offer.id));club.lineup=rivalLineup(club);}

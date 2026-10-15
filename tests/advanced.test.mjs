@@ -56,7 +56,8 @@ test('bónus só é resgatado uma vez em cada jornada',()=>{
  assert.throws(()=>execute(s,'rest-day'),/Limite/);
 });
 test('observação gera IDs únicos, incluindo após migração de save',()=>{
- const s=game();for(let i=0;i<6;i++)execute(s,'scout');
+ const s=game();for(let i=0;i<3;i++)execute(s,'scout');
+ assert.throws(()=>execute(s,'scout'),/Limite de três/);
  const ids=s.market.map(p=>p.id);
  assert.equal(new Set(ids).size,ids.length);
  assert.equal(new Set([...ids,...s.players.map(p=>p.id)]).size,ids.length+s.players.length);

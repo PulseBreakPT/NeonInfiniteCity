@@ -18,4 +18,4 @@ jobs:
       - name: Syntax verification
         run: npm run check
       - name: Career intelligence tests
-        run: node --test tests/career-intelligence.test.mjs tests/management-universe.test.mjs
+        run: node --test tests/career-intelligence.test.mjs tests/management-universe.test.mjs tests/anti-exploit-2026.test.mjs

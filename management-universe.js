@@ -61,7 +61,12 @@ export function executeRealSale(s,id){
  const p=s.players.find(x=>x.id===Number(id));
  if(!p||s.players.length<=16)throw Error('Precisas de pelo menos 16 jogadores.');
  if((p.saleLockUntilWeek||0)>s.week)throw Error('O jogador deve permanecer no clube durante a integração.');
- const price=Math.round(transferValue(p)*.65/1000)*1000;
+ const marketPrice=Math.round(transferValue(p)*.65/1000)*1000;
+ // Immediate resale of a subsidized or underpriced signing must never mint
+ // money. Legitimate appreciation becomes available next season.
+ const feeCap=(p.acquisitionCost>0&&p.acquisitionSeason===s.season)
+  ?Math.max(0,Math.floor(p.acquisitionCost*.92/1000)*1000):marketPrice;
+ const price=Math.min(marketPrice,feeCap);
  const buyer=chooseBuyer(s,p,price);
  if(!buyer)throw Error('Não há clubes compradores com orçamento para este atleta.');
  buyer.club.budget-=price;

@@ -2,7 +2,7 @@
 import {rng,hash,clamp,teamPower,getPlayer,fixtureName,standings,makeCup,makeLeague,autoLineup,makeMarket,makeRivals,rivalTick,generatePlayer,rating,log,weeklyWageBill,televisionIncome,sponsorIncome,campusMaintenance} from './model.js';
 import {runMatch,tacticalModifiers} from './match-engine.js';
 import {progressCareerWeek,nextSeasonCareer} from './career-intelligence.js';
-import {archiveSeasonResults,ensureUniverse} from './management-universe.js';
+import {archiveSeasonResults,ensureUniverse,minimumWage} from './management-universe.js';
 import {runCompetitionFixture} from './competition-physics.js';
 const pick=(random,arr)=>arr[Math.floor(random()*arr.length)];
 const poisson=(random,lambda)=>{let k=0,p=1,L=Math.exp(-lambda);while(p>L&&k<10){p*=random();k++;}return k-1;};
@@ -170,7 +170,7 @@ export function applyRound(state,{featuredResult=null,otherResults=null}={}){
  state.week++;state.day+=7;state.trainingCount=0;state.restDaysThisWeek=0;state.friendliesThisWeek=0;state.gameNonce=0;
  state.players.forEach(p=>{p.injury=Math.max(0,p.injury-1);p.fitness=clamp(p.fitness+8+state.facilities.medical*2,5,100);p.morale=clamp(p.morale+1,5,100);});
  progressCareerWeek(state,state.league.round-1);
- state.market=makeMarket(state,hash(state.club.name)+state.week*923+state.season*322);
+ state.market=makeMarket(state,state.world.careerSeed+state.week*923+state.season*322);
  // Recompensas conquistadas continuam resgatáveis; não destruir o progresso depois do apito final.
  state.events.daily.forEach(q=>{if(q.claimed){q.progress=0;q.claimed=false;}});
  state.events.weekly.forEach(q=>{if(state.week%5===0&&q.claimed){q.progress=0;q.claimed=false;}});
@@ -211,21 +211,23 @@ export function advanceSeason(state){
   p.age++;
   p.contract=Math.max(0,(Number(p.contract)||0)-1);
   if(p.contract===0){
-   // Standard one-season club option: preserves a usable team and costs
-   // a modest 2.5% wage rise, not an impossible signing fee.
-   p.contract=1;p.salary=Math.ceil((Number(p.salary)||5000)*(p.satisfaction<45?1.055:1.025)/100)*100;
+   // Emergency year-only extension: keeps old saves playable, but has real
+   // market-based wage inflation instead of exploitable 2%-only renewals.
+   p.contract=1;
+   p.salary=Math.ceil(Math.max((Number(p.salary)||5000)*1.08,minimumWage(state,p))*1.02/100)*100;
+   p.lastEmergencyExtensionSeason=state.season;
    autoRenewed++;
   }
   p.fitness=95;p.injury=0;p.cards=0;p.goals=0;p.assists=0;p.apps=0;p.cleanSheets=0;
  });
  if(autoRenewed)log(state,'Continuidade do plantel',autoRenewed+' contratos prolongados automaticamente por uma época.');
  nextSeasonCareer(state,previousDivision);
- state.league=makeLeague(state.club.name,state.season,hash(state.club.name),state.division);
+ state.league=makeLeague(state.club.name,state.season,state.world.careerSeed,state.division);
  // Persistent rival careers: do not erase squads, transfers or managers annually.
  for(const team of state.league.teams.filter(t=>t.id!==0)){
   const club=state.rivals[team.id];if(club){team.name=club.name;team.power=clamp(Math.round(club.players.reduce((sum,p)=>sum+rating(p),0)/Math.max(1,club.players.length)),40,95);}
  }
- state.cup=makeCup(state);state.market=makeMarket(state,hash(state.club.name)+state.season*977);
+ state.cup=makeCup(state);state.market=makeMarket(state,state.world.careerSeed+state.season*977);
  state.academy.forEach(p=>{p.age++;p.potential=clamp(p.potential+state.facilities.academy*.3,0,99);});
  state.mentors=state.mentors.filter(m=>(--m.contract)>0);if(!state.mentors.some(m=>m.id===state.mentorActive))state.mentorActive=null;
  state.finance.boardConfidence=clamp((state.finance.boardConfidence??75)+(pos<=8?6:-6),0,100);
