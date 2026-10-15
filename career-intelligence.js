@@ -81,7 +81,7 @@ function rivalLineup(club){
 }
 export function updateRivalIntelligence(state,round){
  ensureCareer(state);
- const random=rng(hash(state.club.name+':rival-ai:'+state.season+':'+round));
+ const random=rng(hash(state.world.careerSeed+':rival-ai:'+state.season+':'+round));
  for(const club of Object.values(state.rivals)){
   const strategy=club.strategy;
   if(round%3!==0)continue;
@@ -193,7 +193,7 @@ export function progressCareerWeek(state,round){
  const key=state.season+':'+round;
  if(state.world.lastWeekProcessed===key)return state;
  state.world.lastWeekProcessed=key;
- const random=rng(hash(state.club.name+':career:'+key));
+ const random=rng(hash(state.world.careerSeed+':career:'+key));
  const xi=new Set(state.lineups?.[state.formation]||[]);
  for(const player of state.players){
   developIdentity(player);
@@ -237,7 +237,7 @@ export function progressCareerWeek(state,round){
 export function nextSeasonCareer(state,previousDivision=state.division){
  ensureCareer(state);
  settleLoans(state);
- const random=rng(hash(state.club.name+':offseason:'+state.season));
+ const random=rng(hash(state.world.careerSeed+':offseason:'+state.season));
  const old=state.rivals;
  // Keep opponents, their players, transfer history and managers between seasons.
  for(const club of Object.values(old)){

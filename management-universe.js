@@ -22,6 +22,9 @@ export function ensureUniverse(s){
  w.serial??=0;w.news??=[];w.transfers??=[];w.seasons??=[];
  w.financialHistory??=[];w.careerRecords??=[];w.outsideMarket??={budget:18000000,players:[]};
  w.inactiveLeagues??={};w.developments??=[];
+ // Stable universe identity: renaming and weakening the squad cannot reroll a season.
+ w.careerSeed??=hash('career-id:'+s.club.name+':'+s.club.city);
+ w.rewardClaims??={};
  s.contractOffers??=[];s.loans??=[];s.playerPromises??=[];
  s.sponsorAgreement??=defaultSponsor(s);
  s.reputation=clamp(safeNumber(s.reputation,43+Math.floor((s.fans||0)/2300)),1,100);
@@ -246,7 +249,7 @@ export function createAnnualYouthIntake(s){
  if(s.world.lastYouthIntakeSeason===s.season)return;
  s.world.lastYouthIntakeSeason=s.season;
  const space=Math.max(0,6-s.academy.length),qty=Math.min(space,s.facilities.academy>=5?2:1);
- const random=rng(hash(s.club.name+':intake:'+s.season));
+ const random=rng(hash(s.world.careerSeed+':intake:'+s.season));
  for(let i=0;i<qty;i++){
   const p=generatePlayer(s.nextId++,positions[Math.floor(random()*positions.length)],random,45+s.facilities.academy+random()*6);
   p.age=15+Math.floor(random()*2);p.potential=clamp(p.potential+Math.round(random()*4),52,96);
@@ -256,7 +259,7 @@ export function createAnnualYouthIntake(s){
  }
 }
 function leagueRoster(s,division){
- const random=rng(hash(s.club.name+':inactive:'+division));
+ const random=rng(hash(s.world.careerSeed+':inactive:'+division));
  const home=Object.values(s.world.divisionArchives?.[division]?.rivals||{});
  if(home.length===15)return home.map(c=>({name:c.name,power:Math.round(c.players.reduce((n,p)=>n+rating(p),0)/Math.max(1,c.players.length))}));
  const towns=['Viseu','Braga','Faro','Évora','Coimbra','Beja','Aveiro','Leiria','Porto','Tomar','Setúbal','Guarda','Bragança','Lamego','Portalegre','Viana'];
@@ -264,7 +267,7 @@ function leagueRoster(s,division){
 }
 export function updateInactiveLeagues(s){
  ensureUniverse(s);
- const random=rng(hash(s.club.name+':world-tables:'+s.season));
+ const random=rng(hash(s.world.careerSeed+':world-tables:'+s.season));
  for(let division=1;division<=Math.max(4,s.division);division++){
   if(division===s.division)continue;
   const squads=leagueRoster(s,division);

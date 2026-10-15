@@ -12,7 +12,7 @@ function eventProgress(s,type){[...s.events.daily,...s.events.weekly].forEach(q=
 export function execute(state,action,data={}){
  const s=state;const snapshot=JSON.parse(JSON.stringify(state));const p=getPlayer(s,data.id);
  const offerForSeed=s.market?.find(x=>x.id===Number(data.id));
- const random=rng(hash(s.club.name+':'+s.day+':'+s.week+':'+s.trainingTotal+':'+action+':'+(s.gameNonce||0)+':'+(offerForSeed?.bids||0)));
+ const random=rng(hash((s.world?.careerSeed??hash(s.club.name))+':'+s.day+':'+s.week+':'+s.trainingTotal+':'+action+':'+(s.gameNonce||0)+':'+(offerForSeed?.bids||0)));
  let message='';
  try{
  switch(action){
@@ -54,7 +54,17 @@ export function execute(state,action,data={}){
   const types={technical:{cost:12000,keys:['pas','sho'],fatigue:8},physical:{cost:15000,keys:['pac','phy'],fatigue:11},defense:{cost:13500,keys:['def','phy'],fatigue:9},recovery:{cost:7500,keys:[],fatigue:-19},teamwork:{cost:11000,keys:['pas','def'],fatigue:6}};
   const t=types[data.kind];if(!t)throw Error('Treino inválido.');spend(s,t.cost,'Treino: '+data.kind);
   let gains=0;for(const player of s.players){
-   if(data.kind==='recovery'){player.morale=clamp(player.morale+3,0,100);}else{gains+=enhance(player,t.keys,s.facilities.training>=4?2:1);}
+   const key=s.season+':'+s.week;
+   if(player.trainingWeekKey!==key){player.trainingWeekKey=key;player.trainingGainsWeek=0;}
+   if(data.kind==='recovery'){player.morale=clamp(player.morale+3,0,100);}
+   else for(const attr of t.keys){
+    const available=Math.max(0,3-player.trainingGainsWeek);
+    if(!available)break;
+    const prev=Number(player[attr])||0;
+    enhance(player,[attr],Math.min(available,s.facilities.training>=4?2:1));
+    const changed=Math.max(0,(Number(player[attr])||0)-prev);
+    gains+=changed;player.trainingGainsWeek+=changed;
+   }
    developIdentity(player);player.satisfaction=clamp(player.satisfaction+(data.kind==='recovery'?3:1),0,100);
    player.fitness=clamp(player.fitness-t.fatigue,5,100);
    if(data.kind!=='recovery'&&player.fitness<25&&random()<.012)player.injury=Math.max(player.injury||0,1+Math.ceil(random()*2));
@@ -76,17 +86,15 @@ export function execute(state,action,data={}){
   s.players.forEach(x=>x.morale=clamp(x.morale+15,0,100));message='Moral de equipa reforçada.';break;
  }
  case 'renew':{
+  // Legacy compatibility still goes through salary evaluation.
   if(!p)throw Error('Jogador desconhecido.');
   if(p.lastRenewedSeason===s.season)throw Error('O contrato já foi renovado nesta época.');
   if((p.contract||0)>=5)throw Error('O jogador já tem contrato de longa duração.');
-  developIdentity(p);
-  if(p.satisfaction<28&&p.personality.loyalty<60)throw Error('O jogador recusou renovar: exige um projeto desportivo mais ambicioso.');
-  const previous=Math.max(0,Number(p.contract)||0);
-  p.contract=Math.min(5,previous+3);
-  p.salary=Math.ceil((Number(p.salary)||5000)*1.02/100)*100;
+  const required=Math.ceil(minimumWage(s,p)*1.12/100)*100;
+  const result=offerContract(s,p.id,required,3);
+  if(result.status!=='accepted')throw Error('O jogador recusou a renovação simplificada.');
   p.lastRenewedSeason=s.season;
-  p.satisfaction=clamp(p.satisfaction+6,0,100);
-  message='Contrato de '+p.name+' prolongado até '+p.contract+' épocas, sem prémio de assinatura. Salário ajustado em 2%.';
+  message='Contrato de '+p.name+' renovado a valores de mercado: '+money(required)+' mensais.';
   break;
  }
  case 'position':{
@@ -181,11 +189,14 @@ export function execute(state,action,data={}){
   message='Especialização de treinador desbloqueada.';break;
  }
  case 'scout':{
+  const key=s.season+':'+s.week;
+  if(s.scoutWeekKey!==key){s.scoutWeekKey=key;s.scoutReportsWeek=0;}
+  if(s.scoutReportsWeek>=3)throw Error('Limite de três relatórios de observação por jornada.');
   const cost=18000;spend(s,cost,'Relatório de olheiros');
-  const market=makeMarket(s,hash(s.club.name)+s.day*991+s.nextId*73);
+  const market=makeMarket(s,(s.world?.careerSeed??hash(s.club.name))+s.day*991+s.nextId*73);
   const candidate=market[0];developIdentity(candidate);
   if((s.coach.skills||[]).includes('scout'))candidate.potential=Math.min(99,candidate.potential+2);
-  s.market.unshift(candidate);s.gameNonce=(s.gameNonce||0)+1;message='Novo talento observado: '+candidate.name+'.';break;
+  s.market.unshift(candidate);s.scoutReportsWeek++;s.gameNonce=(s.gameNonce||0)+1;message='Novo talento observado: '+candidate.name+'.';break;
  }
  case 'upgrade':{
   if(!FACILITY_DATA[data.key])throw Error('Instalação desconhecida.');
@@ -250,9 +261,15 @@ export function execute(state,action,data={}){
   if(s.rewards.streak%3===0)s.tokens+=2;message='Bónus da jornada: '+money(prize)+(s.rewards.streak%3===0?' e 2 tokens':'')+'.';break;
  }
  case 'quest':{
-  const q=[...s.events.daily,...s.events.weekly].find(x=>x.id===data.id);
-  if(!q||q.claimed||q.progress<q.target)throw Error('Objetivo ainda não concluído.');
-  q.claimed=true;if(q.kind==='token')s.tokens+=q.reward;else income(s,q.reward,'Objetivo concluído');
+  ensureUniverse(s);
+  const daily=s.events.daily.find(x=>x.id===data.id);
+  const q=daily||s.events.weekly.find(x=>x.id===data.id);
+  const period=daily?s.season+':'+s.week:s.season+':block'+Math.floor((s.week-1)/5);
+  const key=(daily?'daily:':'weekly:')+q?.id+':'+period;
+  if(!q||q.claimed||q.progress<q.target||s.world.rewardClaims[key])throw Error('Objetivo já resgatado ou ainda não concluído.');
+  q.claimed=true;s.world.rewardClaims[key]=true;
+  const history=Object.keys(s.world.rewardClaims);
+  if(history.length>170)for(const stale of history.slice(0,history.length-150))delete s.world.rewardClaims[stale];if(q.kind==='token')s.tokens+=q.reward;else income(s,q.reward,'Objetivo concluído');
   message='Recompensa resgatada com sucesso.';break;
  }
  case 'buy-consumable':{
@@ -267,7 +284,7 @@ export function execute(state,action,data={}){
   s.inventory.activeKit=data.id;s.club.color=kit.color;message='Equipamento '+data.id+' equipado.';break;
  }
  case 'pack':{
-  requireToken(s,3);const pool=['Lenda do Clube','Mestre Tático','Guardião da Baliza','Campeão da Taça','Artilheiro Histórico','Estrela da Academia','Capitão Eterno'];
+  requireToken(s,3);s.gameNonce=(s.gameNonce||0)+1;const pool=['Lenda do Clube','Mestre Tático','Guardião da Baliza','Campeão da Taça','Artilheiro Histórico','Estrela da Academia','Capitão Eterno'];
   const item=pool[Math.floor(random()*pool.length)];
   if(s.inventory.cards.includes(item)){s.inventory.duplicates++;message='Carta repetida: '+item+'. +1 duplicado.';}
   else{s.inventory.cards.push(item);message='Nova carta colecionável: '+item+'!';}

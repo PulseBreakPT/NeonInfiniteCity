@@ -146,7 +146,8 @@ export function teamPower(state,teamId,forGame=true){
  return Math.round(avg*10)/10;
 }
 export function makeLeague(name,season=1,seed=1,division=1){
- const random=rng(hash(name)+season*331+seed);
+ // The draw depends on persistent career seed, season and division, not club name or current squad.
+ const random=rng(hash('league:'+seed+':'+season+':'+division));
  const teams=[{id:0,name,city:'',power:0}];
  AI_CLUBS.forEach(([n,city],i)=>teams.push({id:i+1,name:n,city,power:clamp(Math.round(53+random()*20+(division-1)*3+season*.3),40,95)}));
  const order=teams.map(t=>t.id),rounds=[];
